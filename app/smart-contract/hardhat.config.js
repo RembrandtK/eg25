@@ -15,7 +15,7 @@ module.exports = {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
     },
-    worldchain: {
+    "worldchain-sepolia": {
       url:
         process.env.WORLD_CHAIN_SEPOLIA_RPC ||
         "https://worldchain-sepolia.g.alchemy.com/public",
@@ -25,11 +25,11 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      worldchain: "abc", // Blockscout doesn't require API key
+      "worldchain-sepolia": "abc", // Blockscout doesn't require API key
     },
     customChains: [
       {
-        network: "worldchain",
+        network: "worldchain-sepolia",
         chainId: 4801,
         urls: {
           apiURL: "https://worldchain-sepolia.blockscout.com/api",

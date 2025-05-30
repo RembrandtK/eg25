@@ -6,5 +6,31 @@
       "0x046B7CDb0DACE9d4c0B5396f34d47945e974E369"
     ],
     "verificationDuration": 31536000
+  },
+  "ElectionDeployment": {
+    "useExistingAddressBook": false,
+    "existingAddressBookAddress": "0x0000000000000000000000000000000000000000",
+    "testAddresses": [
+      "0x046B7CDb0DACE9d4c0B5396f34d47945e974E369"
+    ],
+    "verificationDuration": 31536000,
+    "initialCandidates": [
+      {
+        "name": "Alice Johnson",
+        "description": "Experienced leader focused on community development and transparency"
+      },
+      {
+        "name": "Bob Smith",
+        "description": "Innovation advocate with a background in technology and education"
+      },
+      {
+        "name": "Carol Davis",
+        "description": "Environmental champion committed to sustainable policies"
+      },
+      {
+        "name": "David Wilson",
+        "description": "Economic policy expert with focus on fair growth and opportunity"
+      }
+    ]
   }
 }

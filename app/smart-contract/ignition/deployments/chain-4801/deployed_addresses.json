@@ -1,4 +1,5 @@
 {
   "TestnetDeployment#MockWorldIDAddressBook": "0xA26948dA2413b7a009ae38334Cc787f292A290fe",
-  "TestnetDeployment#TUTE": "0x1BFD23D12834Dd82c2e8Fc3aF22ffd141D1E51F3"
+  "TestnetDeployment#TUTE": "0x1BFD23D12834Dd82c2e8Fc3aF22ffd141D1E51F3",
+  "ElectionDeployment#ElectionManager": "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7"
 }
