@@ -51,15 +51,28 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
 
 1. ✅ **Initial Candidates Added**: Verified 4 candidates are in the contract (Alice, Bob, Carol, David)
 2. ✅ **Network Configuration Fixed**: Frontend now connects to correct worldchain-sepolia network
-3. ✅ **Infinite Loading Loop Fixed**: Resolved useEffect dependency issues causing reload cycles
-4. **Frontend Testing Required**: Need to test the complete voting flow end-to-end
-5. **Contract Integration**: Verify frontend can load candidates and submit votes properly
+3. ❌ **CRITICAL: Maximum Update Depth Exceeded Error**: Still occurring in World App despite multiple fix attempts
+   - Error: "Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render."
+   - Shows as "1 issue pill" in World App bottom-left corner
+   - Candidates load correctly but infinite loop continues in background
+   - Attempted fixes: Memoizing ABI, fixing useEffect dependencies, memoizing callbacks - none resolved issue
+   - **NEEDS FRESH DEBUGGING APPROACH**
+4. **Remove Redundant Wallet Connection Step**: App still shows wallet connection UI from original TUTE template
+5. **Update App Branding**: Clean up titles, descriptions to reflect Election Voting app (not TUTE claiming)
+6. **Frontend Testing Required**: Need to test the complete voting flow end-to-end
+7. **Contract Integration**: Verify frontend can load candidates and submit votes properly
 
 ### Medium Priority
 
-1. **UI Polish**: Drag-and-drop could be enhanced with better visual feedback
-2. **Error Handling**: Need better error messages for contract interactions
-3. **Loading States**: Improve loading indicators during blockchain operations
+1. **Clean Up App Branding & UI**:
+   - [ ] Remove TUTE-related text and replace with Election terminology
+   - [ ] Update page titles from "TUTE Claiming" to "Election Voting"
+   - [ ] Remove redundant wallet connection step (World App handles this)
+   - [ ] Clean up component names and descriptions
+   - [ ] Update README.md to reflect Election app purpose
+2. **UI Polish**: Drag-and-drop could be enhanced with better visual feedback
+3. **Error Handling**: Need better error messages for contract interactions
+4. **Loading States**: Improve loading indicators during blockchain operations
 
 ## 📋 Next Steps (Priority Order)
 
@@ -128,12 +141,31 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
 
 1. ✅ ~~Contract deployment parameters for initial candidates may not have been processed~~ - RESOLVED
 2. ✅ ~~Frontend network mismatch causing "getCandidates returned no data" error~~ - RESOLVED
-3. Need to verify World ID verification works with the deployed contract
-4. Drag-and-drop interface needs better mobile support
-5. Test processes hanging during Hardhat test execution (needs investigation)
+3. ❌ **CRITICAL: Maximum Update Depth Exceeded Error in World App** - UNRESOLVED
+   - Manifests as "1 issue pill" in World App bottom-left
+   - Multiple fix attempts failed (ABI memoization, useEffect deps, callback memoization)
+   - Requires fresh debugging approach in new thread
+4. **Redundant Wallet Connection UI**: App shows wallet connection step that's unnecessary in World App
+5. **Outdated Branding**: Still contains TUTE claiming references instead of Election voting
+6. Need to verify World ID verification works with the deployed contract
+7. Drag-and-drop interface needs better mobile support
+8. Test processes hanging during Hardhat test execution (needs investigation)
 
-## 📝 Notes
+## 📝 Current State Summary
 
+### ✅ **What's Working**
+- Smart contract deployed and functional with 4 candidates
+- Frontend loads candidates correctly from contract
+- Basic UI components built (CandidateList, CandidateRanking, VoteButton)
+- Development server running at localhost:3000
+- Contract integration tests passing
+
+### ❌ **Critical Issues**
+- **Maximum Update Depth Exceeded Error**: Infinite loop in React components (World App shows "1 issue pill")
+- **Redundant UI Flow**: Still shows wallet connection step from TUTE template
+- **Outdated Branding**: References to TUTE claiming instead of Election voting
+
+### 🔧 **Technical Details**
 - Contract address: `0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7`
 - Network: worldchain-sepolia (Chain ID: 4801)
 - World ID App ID: `app_10719845a0977ef63ebe8eb9edb890ad`
