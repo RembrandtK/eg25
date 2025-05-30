@@ -99,6 +99,11 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
    - [x] Test error scenarios and edge cases
 
 4. **Fix Any Critical Bugs**
+   - [ ] **URGENT: Fix Candidates Tab Loading Issue**
+     - [ ] Debug why candidatesLoading state doesn't update when handleCandidatesLoaded is called
+     - [ ] Investigate if useCallback dependencies are causing stale closures
+     - [ ] Consider moving CandidateList out of hidden div or using different state management
+     - [ ] Test if the issue is related to React strict mode or development vs production
    - [ ] Debug any contract interaction issues
    - [ ] Fix TypeScript errors if any
    - [ ] Ensure proper error handling
@@ -184,6 +189,11 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
 - **Bottom navigation with tabs** - Clean mobile-first UI with Candidates and My Ranking tabs
 
 ### ❌ **Remaining Issues**
+- **Bottom Navigation Loading Issue**: Candidates tab shows spinning loading indefinitely while Ranking tab works correctly
+  - CandidatesTab receives loading=true and never changes to false
+  - Hidden CandidateList component loads data successfully (debug shows candidatesCount: 4)
+  - handleCandidatesLoaded callback is called but candidatesLoading state not updating properly
+  - Need to investigate state management between hidden CandidateList and visible CandidatesTab
 - Need to verify World ID verification works with the deployed contract
 - Drag-and-drop interface needs better mobile support
 - Test processes hanging during Hardhat test execution (needs investigation)
