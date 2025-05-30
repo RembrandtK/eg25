@@ -23,11 +23,11 @@ contract TUTE is ERC20 {
 
     function claim() external {
         // Ensure msg.sender is in the registry
-        // require (worldAddressBook.addressVerifiedUntil(msg.sender) > 0, "Address not verified");
-        // require(
-        //     lastMint[msg.sender] + CLAIM_FREQUENCY_SECONDS < block.timestamp,
-        //     "Your claim is not available yet"
-        // );
+        require(worldAddressBook.addressVerifiedUntil(msg.sender) > 0, "Address not verified");
+        require(
+            lastMint[msg.sender] + CLAIM_FREQUENCY_SECONDS < block.timestamp,
+            "Your claim is not available yet"
+        );
         lastMint[msg.sender] = block.timestamp;
         _mint(msg.sender, CLAIM_AMOUNT);
     }

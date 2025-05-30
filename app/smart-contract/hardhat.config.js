@@ -2,8 +2,7 @@
  * @type import('hardhat/config').HardhatUserConfig
  */
 require("@nomicfoundation/hardhat-toolbox");
-require("@nomicfoundation/hardhat-verify");
-require("dotenv").config();
+require("dotenv").config({ path: ".env" });
 
 module.exports = {
   solidity: "0.8.27",

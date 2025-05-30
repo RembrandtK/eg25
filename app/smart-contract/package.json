@@ -6,8 +6,8 @@
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.js",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
-    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
-    "generate:sig": "hardhat run scripts/generate-signature.js",
+    "deploy:worldchain": "hardhat run scripts/deploy.js --network worldchain",
+    "verify:worldchain": "hardhat verify --network worldchain",
     "node": "hardhat node"
   },
   "keywords": [],
