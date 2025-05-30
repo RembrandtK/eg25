@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Candidate Loading</title>
+    <script src="https://unpkg.com/viem@2.30.5/dist/index.umd.js"></script>
+</head>
+<body>
+    <h1>Debug Candidate Loading</h1>
+    <div id="status">Loading...</div>
+    <div id="results"></div>
+
+    <script>
+        const { createPublicClient, http } = viem;
+        
+        const worldchainSepolia = {
+            id: 4801,
+            name: "Worldchain Sepolia",
+            rpcUrls: {
+                default: { 
+                    http: ["https://worldchain-sepolia.g.alchemy.com/public"] 
+                }
+            }
+        };
+
+        const contractAddress = "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7";
+        
+        const abi = [
+            {
+                "inputs": [],
+                "name": "getCandidates",
+                "outputs": [
+                    {
+                        "components": [
+                            { "internalType": "uint256", "name": "id", "type": "uint256" },
+                            { "internalType": "string", "name": "name", "type": "string" },
+                            { "internalType": "string", "name": "description", "type": "string" },
+                            { "internalType": "bool", "name": "active", "type": "bool" }
+                        ],
+                        "internalType": "struct ElectionManager.Candidate[]",
+                        "name": "",
+                        "type": "tuple[]"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        async function testCandidateLoading() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.innerHTML = "Creating client...";
+                
+                const client = createPublicClient({
+                    chain: worldchainSepolia,
+                    transport: http("https://worldchain-sepolia.g.alchemy.com/public")
+                });
+
+                statusDiv.innerHTML = "Calling getCandidates...";
+                
+                const candidates = await client.readContract({
+                    address: contractAddress,
+                    abi: abi,
+                    functionName: "getCandidates",
+                    args: []
+                });
+
+                statusDiv.innerHTML = `✅ Success! Found ${candidates.length} candidates`;
+                
+                let html = "<h2>Candidates:</h2><ul>";
+                candidates.forEach((candidate, index) => {
+                    html += `<li><strong>${candidate.name}</strong> - ${candidate.description} (ID: ${candidate.id.toString()}, Active: ${candidate.active})</li>`;
+                });
+                html += "</ul>";
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultsDiv.innerHTML = `<pre>${error.stack}</pre>`;
+                console.error("Full error:", error);
+            }
+        }
+
+        // Run the test
+        testCandidateLoading();
+    </script>
+</body>
+</html>
