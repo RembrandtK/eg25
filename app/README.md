@@ -1,115 +1,160 @@
-# Mini Apps Web 3 Template
+# World Mini App with Smart Contract Integration
 
-The intention for this project is to enable Mini App Builders to easily create new Next.js mini apps.
+A complete World Mini App template that integrates with on-chain smart contracts on World Chain. This app demonstrates wallet authentication, World ID verification, and ERC20 token claiming functionality.
 
-The example implemented here is a simple mini app that makes you connect and claim a simple ERC20 token every 5 minutes.
+## 🏗️ Project Structure
 
-## Basic Commands used
-
-1. Connect Wallet or Wallet Auth using Next Auth for Sessions
-2. Verify With World ID Command requesting Orb verification level to proceed.
-3. Send Transaction for minting and send the user a $TUTE ERC 20 token just for being verified. This refreshes every 5 minutes.
-
----
-
-## Dependencies
-
-- **[pnpm](https://pnpm.io/)**: Fast and efficient package manager.
-- **[ngrok](https://ngrok.com/)**: Expose your local server publicly for easy testing.
-- **[mini-kit-js](https://www.npmjs.com/package/@worldcoin/mini-kit-js)**: JavaScript SDK for World's Mini Apps.
-- **[minikit-react](https://www.npmjs.com/package/@worldcoin/minikit-react)**: React bindings for MiniKit SDK.
-- **[mini-apps-ui-kit-react](https://www.npmjs.com/package/@worldcoin/mini-apps-ui-kit-react)**: Pre-built UI components for Mini Apps.
-
----
-
-## 🛠️ Setup
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/mateosauton/MiniAppWeb3template.git
-cd MiniAppWeb3template
+```
+app/
+├── my-app/                 # Next.js Mini App
+│   ├── src/
+│   │   ├── app/           # App router pages
+│   │   ├── components/    # React components
+│   │   ├── lib/          # Utilities and configurations
+│   │   └── providers/    # Context providers
+│   ├── .env.local        # Environment variables
+│   └── package.json      # Dependencies
+├── smart-contract/        # Hardhat smart contract project
+│   ├── contracts/        # Solidity contracts
+│   ├── scripts/          # Deployment scripts
+│   ├── .env             # Contract deployment config
+│   └── hardhat.config.js # Hardhat configuration
+└── README.md             # This file
 ```
 
-### 2. Install dependencies
+## 📱 Features
+
+- **Wallet Authentication**: Connect using World App wallet with SIWE
+- **World ID Verification**: Verify human identity with World ID
+- **Token Claiming**: Claim TUTE ERC20 tokens every 5 minutes
+- **Transaction Tracking**: Real-time blockchain transaction status
+- **Responsive Design**: Optimized for mobile World App
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ and pnpm
+- World App installed on your phone
+- World ID account (for testing)
+- Some testnet ETH for contract deployment
+
+### 1. Install Dependencies
 
 ```bash
+# Install Mini App dependencies
+cd my-app
+pnpm install
+
+# Install smart contract dependencies
+cd ../smart-contract
 pnpm install
 ```
 
-### 3. Configure your environment variables
+### 2. Configure Environment Variables
 
-Copy the example environment file:
-
+#### Mini App Configuration (`my-app/.env.local`)
 ```bash
-cp .env.example .env
+NEXT_PUBLIC_WLD_APP_ID="your_world_id_app_id"
+NEXT_PUBLIC_WLD_ACTION_ID="vote"
+NEXT_PUBLIC_APP_URL="http://localhost:3001"
+NEXTAUTH_URL="http://localhost:3001"
+NEXTAUTH_SECRET="your-secret-key-here"
+NEXT_PUBLIC_TUTE_CONTRACT_ADDRESS="deployed_contract_address"
 ```
 
-Then fill in the required variables:
+#### Smart Contract Configuration (`smart-contract/.env`)
+```bash
+PRIVATE_KEY="your_private_key_without_0x"
+WORLD_CHAIN_SEPOLIA_RPC="https://worldchain-sepolia.g.alchemy.com/public"
+WORLD_ID_ADDRESS_BOOK="0x0000000000000000000000000000000000000000"
+```
 
-#### 🔑 APP_ID
-
-Find your **App ID** in the [Developer Portal](https://developer.worldcoin.org/) (`Configuration > Basic`).
-
-#### Incognito Action
-
-Define an _action_ in the developer portal under the Incognito Actions tab, copy it, and include it in the .env file
-
----
-
-## ▶️ Running the Project
-
-Run your Mini App locally:
+### 3. Deploy Smart Contract
 
 ```bash
+cd smart-contract
+pnpm run deploy:worldchain
+```
+
+Copy the deployed contract address to your Mini App's `.env.local` file.
+
+### 4. Run the Mini App
+
+```bash
+cd my-app
 pnpm dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) in your browser.
+The app will be available at `http://localhost:3001`
 
----
+## 🔧 Development
+
+### Running Tests
+
+```bash
+# Smart contract tests
+cd smart-contract
+pnpm test
+
+# Mini App tests (if available)
+cd my-app
+pnpm test
+```
+
+### Building for Production
+
+```bash
+cd my-app
+pnpm build
+```
+
+### Contract Verification
+
+After deploying your contract, verify it on Blockscout:
+
+```bash
+cd smart-contract
+npx hardhat verify --network worldchain <CONTRACT_ADDRESS> "0x0000000000000000000000000000000000000000"
+```
 
 ## 📱 Testing on Mobile
 
-To test your Mini App directly on your phone, expose your app publicly using NGROK.
+To test your Mini App on your phone, expose your app publicly using NGROK:
 
-### 🚀 Using NGROK
+### Using NGROK
 
-Install [NGROK](https://ngrok.com/) and run:
+1. Install [NGROK](https://ngrok.com/)
+2. Run your Mini App locally: `pnpm dev`
+3. In another terminal, run: `ngrok http http://localhost:3001`
+4. Copy the NGROK URL and update your World ID app configuration in the [Developer Portal](https://developer.worldcoin.org/)
 
-```bash
-ngrok http http://localhost:3000
-```
+### Opening in World App
 
-NGROK provides a publicly accessible URL.
+1. Go to the [Developer Portal](https://developer.worldcoin.org/)
+2. Navigate to `Configuration > Basic`
+3. Scan the generated QR code with World App
 
-### 🌎 Configuring Your App (Developer Portal)
+## 🌐 Network Information
 
-Go to the [Developer Portal](https://developer.worldcoin.org/) and configure:
+### World Chain Sepolia Testnet
+- **Chain ID**: 4801
+- **RPC URL**: https://worldchain-sepolia.g.alchemy.com/public
+- **Block Explorer**: https://worldchain-sepolia.blockscout.com
+- **Faucet**: [Get testnet ETH](https://faucet.worldchain.org)
 
-- **App URL:** Set it to your NGROK-generated URL.
-
-<img width="400" alt="image" src="https://github.com/user-attachments/assets/4d2c2c1b-cab4-40a7-ad6d-f91d1a77ecc5" />
-
----
-
-### 📱 Opening your Mini App in World App
-
-From the [Developer Portal](https://developer.worldcoin.org/), navigate to `Configuration > Basic` and scan the generated QR code.
-
----
-
-## 📞 Contact
-
-Questions or feedback? Feel free to reach out!
-
-- **Telegram:** [@mateosauton](https://t.me/mateosauton)
-
----
+### World Chain Mainnet
+- **Chain ID**: 480
+- **RPC URL**: https://worldchain-mainnet.g.alchemy.com/public
+- **Block Explorer**: https://worldscan.org
 
 ## 🔗 Useful Links
 
 - [World Documentation](https://docs.world.org/)
-- [Developer Portal](https://developer.worldcoin.org/)
+- [World Developer Portal](https://developer.worldcoin.org)
+- [MiniKit Documentation](https://docs.world.org/mini-apps)
+- [World Chain Documentation](https://docs.world.org/world-chain)
 
----
+## 📄 License
+
+MIT License - see LICENSE file for details
