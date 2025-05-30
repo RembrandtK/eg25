@@ -39,6 +39,7 @@ export default function Page() {
   const [transactionId, setTransactionId] = useState<string>("");
   const [isVoting, setIsVoting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('candidates');
+  const [candidatesLoading, setCandidatesLoading] = useState(true);
 
   // Memoize the ABI to prevent infinite loops in child components
   const memoizedElectionAbi = useMemo(() => ELECTION_ABI, []);
@@ -83,6 +84,7 @@ export default function Page() {
   // Handle candidates loaded - memoized to prevent infinite loops
   const handleCandidatesLoaded = useCallback((loadedCandidates: Candidate[]) => {
     setCandidates(loadedCandidates);
+    setCandidatesLoading(false);
   }, []);
 
   // Handle ranking change - memoized to prevent infinite loops
@@ -164,7 +166,7 @@ export default function Page() {
               {activeTab === 'candidates' && (
                 <CandidatesTab
                   candidates={candidates}
-                  loading={false}
+                  loading={candidatesLoading}
                   error={null}
                 />
               )}
