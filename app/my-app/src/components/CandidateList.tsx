@@ -28,7 +28,10 @@ export function CandidateList({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Use refs to track if we've already fetched to prevent infinite loops
+  const hasFetchedRef = useRef(false);
+  const contractAddressRef = useRef<string | null>(null);
 
   // Memoize Viem client to prevent recreation on every render
   const client = useMemo(() => createPublicClient({
@@ -36,18 +39,16 @@ export function CandidateList({
     transport: http(), // Use default RPC from chain config with fallbacks
   }), []);
 
-  // Stable reference to prevent infinite loops
-  const onCandidatesLoadedRef = useRef(onCandidatesLoaded);
-  onCandidatesLoadedRef.current = onCandidatesLoaded;
-
   useEffect(() => {
-    // Prevent infinite loops by only running once per contract/abi combination
-    if (hasInitialized || !contractAddress || !contractAbi) {
+    // Only fetch if we haven't fetched for this contract yet
+    if (!contractAddress || !contractAbi ||
+        (hasFetchedRef.current && contractAddressRef.current === contractAddress)) {
       return;
     }
 
-    console.log("🔄 CandidateList initializing for contract:", contractAddress);
-    setHasInitialized(true);
+    console.log("🔄 CandidateList fetching for contract:", contractAddress);
+    hasFetchedRef.current = true;
+    contractAddressRef.current = contractAddress;
 
     const fetchCandidates = async (attempt = 0) => {
       try {
@@ -68,12 +69,15 @@ export function CandidateList({
         const candidateList = result as Candidate[];
         console.log(`✅ Successfully loaded ${candidateList.length} candidates:`, candidateList.map(c => c.name));
         setCandidates(candidateList);
-        if (onCandidatesLoadedRef.current) {
+
+        // Call callback without causing re-renders
+        if (onCandidatesLoaded) {
           console.log("📞 Calling onCandidatesLoaded callback");
-          onCandidatesLoadedRef.current(candidateList);
+          onCandidatesLoaded(candidateList);
         }
-        setRetryCount(0); // Reset retry count on success
-        setLoading(false); // Set loading false on success
+
+        setRetryCount(0);
+        setLoading(false);
         console.log("🎉 Candidate loading completed successfully");
       } catch (err) {
         console.error(`❌ Error fetching candidates (attempt ${attempt + 1}):`, err);
@@ -81,11 +85,9 @@ export function CandidateList({
         console.error("Error details:", err instanceof Error ? err.message : String(err));
 
         if (attempt < MAX_RETRIES) {
-          // Exponential backoff: 2s, 4s, 8s for rate limiting
           const delay = Math.pow(2, attempt + 1) * 1000;
           console.log(`🔄 Retrying in ${delay/1000} seconds... (${attempt + 1}/${MAX_RETRIES})`);
 
-          // Check if it's a rate limiting error
           const isRateLimit = err instanceof Error &&
             (err.message.includes('429') || err.message.includes('rate limit'));
 
@@ -98,12 +100,12 @@ export function CandidateList({
         }
 
         setError(`Failed to load candidates after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        setLoading(false); // Set loading false on final failure
+        setLoading(false);
       }
     };
 
     fetchCandidates();
-  }, [contractAddress, contractAbi, client, hasInitialized]);
+  }, [contractAddress, contractAbi]); // Minimal dependencies
 
   if (loading) {
     return (
