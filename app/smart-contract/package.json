@@ -10,6 +10,7 @@
     "deploy:ignition:sepolia": "hardhat ignition deploy ignition/modules/TestnetDeployment.js --network worldchain-sepolia --parameters ignition/parameters/testnet.json",
     "deploy:ignition:mainnet": "hardhat ignition deploy ignition/modules/FullDeployment.js --network worldchain-sepolia --parameters ignition/parameters/worldchain-mainnet.json",
     "deploy:election:sepolia": "hardhat ignition deploy ignition/modules/ElectionDeployment.js --network worldchain-sepolia --parameters ignition/parameters/worldchain-sepolia.json",
+    "add-candidates:sepolia": "hardhat run scripts/add-candidates.js --network worldchain-sepolia",
     "verify:worldchain": "hardhat verify --network worldchain",
     "manage-addresses": "node scripts/manage-addresses.js",
     "ignition-utils": "node scripts/ignition-utils.js",
