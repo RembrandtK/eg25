@@ -11,6 +11,8 @@
     "deploy:ignition:mainnet": "hardhat ignition deploy ignition/modules/FullDeployment.js --network worldchain-sepolia --parameters ignition/parameters/worldchain-mainnet.json",
     "deploy:election:sepolia": "hardhat ignition deploy ignition/modules/ElectionDeployment.js --network worldchain-sepolia --parameters ignition/parameters/worldchain-sepolia.json",
     "add-candidates:sepolia": "hardhat run scripts/add-candidates.js --network worldchain-sepolia",
+    "test:election": "hardhat test test/ElectionManager.test.js",
+    "test:integration": "hardhat test test/contract-integration.test.js",
     "verify:worldchain": "hardhat verify --network worldchain",
     "manage-addresses": "node scripts/manage-addresses.js",
     "ignition-utils": "node scripts/ignition-utils.js",
@@ -23,10 +25,10 @@
   "description": "Hardhat project for testing TUTE contract",
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.11",
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "@openzeppelin/contracts": "^5.0.0",
-    "ethers": "^6.8.1",
-    "hardhat": "^2.18.0"
+    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "@openzeppelin/contracts": "5.3.0",
+    "ethers": "6.14.3",
+    "hardhat": "2.24.1"
   },
   "dependencies": {
     "dotenv": "^16.4.7"
