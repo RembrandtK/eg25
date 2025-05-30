@@ -11,6 +11,7 @@
     "deploy:ignition:mainnet": "hardhat ignition deploy ignition/modules/FullDeployment.js --network worldchain --parameters ignition/parameters/worldchain-mainnet.json",
     "verify:worldchain": "hardhat verify --network worldchain",
     "manage-addresses": "node scripts/manage-addresses.js",
+    "ignition-utils": "node scripts/ignition-utils.js",
     "node": "hardhat node"
   },
   "keywords": [],
