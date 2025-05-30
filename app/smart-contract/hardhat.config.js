@@ -16,10 +16,10 @@ module.exports = {
     },
     worldchain: {
       url:
-        process.env.WORLDCHAIN_RPC_URL ||
-        "https://worldchain-mainnet.g.alchemy.com/public",
+        process.env.WORLD_CHAIN_SEPOLIA_RPC ||
+        "https://worldchain-sepolia.g.alchemy.com/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 480,
+      chainId: 4801,
     },
   },
   etherscan: {
@@ -29,10 +29,10 @@ module.exports = {
     customChains: [
       {
         network: "worldchain",
-        chainId: 480,
+        chainId: 4801,
         urls: {
-          apiURL: "https://worldscan.org/api",
-          browserURL: "https://worldscan.org",
+          apiURL: "https://worldchain-sepolia.blockscout.com/api",
+          browserURL: "https://worldchain-sepolia.blockscout.com",
         },
       },
     ],
