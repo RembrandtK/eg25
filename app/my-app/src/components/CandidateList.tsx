@@ -13,14 +13,14 @@ interface Candidate {
 
 interface CandidateListProps {
   contractAddress: string;
-  contractAbi: any[];
+  contractAbi: readonly any[];
   onCandidatesLoaded?: (candidates: Candidate[]) => void;
 }
 
-export function CandidateList({ 
-  contractAddress, 
-  contractAbi, 
-  onCandidatesLoaded 
+export function CandidateList({
+  contractAddress,
+  contractAbi,
+  onCandidatesLoaded
 }: CandidateListProps) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,11 +42,12 @@ export function CandidateList({
           address: contractAddress as `0x${string}`,
           abi: contractAbi,
           functionName: "getCandidates",
+          args: [],
         });
 
         const candidateList = result as Candidate[];
         setCandidates(candidateList);
-        
+
         if (onCandidatesLoaded) {
           onCandidatesLoaded(candidateList);
         }
@@ -115,7 +116,7 @@ export function CandidateList({
           <h3 className="text-lg font-semibold text-gray-900">Election Candidates</h3>
           <p className="text-sm text-gray-500 mt-1">{candidates.length} candidate{candidates.length !== 1 ? 's' : ''} available</p>
         </div>
-        
+
         <div className="divide-y divide-gray-200">
           {candidates.map((candidate) => (
             <div key={candidate.id.toString()} className="px-6 py-4">

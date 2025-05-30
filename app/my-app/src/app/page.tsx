@@ -2,29 +2,38 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { TuteTimer } from "@/components/TuteTimer";
+import { CandidateList } from "@/components/CandidateList";
+import { CandidateRanking } from "@/components/CandidateRanking";
+import { VoteButton } from "@/components/VoteButton";
 import { VerifyButton } from "@/components/VerifyButton";
-import { ClaimButton } from "@/components/ClaimButton";
 import { WalletAuthButton } from "@/components/wallet-auth-button";
 import { useWaitForTransactionReceipt } from "@worldcoin/minikit-react";
 import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 import { TransactionStatus } from "@/components/TransactionStatus";
+import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI } from "@/election-abi";
 
 // // This would come from environment variables in a real app
 // const APP_ID =
 //   process.env.NEXT_PUBLIC_WORLDCOIN_APP_ID ||
 //   "app_9a73963d73efdf2e7d9472593dc9dffd";
 
+interface Candidate {
+  id: bigint;
+  name: string;
+  description: string;
+  active: boolean;
+}
+
 export default function Page() {
   const { data: session, status } = useSession();
   const [walletConnected, setWalletConnected] = useState(false);
   const [verified, setVerified] = useState(false);
-  const [tuteClaimed, setTuteClaimed] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes in seconds
-  const [claimCount, setClaimCount] = useState(0);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [transactionId, setTransactionId] = useState<string>("");
-  const [isMinting, setIsMinting] = useState(false);
+  const [isVoting, setIsVoting] = useState(false);
 
   // Initialize Viem client
   const client = createPublicClient({
@@ -52,12 +61,11 @@ export default function Page() {
 
   // Update UI when transaction is confirmed
   useEffect(() => {
-    if (isConfirmed && !tuteClaimed) {
-      setTuteClaimed(true);
-      setClaimCount((prevCount) => prevCount + 1);
-      setIsMinting(false);
+    if (isConfirmed && !hasVoted) {
+      setHasVoted(true);
+      setIsVoting(false);
     }
-  }, [isConfirmed, tuteClaimed]);
+  }, [isConfirmed, hasVoted]);
 
   // Handle wallet connection success
   const handleWalletConnected = () => {
@@ -67,45 +75,62 @@ export default function Page() {
 
   // Handle verification success
   const handleVerificationSuccess = () => {
-    console.log("Verification success callback triggered in TuteApp");
+    console.log("Verification success callback triggered in Election App");
     setVerified(true);
   };
 
-  // Handle claim success
-  const handleClaimSuccess = (txId: string) => {
-    console.log("Claim initiated with transaction ID:", txId);
+  // Handle vote success
+  const handleVoteSuccess = (txId: string) => {
+    console.log("Vote initiated with transaction ID:", txId);
     setTransactionId(txId);
-    setIsMinting(true);
+    setIsVoting(true);
   };
 
-  // Timer effect for claim cooldown
+  // Handle candidates loaded
+  const handleCandidatesLoaded = (loadedCandidates: Candidate[]) => {
+    setCandidates(loadedCandidates);
+  };
+
+  // Handle ranking change
+  const handleRankingChange = (rankedIds: bigint[]) => {
+    setRankedCandidateIds(rankedIds);
+  };
+
+  // Check if user has already voted when wallet connects
   useEffect(() => {
-    let timer: NodeJS.Timeout | null = null;
-
-    if (tuteClaimed && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (timeRemaining === 0) {
-      // When timer reaches zero, enable claiming again
-      setTuteClaimed(false);
-      setVerified(false); // Reset verification for next claim cycle
-      setTimeRemaining(300); // Reset timer for next claim
-    }
-
-    return () => {
-      if (timer) clearInterval(timer);
+    const checkVotingStatus = async () => {
+      if (walletConnected && session?.user?.address) {
+        try {
+          const hasUserVoted = await client.readContract({
+            address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
+            abi: ELECTION_ABI,
+            functionName: "checkHasVoted",
+            args: [session.user.address as `0x${string}`],
+          });
+          setHasVoted(hasUserVoted as boolean);
+        } catch (error) {
+          console.error("Error checking voting status:", error);
+        }
+      }
     };
-  }, [tuteClaimed, timeRemaining]);
+
+    checkVotingStatus();
+  }, [walletConnected, session?.user?.address, client]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white safe-area-inset">
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-8">
-        <h1 className="text-3xl font-bold text-purple-600">TUTE App</h1>
+        <h1 className="text-3xl font-bold text-purple-600">Election Voting</h1>
 
-        {tuteClaimed ? (
-          <TuteTimer timeRemaining={timeRemaining} />
+        {hasVoted ? (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">✅</span>
+            </div>
+            <h2 className="text-xl font-semibold text-green-800 mb-2">Vote Cast Successfully!</h2>
+            <p className="text-gray-600">Thank you for participating in the election.</p>
+          </div>
         ) : (
           <>
             <div className="text-center mb-6">
@@ -113,13 +138,10 @@ export default function Page() {
                 {!walletConnected
                   ? "Connect your wallet to continue"
                   : !verified
-                  ? "Verify with World ID to claim your TUTE tokens"
-                  : isConfirming || isMinting
-                  ? "Minting your TUTE tokens..."
-                  : "You're all set! Claim your TUTE tokens now"}
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Tokens claimed: {claimCount}
+                  ? "Verify with World ID to participate in the election"
+                  : isConfirming || isVoting
+                  ? "Casting your vote..."
+                  : "Rank the candidates and cast your vote"}
               </p>
               <p className="text-xs text-blue-500 mt-1">
                 Wallet:{" "}
@@ -134,7 +156,7 @@ export default function Page() {
               <TransactionStatus
                 isConfirming={isConfirming}
                 isConfirmed={isConfirmed}
-                isMinting={isMinting}
+                isMinting={isVoting}
               />
             </div>
 
@@ -143,7 +165,31 @@ export default function Page() {
             ) : !verified ? (
               <VerifyButton onVerificationSuccess={handleVerificationSuccess} />
             ) : (
-              <ClaimButton onSuccess={handleClaimSuccess} />
+              <div className="w-full max-w-md space-y-6">
+                <CandidateList
+                  contractAddress={ELECTION_CONTRACT_ADDRESS}
+                  contractAbi={ELECTION_ABI}
+                  onCandidatesLoaded={handleCandidatesLoaded}
+                />
+
+                {candidates.length > 0 && (
+                  <>
+                    <CandidateRanking
+                      candidates={candidates}
+                      onRankingChange={handleRankingChange}
+                      disabled={isVoting || isConfirming}
+                    />
+
+                    <VoteButton
+                      contractAddress={ELECTION_CONTRACT_ADDRESS}
+                      contractAbi={ELECTION_ABI}
+                      rankedCandidateIds={rankedCandidateIds}
+                      onSuccess={handleVoteSuccess}
+                      disabled={isVoting || isConfirming}
+                    />
+                  </>
+                )}
+              </div>
             )}
           </>
         )}

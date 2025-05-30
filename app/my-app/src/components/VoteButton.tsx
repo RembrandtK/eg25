@@ -6,16 +6,16 @@ import { useSession } from "next-auth/react";
 
 interface VoteButtonProps {
   contractAddress: string;
-  contractAbi: any[];
+  contractAbi: readonly any[];
   rankedCandidateIds: bigint[];
   onSuccess: (txId: string) => void;
   disabled?: boolean;
 }
 
-export function VoteButton({ 
-  contractAddress, 
-  contractAbi, 
-  rankedCandidateIds, 
+export function VoteButton({
+  contractAddress,
+  contractAbi,
+  rankedCandidateIds,
   onSuccess,
   disabled = false
 }: VoteButtonProps) {
@@ -40,10 +40,10 @@ export function VoteButton({
 
     try {
       setIsLoading(true);
-      
+
       // Convert BigInt array to regular number array for the contract call
       const candidateIdsAsNumbers = rankedCandidateIds.map(id => Number(id));
-      
+
       console.log("Submitting vote with ranking:", candidateIdsAsNumbers);
 
       // Send transaction to cast vote
@@ -97,13 +97,13 @@ export function VoteButton({
           </div>
         )}
       </button>
-      
+
       {rankedCandidateIds.length === 0 && !isLoading && (
         <p className="text-xs text-gray-500 text-center mt-2">
           Please rank at least one candidate to vote
         </p>
       )}
-      
+
       {rankedCandidateIds.length > 0 && !isLoading && (
         <p className="text-xs text-green-600 text-center mt-2">
           Ready to vote with {rankedCandidateIds.length} candidate{rankedCandidateIds.length !== 1 ? 's' : ''} ranked
