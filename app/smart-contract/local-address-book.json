@@ -1,0 +1,32 @@
+{
+  "addresses": [
+    {
+      "address": "0x046b7cdb0dace9d4c0b5396f34d47945e974e369",
+      "name": "Deployer",
+      "notes": "Main deployment account",
+      "addedAt": "2025-05-30T20:09:36.422Z",
+      "lastUpdated": "2025-05-30T20:10:10.663Z",
+      "verified": true,
+      "verifiedUntil": 1780171810
+    },
+    {
+      "address": "0x742d35cc6634c0532925a3b8d4c9db96c4b4d8e1",
+      "name": "Test User 1",
+      "notes": "First test user",
+      "addedAt": "2025-05-30T20:09:52.309Z",
+      "lastUpdated": "2025-05-30T20:10:10.666Z",
+      "verified": true,
+      "verifiedUntil": 1780171810
+    },
+    {
+      "address": "0x8ba1f109551bd432803012645hac136c9c1495",
+      "name": "Test User 2",
+      "notes": "Second test user",
+      "addedAt": "2025-05-30T20:09:59.075Z",
+      "lastUpdated": "2025-05-30T20:09:59.075Z",
+      "verified": false,
+      "verifiedUntil": null
+    }
+  ],
+  "lastUpdated": "2025-05-30T20:10:18.318Z"
+}

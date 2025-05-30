@@ -7,14 +7,15 @@ module.exports = buildModule("FullDeployment", (m) => {
   const testAddresses = m.getParameter("testAddresses", []);
   const verificationDuration = m.getParameter("verificationDuration", 365 * 24 * 60 * 60); // 1 year
 
-  let addressBook;
+  let addressBookAddress;
 
   if (useExistingAddressBook && existingAddressBookAddress !== "0x0000000000000000000000000000000000000000") {
     // Use existing address book (for mainnet)
-    addressBook = m.contractAt("IWorldIdAddressBook", existingAddressBookAddress);
+    addressBookAddress = existingAddressBookAddress;
   } else {
     // Deploy mock address book for testing
-    addressBook = m.contract("MockWorldIDAddressBook");
+    const mockAddressBook = m.contract("MockWorldIDAddressBook");
+    addressBookAddress = mockAddressBook;
 
     // Verify test addresses if provided
     if (testAddresses.length > 0) {
@@ -22,7 +23,7 @@ module.exports = buildModule("FullDeployment", (m) => {
       const verifiedUntil = currentTime + verificationDuration;
 
       testAddresses.forEach((address, index) => {
-        m.call(addressBook, "setAddressVerifiedUntil", [address, verifiedUntil], {
+        m.call(mockAddressBook, "setAddressVerifiedUntil", [address, verifiedUntil], {
           id: `verify_address_${index}`,
         });
       });
@@ -30,13 +31,11 @@ module.exports = buildModule("FullDeployment", (m) => {
   }
 
   // Deploy TUTE contract
-  const tute = m.contract("TUTE", [addressBook]);
+  const tute = m.contract("TUTE", [addressBookAddress]);
 
-  return { 
-    addressBook, 
+  return {
+    mockAddressBook: useExistingAddressBook ? null : addressBookAddress,
     tute,
-    // Export useful info
-    isUsingMockAddressBook: !useExistingAddressBook,
-    verifiedAddresses: testAddresses,
+    addressBookAddress,
   };
 });

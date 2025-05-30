@@ -7,7 +7,10 @@
     "deploy": "hardhat run scripts/deploy.js",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:worldchain": "hardhat run scripts/deploy.js --network worldchain",
+    "deploy:ignition:sepolia": "hardhat ignition deploy ignition/modules/FullDeployment.js --network worldchain --parameters ignition/parameters/worldchain-sepolia.json",
+    "deploy:ignition:mainnet": "hardhat ignition deploy ignition/modules/FullDeployment.js --network worldchain --parameters ignition/parameters/worldchain-mainnet.json",
     "verify:worldchain": "hardhat verify --network worldchain",
+    "manage-addresses": "node scripts/manage-addresses.js",
     "node": "hardhat node"
   },
   "keywords": [],
