@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ELECTION_CONTRACT_ADDRESS } from "@/election-abi";
 
 interface DebugPanelProps {
@@ -12,15 +12,88 @@ interface DebugPanelProps {
   hasVoted?: boolean;
 }
 
-export function DebugPanel({ 
-  candidates = [], 
-  loading = false, 
+export function DebugPanel({
+  candidates = [],
+  loading = false,
   error = null,
   walletConnected = false,
   verified = false,
   hasVoted = false
 }: DebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [lastSent, setLastSent] = useState<string>('');
+  const [sendStatus, setSendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const sessionId = useRef<string>(`session-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
+
+  // Generate debug data
+  const generateDebugData = () => ({
+    sessionId: sessionId.current,
+    url: typeof window !== 'undefined' ? window.location.href : 'SSR',
+    appState: {
+      walletConnected,
+      verified,
+      hasVoted,
+    },
+    contract: {
+      address: ELECTION_CONTRACT_ADDRESS,
+      network: 'worldchain-sepolia (4801)',
+    },
+    candidates: {
+      loading,
+      count: candidates.length,
+      error,
+      list: candidates.slice(0, 5).map((c, i) => ({
+        id: c.id || i,
+        name: c.name || 'Unknown'
+      })),
+    },
+    environment: {
+      mode: process.env.NODE_ENV || 'development',
+      origin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
+    },
+    performance: {
+      loadTime: typeof window !== 'undefined' ? performance.now() : 0,
+    },
+  });
+
+  // Send debug data to server
+  const sendDebugData = async () => {
+    if (sendStatus === 'sending') return;
+
+    setSendStatus('sending');
+    try {
+      const debugData = generateDebugData();
+      const response = await fetch('/api/debug', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(debugData),
+      });
+
+      if (response.ok) {
+        setSendStatus('success');
+        setLastSent(new Date().toLocaleTimeString());
+        setTimeout(() => setSendStatus('idle'), 2000);
+      } else {
+        setSendStatus('error');
+        setTimeout(() => setSendStatus('idle'), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to send debug data:', error);
+      setSendStatus('error');
+      setTimeout(() => setSendStatus('idle'), 3000);
+    }
+  };
+
+  // Auto-send debug data when important state changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      sendDebugData();
+    }, 1000); // Debounce rapid changes
+
+    return () => clearTimeout(timer);
+  }, [walletConnected, verified, hasVoted, candidates.length, error]);
 
   if (process.env.NODE_ENV === 'production') {
     return null; // Don't show in production
@@ -30,16 +103,44 @@ export function DebugPanel({
     <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gray-800 text-white px-3 py-2 rounded-lg text-xs font-mono hover:bg-gray-700 transition-colors"
+        className={`px-3 py-2 rounded-lg text-xs font-mono hover:bg-gray-700 transition-colors ${
+          sendStatus === 'success' ? 'bg-green-800 text-green-200' :
+          sendStatus === 'error' ? 'bg-red-800 text-red-200' :
+          sendStatus === 'sending' ? 'bg-yellow-800 text-yellow-200' :
+          'bg-gray-800 text-white'
+        }`}
       >
-        🐛 Debug {isOpen ? '▼' : '▲'}
+        🐛 Debug {isOpen ? '▼' : '▲'} {
+          sendStatus === 'sending' ? '📡' :
+          sendStatus === 'success' ? '✅' :
+          sendStatus === 'error' ? '❌' : '📊'
+        }
       </button>
-      
+
       {isOpen && (
         <div className="absolute bottom-12 right-0 bg-gray-900 text-green-400 p-4 rounded-lg shadow-lg max-w-sm w-80 font-mono text-xs">
           <div className="space-y-2">
-            <div className="text-yellow-400 font-bold">🔍 Frontend Debug Panel</div>
-            
+            <div className="text-yellow-400 font-bold">🔍 Debug Panel (Server Monitoring)</div>
+
+            <div className="border-t border-gray-700 pt-2">
+              <div className="text-blue-400">📡 Server Monitoring:</div>
+              <div>Status: {
+                sendStatus === 'sending' ? '🔄 Sending...' :
+                sendStatus === 'success' ? '✅ Connected' :
+                sendStatus === 'error' ? '❌ Failed' :
+                '⏳ Ready'
+              }</div>
+              <div>Session: {sessionId.current.slice(-8)}</div>
+              {lastSent && <div>Last Sent: {lastSent}</div>}
+              <button
+                onClick={sendDebugData}
+                disabled={sendStatus === 'sending'}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-2 py-1 rounded text-xs mt-1"
+              >
+                📤 Send Now
+              </button>
+            </div>
+
             <div className="border-t border-gray-700 pt-2">
               <div className="text-blue-400">📊 App State:</div>
               <div>Wallet: {walletConnected ? '✅ Connected' : '❌ Disconnected'}</div>

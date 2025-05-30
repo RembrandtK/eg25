@@ -89,7 +89,7 @@ export default function Page() {
   // Check if user has already voted when session is available
   useEffect(() => {
     const checkVotingStatus = async () => {
-      if (status === "authenticated" && session?.user?.address) {
+      if (session?.user?.address) {
         try {
           const hasUserVoted = await client.readContract({
             address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
@@ -105,7 +105,7 @@ export default function Page() {
     };
 
     checkVotingStatus();
-  }, [status, session?.user?.address, client, memoizedElectionAbi]);
+  }, [session?.user?.address, client, memoizedElectionAbi]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white safe-area-inset">
@@ -125,23 +125,21 @@ export default function Page() {
           <>
             <div className="text-center mb-6">
               <p className="text-lg">
-                {status !== "authenticated"
-                  ? "Loading your wallet..."
-                  : !verified
+                {!verified
                   ? "Verify with World ID to participate in the election"
                   : isConfirming || isVoting
                   ? "Casting your vote..."
                   : "Rank the candidates and cast your vote"}
               </p>
-              <p className="text-xs text-blue-500 mt-1">
-                Wallet:{" "}
-                {session?.user?.address
-                  ? `${session.user.address.substring(
-                      0,
-                      6
-                    )}...${session.user.address.substring(38)}`
-                  : "..."}
-              </p>
+              {session?.user?.address && (
+                <p className="text-xs text-blue-500 mt-1">
+                  Wallet:{" "}
+                  {`${session.user.address.substring(
+                    0,
+                    6
+                  )}...${session.user.address.substring(38)}`}
+                </p>
+              )}
 
               <TransactionStatus
                 isConfirming={isConfirming}
@@ -150,12 +148,7 @@ export default function Page() {
               />
             </div>
 
-            {status !== "authenticated" ? (
-              <div className="text-center">
-                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Connecting to your World App wallet...</p>
-              </div>
-            ) : !verified ? (
+            {!verified ? (
               <VerifyButton onVerificationSuccess={handleVerificationSuccess} />
             ) : (
               <div className="w-full max-w-md space-y-6">
@@ -193,7 +186,7 @@ export default function Page() {
         candidates={candidates}
         loading={false}
         error={null}
-        walletConnected={status === "authenticated"}
+        walletConnected={status === "authenticated" || !!(session as any)?.user?.address}
         verified={verified}
         hasVoted={hasVoted}
       />
