@@ -43,7 +43,7 @@ export function DebugPanel({
       count: candidates.length,
       error,
       list: candidates.slice(0, 5).map((c, i) => ({
-        id: c.id || i,
+        id: typeof c.id === 'bigint' ? c.id.toString() : (c.id || i),
         name: c.name || 'Unknown'
       })),
     },
@@ -68,19 +68,34 @@ export function DebugPanel({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(debugData),
+        body: JSON.stringify(debugData, (_key, value) =>
+          typeof value === 'bigint' ? value.toString() : value
+        ),
       });
 
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Debug data sent successfully:', result);
         setSendStatus('success');
         setLastSent(new Date().toLocaleTimeString());
         setTimeout(() => setSendStatus('idle'), 2000);
       } else {
+        const errorText = await response.text();
+        console.error('❌ Debug data send failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        });
         setSendStatus('error');
         setTimeout(() => setSendStatus('idle'), 3000);
       }
     } catch (error) {
-      console.error('Failed to send debug data:', error);
+      console.error('❌ Failed to send debug data:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        debugData: generateDebugData(),
+      });
       setSendStatus('error');
       setTimeout(() => setSendStatus('idle'), 3000);
     }
