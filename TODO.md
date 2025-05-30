@@ -49,8 +49,9 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
 ### High Priority
 
 1. ✅ **Initial Candidates Added**: Verified 4 candidates are in the contract (Alice, Bob, Carol, David)
-2. **Frontend Testing Required**: Need to test the complete voting flow end-to-end
-3. **Contract Integration**: Verify frontend can load candidates and submit votes
+2. ✅ **Network Configuration Fixed**: Frontend now connects to correct worldchain-sepolia network
+3. **Frontend Testing Required**: Need to test the complete voting flow end-to-end
+4. **Contract Integration**: Verify frontend can load candidates and submit votes properly
 
 ### Medium Priority
 
@@ -124,9 +125,10 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
 ## 🐛 Known Issues
 
 1. ✅ ~~Contract deployment parameters for initial candidates may not have been processed~~ - RESOLVED
-2. Need to verify World ID verification works with the deployed contract
-3. Drag-and-drop interface needs better mobile support
-4. Test processes hanging during Hardhat test execution (needs investigation)
+2. ✅ ~~Frontend network mismatch causing "getCandidates returned no data" error~~ - RESOLVED
+3. Need to verify World ID verification works with the deployed contract
+4. Drag-and-drop interface needs better mobile support
+5. Test processes hanging during Hardhat test execution (needs investigation)
 
 ## 📝 Notes
 

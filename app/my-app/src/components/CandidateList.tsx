@@ -25,18 +25,30 @@ export function CandidateList({
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
-  // Initialize Viem client
-  const client = createPublicClient({
+  // Memoize Viem client to prevent recreation on every render
+  const client = useMemo(() => createPublicClient({
     chain: worldchain,
     transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
-  });
+  }), []);
+
+  // Memoize the callback to prevent infinite loops
+  const handleCandidatesLoaded = useCallback((candidateList: Candidate[]) => {
+    if (onCandidatesLoaded) {
+      onCandidatesLoaded(candidateList);
+    }
+  }, [onCandidatesLoaded]);
 
   useEffect(() => {
-    const fetchCandidates = async () => {
+    const fetchCandidates = async (attempt = 0) => {
       try {
         setLoading(true);
         setError(null);
+        setRetryCount(attempt);
+
+        console.log(`Fetching candidates (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
 
         const result = await client.readContract({
           address: contractAddress as `0x${string}`,
@@ -46,23 +58,33 @@ export function CandidateList({
         });
 
         const candidateList = result as Candidate[];
+        console.log(`Successfully loaded ${candidateList.length} candidates`);
         setCandidates(candidateList);
-
-        if (onCandidatesLoaded) {
-          onCandidatesLoaded(candidateList);
-        }
+        handleCandidatesLoaded(candidateList);
+        setRetryCount(0); // Reset retry count on success
       } catch (err) {
-        console.error("Error fetching candidates:", err);
-        setError("Failed to load candidates");
+        console.error(`Error fetching candidates (attempt ${attempt + 1}):`, err);
+        console.error("Contract address:", contractAddress);
+        console.error("Error details:", err instanceof Error ? err.message : String(err));
+
+        if (attempt < MAX_RETRIES) {
+          console.log(`Retrying in 2 seconds... (${attempt + 1}/${MAX_RETRIES})`);
+          setTimeout(() => fetchCandidates(attempt + 1), 2000);
+          return;
+        }
+
+        setError(`Failed to load candidates after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : 'Unknown error'}`);
       } finally {
-        setLoading(false);
+        if (retryCount === 0) { // Only set loading false on final attempt
+          setLoading(false);
+        }
       }
     };
 
     if (contractAddress && contractAbi) {
       fetchCandidates();
     }
-  }, [contractAddress, contractAbi, client, onCandidatesLoaded]);
+  }, [contractAddress, contractAbi, client, handleCandidatesLoaded, retryCount, MAX_RETRIES]);
 
   if (loading) {
     return (
@@ -70,7 +92,14 @@ export function CandidateList({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3 text-gray-600">Loading candidates...</span>
+            <div className="ml-3">
+              <span className="text-gray-600">Loading candidates...</span>
+              {retryCount > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Retry attempt {retryCount}/{MAX_RETRIES}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
