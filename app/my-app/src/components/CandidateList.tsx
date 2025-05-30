@@ -24,6 +24,16 @@ export function CandidateList({
   contractAbi,
   onCandidatesLoaded
 }: CandidateListProps) {
+  // Debug: Track renders and what's causing them
+  const renderCount = useRef(0);
+  renderCount.current += 1;
+
+  console.log(`🔄 CandidateList render #${renderCount.current}`, {
+    contractAddress,
+    contractAbiLength: contractAbi?.length,
+    onCandidatesLoadedType: typeof onCandidatesLoaded,
+    timestamp: new Date().toISOString()
+  });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +50,22 @@ export function CandidateList({
   }), []);
 
   useEffect(() => {
+    console.log("🎯 useEffect triggered", {
+      contractAddress,
+      contractAbiLength: contractAbi?.length,
+      hasFetched: hasFetchedRef.current,
+      previousContract: contractAddressRef.current,
+      renderCount: renderCount.current
+    });
+
     // Only fetch if we haven't fetched for this contract yet
     if (!contractAddress || !contractAbi ||
         (hasFetchedRef.current && contractAddressRef.current === contractAddress)) {
+      console.log("⏭️ Skipping fetch - already done or missing data");
       return;
     }
 
-    console.log("🔄 CandidateList fetching for contract:", contractAddress);
+    console.log("🚀 Starting fetch for contract:", contractAddress);
     hasFetchedRef.current = true;
     contractAddressRef.current = contractAddress;
 
