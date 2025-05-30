@@ -82,9 +82,7 @@ export function CandidatesTab({ candidates, loading = false, error = null }: Can
         </div>
       </div>
 
-      <div className="text-center text-xs text-gray-500 mt-6">
-        Review all candidates before ranking them in the "My Ranking" tab
-      </div>
+
     </div>
   );
 }

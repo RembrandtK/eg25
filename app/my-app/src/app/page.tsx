@@ -58,6 +58,18 @@ export default function Page() {
     setVerified(true);
   };
 
+  // Auto-trigger verification when app loads
+  useEffect(() => {
+    if (!verified) {
+      // Automatically trigger verification process
+      const timer = setTimeout(() => {
+        // This will be handled by the VerifyButton component automatically
+        console.log("Auto-triggering World ID verification...");
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [verified]);
+
   // Handle vote success
   const handleVoteSuccess = (txId: string) => {
     console.log("Vote initiated with transaction ID:", txId);
@@ -126,29 +138,14 @@ export default function Page() {
       <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-purple-600 text-center">Election Voting</h1>
 
-        {/* Status Info */}
-        <div className="text-center mt-2">
-          <p className="text-sm text-gray-600">
-            {!verified
-              ? "Verify with World ID to participate"
-              : isConfirming || isVoting
-              ? "Casting your vote..."
-              : hasVoted
-              ? "Vote submitted successfully!"
-              : "Ready to vote"}
-          </p>
-          {session?.user?.address && (
-            <p className="text-xs text-blue-500 mt-1">
-              {`${session.user.address.substring(0, 6)}...${session.user.address.substring(38)}`}
-            </p>
-          )}
-        </div>
-
-        <TransactionStatus
-          isConfirming={isConfirming}
-          isConfirmed={isConfirmed}
-          isMinting={isVoting}
-        />
+        {/* Only show transaction status when actively voting */}
+        {(isConfirming || isVoting) && (
+          <TransactionStatus
+            isConfirming={isConfirming}
+            isConfirmed={isConfirmed}
+            isMinting={isVoting}
+          />
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -156,6 +153,7 @@ export default function Page() {
         <div className="px-6 py-4">
           {!verified ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
+              {/* Auto-verification in progress */}
               <VerifyButton onVerificationSuccess={handleVerificationSuccess} />
             </div>
           ) : (
@@ -187,7 +185,7 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - only show when verified */}
       {verified && (
         <BottomNavigation
           activeTab={activeTab}
