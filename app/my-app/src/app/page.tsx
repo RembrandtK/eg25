@@ -13,6 +13,9 @@ import { worldchain } from "@/lib/chains";
 import { TransactionStatus } from "@/components/TransactionStatus";
 import { DebugPanel } from "@/components/DebugPanel";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { BottomNavigation, TabType } from "@/components/BottomNavigation";
+import { CandidatesTab } from "@/components/CandidatesTab";
+import { RankingTab } from "@/components/RankingTab";
 import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI } from "@/election-abi";
 
 // // This would come from environment variables in a real app
@@ -35,6 +38,7 @@ export default function Page() {
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [transactionId, setTransactionId] = useState<string>("");
   const [isVoting, setIsVoting] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('candidates');
 
   // Memoize the ABI to prevent infinite loops in child components
   const memoizedElectionAbi = useMemo(() => ELECTION_ABI, []);
@@ -109,77 +113,89 @@ export default function Page() {
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white safe-area-inset">
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-8">
-        <h1 className="text-3xl font-bold text-purple-600">Election Voting</h1>
+      {/* Header */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-purple-600 text-center">Election Voting</h1>
 
-        {hasVoted ? (
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">✅</span>
-            </div>
-            <h2 className="text-xl font-semibold text-green-800 mb-2">Vote Cast Successfully!</h2>
-            <p className="text-gray-600">Thank you for participating in the election.</p>
-          </div>
-        ) : (
-          <>
-            <div className="text-center mb-6">
-              <p className="text-lg">
-                {!verified
-                  ? "Verify with World ID to participate in the election"
-                  : isConfirming || isVoting
-                  ? "Casting your vote..."
-                  : "Rank the candidates and cast your vote"}
-              </p>
-              {session?.user?.address && (
-                <p className="text-xs text-blue-500 mt-1">
-                  Wallet:{" "}
-                  {`${session.user.address.substring(
-                    0,
-                    6
-                  )}...${session.user.address.substring(38)}`}
-                </p>
-              )}
+        {/* Status Info */}
+        <div className="text-center mt-2">
+          <p className="text-sm text-gray-600">
+            {!verified
+              ? "Verify with World ID to participate"
+              : isConfirming || isVoting
+              ? "Casting your vote..."
+              : hasVoted
+              ? "Vote submitted successfully!"
+              : "Ready to vote"}
+          </p>
+          {session?.user?.address && (
+            <p className="text-xs text-blue-500 mt-1">
+              {`${session.user.address.substring(0, 6)}...${session.user.address.substring(38)}`}
+            </p>
+          )}
+        </div>
 
-              <TransactionStatus
-                isConfirming={isConfirming}
-                isConfirmed={isConfirmed}
-                isMinting={isVoting}
-              />
-            </div>
+        <TransactionStatus
+          isConfirming={isConfirming}
+          isConfirmed={isConfirmed}
+          isMinting={isVoting}
+        />
+      </div>
 
-            {!verified ? (
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto pb-16">
+        <div className="px-6 py-4">
+          {!verified ? (
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
               <VerifyButton onVerificationSuccess={handleVerificationSuccess} />
-            ) : (
-              <div className="w-full max-w-md space-y-6">
+            </div>
+          ) : (
+            <>
+              {/* Hidden CandidateList to load data */}
+              <div className="hidden">
                 <CandidateList
                   contractAddress={ELECTION_CONTRACT_ADDRESS}
                   contractAbi={memoizedElectionAbi}
                   onCandidatesLoaded={handleCandidatesLoaded}
                 />
-
-                {candidates.length > 0 && (
-                  <>
-                    <CandidateRanking
-                      candidates={candidates}
-                      onRankingChange={handleRankingChange}
-                      disabled={isVoting || isConfirming}
-                    />
-
-                    <VoteButton
-                      contractAddress={ELECTION_CONTRACT_ADDRESS}
-                      contractAbi={memoizedElectionAbi}
-                      rankedCandidateIds={rankedCandidateIds}
-                      onSuccess={handleVoteSuccess}
-                      disabled={isVoting || isConfirming}
-                    />
-                  </>
-                )}
               </div>
-            )}
-          </>
-        )}
+
+              {/* Tab Content */}
+              {activeTab === 'candidates' && (
+                <CandidatesTab
+                  candidates={candidates}
+                  loading={false}
+                  error={null}
+                />
+              )}
+
+              {activeTab === 'ranking' && (
+                <RankingTab
+                  candidates={candidates}
+                  rankedCandidateIds={rankedCandidateIds}
+                  onRankingChange={handleRankingChange}
+                  verified={verified}
+                  hasVoted={hasVoted}
+                  isVoting={isVoting || isConfirming}
+                  onVoteSuccess={handleVoteSuccess}
+                  contractAddress={ELECTION_CONTRACT_ADDRESS}
+                  contractAbi={memoizedElectionAbi}
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Bottom Navigation */}
+      {verified && (
+        <BottomNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          candidateCount={candidates.length}
+          rankedCount={rankedCandidateIds.length}
+        />
+      )}
 
       {/* Debug Panel for development */}
       <DebugPanel

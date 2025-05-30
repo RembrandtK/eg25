@@ -104,6 +104,13 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
    - [ ] Ensure proper error handling
 
 5. **UI/UX Improvements**
+   - [ ] **Add Bottom Navigation Bar** (IN PROGRESS)
+     - [ ] Create BottomNavigation component with two tabs
+     - [ ] Create CandidatesTab component for candidate info display
+     - [ ] Create RankingTab component for ranked candidates display
+     - [ ] Update main page to use tab-based layout
+     - [ ] Add proper spacing for fixed bottom navigation
+     - [ ] Test on mobile devices for proper tab bar behavior
    - [ ] Add better loading states
    - [ ] Improve drag-and-drop visual feedback
    - [ ] Add vote confirmation dialog
@@ -204,3 +211,10 @@ Transform the existing TUTE token claiming Mini App into an election voting syst
 - Check browser console for any React warnings
 - Use the debug panel (bottom right) to monitor app state
 - **IMPORTANT**: Regularly commit AND push changes as you work - don't wait for completion, just keep going but commit frequently
+
+### 📋 **Step-by-Step Process:**
+1. **Plan**: For every feature/task, first add detailed sub-tasks to TODO.md
+2. **List**: Create a bulleted list of specific implementation steps
+3. **Implement**: Work through each step systematically
+4. **Commit**: Commit and push after completing each major step
+5. **Update TODO**: Mark completed items and add any new discoveries
