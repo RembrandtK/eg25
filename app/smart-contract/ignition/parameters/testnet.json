@@ -1,0 +1,8 @@
+{
+  "TestnetDeployment": {
+    "testAddresses": [
+      "0x046B7CDb0DACE9d4c0B5396f34d47945e974E369"
+    ],
+    "verificationDuration": 31536000
+  }
+}
