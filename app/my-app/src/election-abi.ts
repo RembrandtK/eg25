@@ -1,5 +1,12 @@
 export const ELECTION_CONTRACT_ADDRESS = "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7";
 
+export interface Candidate {
+  id: bigint;
+  name: string;
+  description: string;
+  active: boolean;
+}
+
 export const ELECTION_ABI = [
   {
     "inputs": [

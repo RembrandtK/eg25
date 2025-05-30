@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { CandidateList } from "@/components/CandidateList";
-import { CandidateRanking } from "@/components/CandidateRanking";
-import { VoteButton } from "@/components/VoteButton";
 import { VerifyButton } from "@/components/VerifyButton";
 
 import { useWaitForTransactionReceipt } from "@worldcoin/minikit-react";
@@ -12,23 +9,10 @@ import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 import { TransactionStatus } from "@/components/TransactionStatus";
 import { DebugPanel } from "@/components/DebugPanel";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { RankingTab } from "@/components/RankingTab";
-import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI } from "@/election-abi";
-
-// // This would come from environment variables in a real app
-// const APP_ID =
-//   process.env.NEXT_PUBLIC_WORLDCOIN_APP_ID ||
-//   "app_9a73963d73efdf2e7d9472593dc9dffd";
-
-interface Candidate {
-  id: bigint;
-  name: string;
-  description: string;
-  active: boolean;
-}
+import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI, Candidate } from "@/election-abi";
 
 export default function Page() {
   const { data: session, status } = useSession();
@@ -47,7 +31,7 @@ export default function Page() {
   // Initialize Viem client - memoized to prevent infinite loops
   const client = useMemo(() => createPublicClient({
     chain: worldchain,
-    transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
+    transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
   }), []);
 
   // Track transaction status
@@ -81,11 +65,34 @@ export default function Page() {
     setIsVoting(true);
   };
 
-  // Handle candidates loaded - memoized to prevent infinite loops
-  const handleCandidatesLoaded = useCallback((loadedCandidates: Candidate[]) => {
-    setCandidates(loadedCandidates);
-    setCandidatesLoading(false);
-  }, []);
+  // Load candidates from contract
+  useEffect(() => {
+    const loadCandidates = async () => {
+      if (!verified) return; // Only load after verification
+
+      try {
+        console.log("🔍 Loading candidates from contract...");
+        setCandidatesLoading(true);
+
+        const result = await client.readContract({
+          address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
+          abi: memoizedElectionAbi,
+          functionName: "getCandidates",
+          args: [],
+        });
+
+        const candidateList = result as Candidate[];
+        console.log(`✅ Successfully loaded ${candidateList.length} candidates:`, candidateList.map(c => c.name));
+        setCandidates(candidateList);
+        setCandidatesLoading(false);
+      } catch (error) {
+        console.error("❌ Error loading candidates:", error);
+        setCandidatesLoading(false);
+      }
+    };
+
+    loadCandidates();
+  }, [verified, client, memoizedElectionAbi]);
 
   // Handle ranking change - memoized to prevent infinite loops
   const handleRankingChange = useCallback((rankedIds: bigint[]) => {
@@ -153,15 +160,6 @@ export default function Page() {
             </div>
           ) : (
             <>
-              {/* Hidden CandidateList to load data */}
-              <div className="hidden">
-                <CandidateList
-                  contractAddress={ELECTION_CONTRACT_ADDRESS}
-                  contractAbi={memoizedElectionAbi}
-                  onCandidatesLoaded={handleCandidatesLoaded}
-                />
-              </div>
-
               {/* Tab Content */}
               {activeTab === 'candidates' && (
                 <CandidatesTab

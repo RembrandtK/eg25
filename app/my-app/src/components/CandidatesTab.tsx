@@ -1,6 +1,5 @@
 "use client";
 
-import { CandidateList } from "./CandidateList";
 import { Candidate } from "@/election-abi";
 
 interface CandidatesTabProps {
@@ -55,9 +54,34 @@ export function CandidatesTab({ candidates, loading = false, error = null }: Can
           {candidates.length} candidate{candidates.length !== 1 ? 's' : ''} running for election
         </p>
       </div>
-      
-      <CandidateList candidates={candidates} />
-      
+
+      {/* Candidate Display */}
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="divide-y divide-gray-200">
+            {candidates.map((candidate) => (
+              <div key={candidate.id.toString()} className="px-6 py-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-purple-600 font-semibold text-sm">
+                        {candidate.id.toString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ml-4 flex-1">
+                    <h4 className="text-sm font-medium text-gray-900">{candidate.name}</h4>
+                    {candidate.description && (
+                      <p className="text-sm text-gray-500 mt-1">{candidate.description}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="text-center text-xs text-gray-500 mt-6">
         Review all candidates before ranking them in the "My Ranking" tab
       </div>
