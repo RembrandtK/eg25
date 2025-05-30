@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "test:fast": "node scripts/test-contract-simple.js",
+    "test:build": "npm run type-check && npm run build",
     "sync-contracts": "node scripts/sync-contracts.js"
   },
   "dependencies": {
@@ -35,6 +38,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
     "hardhat": "^2.22.19",
+    "node-fetch": "^3.3.2",
     "tailwindcss": "^4.0.16",
     "typescript": "^5"
   }

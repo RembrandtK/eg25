@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 
