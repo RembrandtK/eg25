@@ -1,25 +1,25 @@
-// Worldchain details as a fallback in case viem/chains doesn't have it
+// Worldchain Sepolia testnet configuration
 export const worldchain = {
-  id: 59144,
-  name: "Worldchain",
-  network: "worldchain",
+  id: 4801,
+  name: "Worldchain Sepolia",
+  network: "worldchain-sepolia",
   nativeCurrency: {
     decimals: 18,
-    name: "Worldchain Ether",
-    symbol: "WLD",
+    name: "Sepolia Ether",
+    symbol: "ETH",
   },
   rpcUrls: {
     default: {
-      http: ["https://worldchain-mainnet.g.alchemy.com/public"],
+      http: ["https://worldchain-sepolia.g.alchemy.com/public"],
     },
     public: {
-      http: ["https://worldchain-mainnet.g.alchemy.com/public"],
+      http: ["https://worldchain-sepolia.g.alchemy.com/public"],
     },
   },
   blockExplorers: {
     default: {
-      name: "WorldcoinExplorer",
-      url: "https://explorer.worldcoin.org",
+      name: "Worldchain Sepolia Explorer",
+      url: "https://worldchain-sepolia.blockscout.com",
     },
   },
 };

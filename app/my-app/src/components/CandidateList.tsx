@@ -29,7 +29,7 @@ export function CandidateList({
   // Initialize Viem client
   const client = createPublicClient({
     chain: worldchain,
-    transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
+    transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
   });
 
   useEffect(() => {
