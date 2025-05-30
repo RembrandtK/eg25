@@ -11,6 +11,7 @@ import { useWaitForTransactionReceipt } from "@worldcoin/minikit-react";
 import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 import { TransactionStatus } from "@/components/TransactionStatus";
+import { DebugPanel } from "@/components/DebugPanel";
 import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI } from "@/election-abi";
 
 // // This would come from environment variables in a real app
@@ -194,6 +195,16 @@ export default function Page() {
           </>
         )}
       </div>
+
+      {/* Debug Panel for development */}
+      <DebugPanel
+        candidates={candidates}
+        loading={false}
+        error={null}
+        walletConnected={walletConnected}
+        verified={verified}
+        hasVoted={hasVoted}
+      />
     </div>
   );
 }
