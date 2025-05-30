@@ -8,7 +8,7 @@ import { useWaitForTransactionReceipt } from "@worldcoin/minikit-react";
 import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 import { TransactionStatus } from "@/components/TransactionStatus";
-import { DebugPanel } from "@/components/DebugPanel";
+
 import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { RankingTab } from "@/components/RankingTab";
@@ -195,15 +195,7 @@ export default function Page() {
         />
       )}
 
-      {/* Debug Panel for development */}
-      <DebugPanel
-        candidates={candidates}
-        loading={false}
-        error={null}
-        walletConnected={status === "authenticated" || !!(session as any)?.user?.address}
-        verified={verified}
-        hasVoted={hasVoted}
-      />
+
     </div>
   );
 }

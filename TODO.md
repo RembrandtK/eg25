@@ -37,25 +37,32 @@ Election voting system where users can:
    - [x] Keep server-side debug logging functionality intact ✅
    - [x] Maintain `/api/debug` endpoint for monitoring ✅
 
-2. **Test Complete Voting Flow**
+2. ✅ **Clean Up UI & UX** - COMPLETED
+   - [x] Remove manual "Verify to claim" button ✅
+   - [x] Keep automatic World ID verification process ✅
+   - [x] Remove noisy status messages from header ✅
+   - [x] Only show transaction status when actively voting ✅
+   - [x] Remove repetitive ranking instruction text ✅
+
+3. **Test Complete Voting Flow**
    - [x] Test candidate loading from contract ✅
    - [ ] Test ranking interface (drag-and-drop)
    - [ ] Test vote submission to blockchain
    - [ ] Test post-vote state (prevent double voting)
 
 ### Medium Priority
-3. **UI/UX Polish**
+4. **UI/UX Polish**
    - [ ] Improve drag-and-drop visual feedback
    - [ ] Add vote confirmation dialog
    - [ ] Show transaction hash after voting
    - [ ] Better loading states
 
-4. **Mobile Optimization**
+5. **Mobile Optimization**
    - [ ] Improve drag-and-drop for touch devices
    - [ ] Test on various mobile browsers
 
 ### Future Enhancements
-5. **Advanced Features**
+6. **Advanced Features**
    - [ ] Add vote viewing (show user's ranking if voted)
    - [ ] Add total vote count display
    - [ ] Results visualization after voting ends
