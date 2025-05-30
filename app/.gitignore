@@ -50,8 +50,8 @@ logs
 ehthumbs.db
 Thumbs.db
 
-# Deploy artifacts
-deployments
+# Deploy artifacts (but keep Ignition deployments)
+# deployments - commented out to allow Ignition deployment tracking
 
 # Misc
 .coverage
