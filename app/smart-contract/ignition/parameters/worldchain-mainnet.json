@@ -1,0 +1,8 @@
+{
+  "FullDeployment": {
+    "useExistingAddressBook": true,
+    "existingAddressBookAddress": "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D",
+    "testAddresses": [],
+    "verificationDuration": 0
+  }
+}
