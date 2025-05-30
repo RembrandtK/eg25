@@ -6,7 +6,7 @@ import { CandidateList } from "@/components/CandidateList";
 import { CandidateRanking } from "@/components/CandidateRanking";
 import { VoteButton } from "@/components/VoteButton";
 import { VerifyButton } from "@/components/VerifyButton";
-import { WalletAuthButton } from "@/components/wallet-auth-button";
+
 import { useWaitForTransactionReceipt } from "@worldcoin/minikit-react";
 import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
@@ -29,7 +29,6 @@ interface Candidate {
 
 export default function Page() {
   const { data: session, status } = useSession();
-  const [walletConnected, setWalletConnected] = useState(false);
   const [verified, setVerified] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
@@ -40,11 +39,11 @@ export default function Page() {
   // Memoize the ABI to prevent infinite loops in child components
   const memoizedElectionAbi = useMemo(() => ELECTION_ABI, []);
 
-  // Initialize Viem client
-  const client = createPublicClient({
+  // Initialize Viem client - memoized to prevent infinite loops
+  const client = useMemo(() => createPublicClient({
     chain: worldchain,
     transport: http("https://worldchain-mainnet.g.alchemy.com/public"),
-  });
+  }), []);
 
   // Track transaction status
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -56,14 +55,6 @@ export default function Page() {
       transactionId,
     });
 
-  // Check if user is authenticated when session changes
-  useEffect(() => {
-    if (status === "authenticated" && session?.user?.address) {
-      setWalletConnected(true);
-      console.log("User authenticated:", session.user);
-    }
-  }, [session, status]);
-
   // Update UI when transaction is confirmed
   useEffect(() => {
     if (isConfirmed && !hasVoted) {
@@ -71,12 +62,6 @@ export default function Page() {
       setIsVoting(false);
     }
   }, [isConfirmed, hasVoted]);
-
-  // Handle wallet connection success
-  const handleWalletConnected = () => {
-    setWalletConnected(true);
-    console.log("Wallet connected");
-  };
 
   // Handle verification success
   const handleVerificationSuccess = () => {
@@ -96,15 +81,15 @@ export default function Page() {
     setCandidates(loadedCandidates);
   }, []);
 
-  // Handle ranking change
-  const handleRankingChange = (rankedIds: bigint[]) => {
+  // Handle ranking change - memoized to prevent infinite loops
+  const handleRankingChange = useCallback((rankedIds: bigint[]) => {
     setRankedCandidateIds(rankedIds);
-  };
+  }, []);
 
-  // Check if user has already voted when wallet connects
+  // Check if user has already voted when session is available
   useEffect(() => {
     const checkVotingStatus = async () => {
-      if (walletConnected && session?.user?.address) {
+      if (status === "authenticated" && session?.user?.address) {
         try {
           const hasUserVoted = await client.readContract({
             address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
@@ -120,7 +105,7 @@ export default function Page() {
     };
 
     checkVotingStatus();
-  }, [walletConnected, session?.user?.address, client]);
+  }, [status, session?.user?.address, client, memoizedElectionAbi]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white safe-area-inset">
@@ -140,8 +125,8 @@ export default function Page() {
           <>
             <div className="text-center mb-6">
               <p className="text-lg">
-                {!walletConnected
-                  ? "Connect your wallet to continue"
+                {status !== "authenticated"
+                  ? "Loading your wallet..."
                   : !verified
                   ? "Verify with World ID to participate in the election"
                   : isConfirming || isVoting
@@ -165,8 +150,11 @@ export default function Page() {
               />
             </div>
 
-            {!walletConnected ? (
-              <WalletAuthButton onSuccess={handleWalletConnected} />
+            {status !== "authenticated" ? (
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Connecting to your World App wallet...</p>
+              </div>
             ) : !verified ? (
               <VerifyButton onVerificationSuccess={handleVerificationSuccess} />
             ) : (
@@ -205,7 +193,7 @@ export default function Page() {
         candidates={candidates}
         loading={false}
         error={null}
-        walletConnected={walletConnected}
+        walletConnected={status === "authenticated"}
         verified={verified}
         hasVoted={hasVoted}
       />

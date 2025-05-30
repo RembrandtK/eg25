@@ -16,10 +16,10 @@ interface CandidateRankingProps {
   disabled?: boolean;
 }
 
-export function CandidateRanking({ 
-  candidates, 
-  onRankingChange, 
-  disabled = false 
+export function CandidateRanking({
+  candidates,
+  onRankingChange,
+  disabled = false
 }: CandidateRankingProps) {
   const [rankedCandidates, setRankedCandidates] = useState<Candidate[]>([]);
 
@@ -32,13 +32,15 @@ export function CandidateRanking({
 
   // Notify parent of ranking changes
   useEffect(() => {
-    const rankedIds = rankedCandidates.map(candidate => candidate.id);
-    onRankingChange(rankedIds);
+    if (rankedCandidates.length > 0) {
+      const rankedIds = rankedCandidates.map(candidate => candidate.id);
+      onRankingChange(rankedIds);
+    }
   }, [rankedCandidates, onRankingChange]);
 
   const moveCandidate = (fromIndex: number, toIndex: number) => {
     if (disabled) return;
-    
+
     const newRanking = [...rankedCandidates];
     const [movedCandidate] = newRanking.splice(fromIndex, 1);
     newRanking.splice(toIndex, 0, movedCandidate);
@@ -76,20 +78,20 @@ export function CandidateRanking({
             Drag to reorder or use the arrow buttons. #1 is your top choice.
           </p>
         </div>
-        
+
         <div className="divide-y divide-gray-200">
           {rankedCandidates.map((candidate, index) => (
-            <div 
-              key={candidate.id.toString()} 
+            <div
+              key={candidate.id.toString()}
               className={`px-6 py-4 ${disabled ? 'opacity-50' : ''}`}
             >
               <div className="flex items-center space-x-4">
                 {/* Rank Number */}
                 <div className="flex-shrink-0">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    index === 0 
-                      ? 'bg-yellow-100 text-yellow-800' 
-                      : index === 1 
+                    index === 0
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : index === 1
                       ? 'bg-gray-100 text-gray-700'
                       : index === 2
                       ? 'bg-orange-100 text-orange-700'

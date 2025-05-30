@@ -9,8 +9,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TUTE App",
-  description: "Claim your TUTE tokens",
+  title: "Election Voting",
+  description: "Participate in ranked-choice elections with World ID verification",
 };
 
 export const viewport: Viewport = {
