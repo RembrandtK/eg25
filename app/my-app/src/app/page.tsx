@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { CandidateList } from "@/components/CandidateList";
 import { CandidateRanking } from "@/components/CandidateRanking";
@@ -12,6 +12,7 @@ import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 import { TransactionStatus } from "@/components/TransactionStatus";
 import { DebugPanel } from "@/components/DebugPanel";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI } from "@/election-abi";
 
 // // This would come from environment variables in a real app
@@ -90,10 +91,10 @@ export default function Page() {
     setIsVoting(true);
   };
 
-  // Handle candidates loaded
-  const handleCandidatesLoaded = (loadedCandidates: Candidate[]) => {
+  // Handle candidates loaded - memoized to prevent infinite loops
+  const handleCandidatesLoaded = useCallback((loadedCandidates: Candidate[]) => {
     setCandidates(loadedCandidates);
-  };
+  }, []);
 
   // Handle ranking change
   const handleRankingChange = (rankedIds: bigint[]) => {
