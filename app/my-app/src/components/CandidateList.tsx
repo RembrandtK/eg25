@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPublicClient, http } from "viem";
 import { worldchain } from "@/lib/chains";
 
@@ -31,15 +31,12 @@ export function CandidateList({
   // Memoize Viem client to prevent recreation on every render
   const client = useMemo(() => createPublicClient({
     chain: worldchain,
-    transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
+    transport: http(), // Use default RPC from chain config with fallbacks
   }), []);
 
-  // Memoize the callback to prevent infinite loops
-  const handleCandidatesLoaded = useCallback((candidateList: Candidate[]) => {
-    if (onCandidatesLoaded) {
-      onCandidatesLoaded(candidateList);
-    }
-  }, [onCandidatesLoaded]);
+  // Stable reference to prevent infinite loops
+  const onCandidatesLoadedRef = useRef(onCandidatesLoaded);
+  onCandidatesLoadedRef.current = onCandidatesLoaded;
 
   useEffect(() => {
     const fetchCandidates = async (attempt = 0) => {
@@ -60,31 +57,42 @@ export function CandidateList({
         const candidateList = result as Candidate[];
         console.log(`Successfully loaded ${candidateList.length} candidates`);
         setCandidates(candidateList);
-        handleCandidatesLoaded(candidateList);
+        if (onCandidatesLoadedRef.current) {
+          onCandidatesLoadedRef.current(candidateList);
+        }
         setRetryCount(0); // Reset retry count on success
+        setLoading(false); // Set loading false on success
       } catch (err) {
         console.error(`Error fetching candidates (attempt ${attempt + 1}):`, err);
         console.error("Contract address:", contractAddress);
         console.error("Error details:", err instanceof Error ? err.message : String(err));
 
         if (attempt < MAX_RETRIES) {
-          console.log(`Retrying in 2 seconds... (${attempt + 1}/${MAX_RETRIES})`);
-          setTimeout(() => fetchCandidates(attempt + 1), 2000);
+          // Exponential backoff: 2s, 4s, 8s for rate limiting
+          const delay = Math.pow(2, attempt + 1) * 1000;
+          console.log(`Retrying in ${delay/1000} seconds... (${attempt + 1}/${MAX_RETRIES})`);
+
+          // Check if it's a rate limiting error
+          const isRateLimit = err instanceof Error &&
+            (err.message.includes('429') || err.message.includes('rate limit'));
+
+          if (isRateLimit) {
+            console.log('Rate limiting detected - using longer delay');
+          }
+
+          setTimeout(() => fetchCandidates(attempt + 1), isRateLimit ? delay * 2 : delay);
           return;
         }
 
         setError(`Failed to load candidates after ${MAX_RETRIES + 1} attempts: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      } finally {
-        if (retryCount === 0) { // Only set loading false on final attempt
-          setLoading(false);
-        }
+        setLoading(false); // Set loading false on final failure
       }
     };
 
     if (contractAddress && contractAbi) {
       fetchCandidates();
     }
-  }, [contractAddress, contractAbi, client, handleCandidatesLoaded, retryCount, MAX_RETRIES]);
+  }, [contractAddress, contractAbi, client]);
 
   if (loading) {
     return (

@@ -7,10 +7,14 @@
 
 const { createPublicClient, http } = require("viem");
 
-// Configuration
+// Configuration with Ankr RPC (with API key)
 const CONFIG = {
   contractAddress: "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7",
-  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrls: [
+    "https://worldchain-sepolia.g.alchemy.com/public",
+    "https://worldchain-sepolia.gateway.tenderly.co",
+    "https://rpc.worldchain-sepolia.org"
+  ],
   chainId: 4801
 };
 
@@ -19,8 +23,8 @@ const worldchainSepolia = {
   id: 4801,
   name: "Worldchain Sepolia",
   rpcUrls: {
-    default: { http: [CONFIG.rpcUrl] },
-    public: { http: [CONFIG.rpcUrl] }
+    default: { http: CONFIG.rpcUrls },
+    public: { http: CONFIG.rpcUrls }
   }
 };
 
@@ -95,7 +99,7 @@ async function testContractConnection() {
       functionName: "getCandidates",
       args: []
     });
-    
+
     console.log(`✅ getCandidates() returned ${candidates.length} candidates:`);
     candidates.forEach((candidate, index) => {
       console.log(`   ${index + 1}. ${candidate.name} - ${candidate.description}`);
@@ -114,7 +118,7 @@ async function testContractConnection() {
     // Validation
     console.log("");
     console.log("🔍 Validation:");
-    
+
     if (Number(candidateCount) !== candidates.length) {
       console.log(`❌ Mismatch: candidateCount=${candidateCount}, getCandidates length=${candidates.length}`);
       return false;
@@ -129,7 +133,7 @@ async function testContractConnection() {
 
     const expectedCandidates = ["Alice Johnson", "Bob Smith", "Carol Davis", "David Wilson"];
     const actualNames = candidates.map(c => c.name);
-    
+
     for (const expectedName of expectedCandidates) {
       if (!actualNames.includes(expectedName)) {
         console.log(`❌ Missing expected candidate: ${expectedName}`);
@@ -143,14 +147,14 @@ async function testContractConnection() {
     console.log("✅ Frontend should be able to load candidates");
     console.log("✅ All contract functions accessible");
     console.log("✅ Data structure is correct");
-    
+
     return true;
 
   } catch (error) {
     console.log("");
     console.log("❌ FAILED: Contract connection error");
     console.log(`Error: ${error.message}`);
-    
+
     if (error.message.includes("returned no data")) {
       console.log("");
       console.log("🔧 Troubleshooting:");
@@ -158,7 +162,7 @@ async function testContractConnection() {
       console.log("- Verify contract address is correct");
       console.log("- Ensure RPC URL is accessible");
     }
-    
+
     console.log(`Stack: ${error.stack}`);
     return false;
   }
