@@ -13,6 +13,7 @@
     "add-candidates:sepolia": "hardhat run scripts/add-candidates.js --network worldchain-sepolia",
     "test:election": "hardhat test test/ElectionManager.test.js",
     "test:integration": "hardhat test test/contract-integration.test.js",
+    "test:frontend": "hardhat run scripts/test-frontend-integration.js --network worldchain-sepolia",
     "verify:worldchain": "hardhat verify --network worldchain",
     "manage-addresses": "node scripts/manage-addresses.js",
     "ignition-utils": "node scripts/ignition-utils.js",
