@@ -19,20 +19,20 @@ module.exports = {
         process.env.WORLDCHAIN_RPC_URL ||
         "https://worldchain-mainnet.g.alchemy.com/public",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 59144,
+      chainId: 480,
     },
   },
   etherscan: {
     apiKey: {
-      worldchain: process.env.WORLDCHAIN_API_KEY || "", // Get this from the Worldchain block explorer
+      worldchain: "abc", // Blockscout doesn't require API key
     },
     customChains: [
       {
         network: "worldchain",
-        chainId: 59144,
+        chainId: 480,
         urls: {
-          apiURL: "https://explorer.worldcoin.org/api",
-          browserURL: "https://explorer.worldcoin.org",
+          apiURL: "https://worldscan.org/api",
+          browserURL: "https://worldscan.org",
         },
       },
     ],
