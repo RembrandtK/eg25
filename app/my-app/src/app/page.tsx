@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { CandidateList } from "@/components/CandidateList";
 import { CandidateRanking } from "@/components/CandidateRanking";
@@ -35,6 +35,9 @@ export default function Page() {
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [transactionId, setTransactionId] = useState<string>("");
   const [isVoting, setIsVoting] = useState(false);
+
+  // Memoize the ABI to prevent infinite loops in child components
+  const memoizedElectionAbi = useMemo(() => ELECTION_ABI, []);
 
   // Initialize Viem client
   const client = createPublicClient({
@@ -104,7 +107,7 @@ export default function Page() {
         try {
           const hasUserVoted = await client.readContract({
             address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
-            abi: ELECTION_ABI,
+            abi: memoizedElectionAbi,
             functionName: "checkHasVoted",
             args: [session.user.address as `0x${string}`],
           });
@@ -169,7 +172,7 @@ export default function Page() {
               <div className="w-full max-w-md space-y-6">
                 <CandidateList
                   contractAddress={ELECTION_CONTRACT_ADDRESS}
-                  contractAbi={ELECTION_ABI}
+                  contractAbi={memoizedElectionAbi}
                   onCandidatesLoaded={handleCandidatesLoaded}
                 />
 
@@ -183,7 +186,7 @@ export default function Page() {
 
                     <VoteButton
                       contractAddress={ELECTION_CONTRACT_ADDRESS}
-                      contractAbi={ELECTION_ABI}
+                      contractAbi={memoizedElectionAbi}
                       rankedCandidateIds={rankedCandidateIds}
                       onSuccess={handleVoteSuccess}
                       disabled={isVoting || isConfirming}
