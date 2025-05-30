@@ -22,10 +22,8 @@ contract TUTE is ERC20 {
     }
 
     function claim() external {
-        // Ensure msg.sender is in the registry (skip check if address book is zero address for testing)
-        if (address(worldAddressBook) != address(0)) {
-            require(worldAddressBook.addressVerifiedUntil(msg.sender) > 0, "Address not verified");
-        }
+        // Ensure msg.sender is in the registry
+        require(worldAddressBook.addressVerifiedUntil(msg.sender) > 0, "Address not verified");
         require(
             lastMint[msg.sender] + CLAIM_FREQUENCY_SECONDS < block.timestamp,
             "Your claim is not available yet"

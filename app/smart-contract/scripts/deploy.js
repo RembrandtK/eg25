@@ -11,14 +11,29 @@ async function main() {
   const balance = await ethers.provider.getBalance(deployer.address);
   console.log("Account balance:", ethers.formatEther(balance), "ETH");
 
-  // World ID Address Book contract address on World Chain
-  // This is the official World ID Address Book contract on World Chain mainnet
-  const WORLD_ID_ADDRESS_BOOK = process.env.WORLD_ID_ADDRESS_BOOK || "0x0000000000000000000000000000000000000000";
-  
+  // World ID Address Book contract address
+  let WORLD_ID_ADDRESS_BOOK = process.env.WORLD_ID_ADDRESS_BOOK || "0x0000000000000000000000000000000000000000";
+
+  // Deploy mock World ID Address Book for testing if using zero address
   if (WORLD_ID_ADDRESS_BOOK === "0x0000000000000000000000000000000000000000") {
-    console.log("⚠️  Warning: Using zero address for World ID Address Book");
-    console.log("   This means World ID verification will be disabled");
-    console.log("   Update WORLD_ID_ADDRESS_BOOK in .env for production");
+    console.log("📝 Deploying Mock World ID Address Book for testing...");
+
+    const MockWorldIDAddressBook = await ethers.getContractFactory("MockWorldIDAddressBook");
+    const mockAddressBook = await MockWorldIDAddressBook.deploy();
+    await mockAddressBook.waitForDeployment();
+
+    WORLD_ID_ADDRESS_BOOK = await mockAddressBook.getAddress();
+    console.log("✅ Mock World ID Address Book deployed to:", WORLD_ID_ADDRESS_BOOK);
+
+    // Verify the deployer address for testing
+    const verifyTx = await mockAddressBook.setAddressVerifiedUntil(
+      deployer.address,
+      Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60) // 1 year from now
+    );
+    await verifyTx.wait();
+    console.log("✅ Deployer address verified in mock contract");
+  } else {
+    console.log("🔗 Using existing World ID Address Book:", WORLD_ID_ADDRESS_BOOK);
   }
 
   // Deploy TUTE contract
