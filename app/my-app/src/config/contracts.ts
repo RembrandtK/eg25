@@ -25,18 +25,15 @@ export interface NetworkConfig {
   contracts: {
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
-    PeerRanking: ContractConfig;
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T11:24:24.945Z
+// Last updated: 2025-05-31T16:40:05.868Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
-    "PeerRankingDeployment#PeerRanking": "0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1",
-    "ElectionDeployment#ElectionManager": "0xC0f83dF1d76c19C2b3c3ac8484ef4417b85EC873",
-    "MockWorldIDDeployment#MockWorldIDAddressBook": "0x97E098C600F5EF24e93Cbf455F2625e147D5FD40"
+    "ElectionDeployment#ElectionManager": "0xa3ee18dc44C24DDd48DDe3B37a377D7664f69511"
   }
 };
 
@@ -48,15 +45,11 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     WorldIDAddressBook: {
-      address: DEPLOYED_ADDRESSES[4801]["MockWorldIDDeployment#MockWorldIDAddressBook"] || "",
-      verified: false,
+      address: "0x469449f251692e0779667583026b5a1e99512157", // World ID Address Book on Sepolia
+      verified: true,
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -75,10 +68,6 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -120,4 +109,3 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
-export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');
