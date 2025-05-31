@@ -6,7 +6,8 @@ test = "test/foundry"
 remappings = [
     "forge-std/=lib/forge-std/src/",
     "contracts/=contracts/",
-    "@worldcoin/world-id-contracts/=node_modules/@worldcoin/world-id-contracts/"
+    "@worldcoin/world-id-contracts/=node_modules/@worldcoin/world-id-contracts/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
 
 # Solidity compiler settings
