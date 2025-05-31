@@ -98,7 +98,7 @@ interface TidemanResults {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🗳️ Calculating Tideman results...');
+    console.log('🗳️ Calculating Tideman results (using established graph-based method)...');
     const startTime = Date.now();
 
     // Get election data
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
         totalVoters: voters.length,
         candidateCount: candidates.length,
         timestamp: new Date().toISOString(),
-        description: 'Tideman method - ranks pairs by margin of victory and locks them to avoid cycles',
+        description: 'Established Tideman method (graph-based) - proven Condorcet criterion and democratic properties',
         calculationTimeMs: endTime - startTime
       }
     };

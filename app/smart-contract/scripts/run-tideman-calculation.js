@@ -5,8 +5,11 @@ const fs = require("fs");
 const path = require("path");
 
 /**
- * Script to run Tideman calculation on a deployed Election contract
- * 
+ * Production Script: Tideman Calculation using Established Graph-based Method
+ *
+ * This script uses the mathematically proven Tideman method with established
+ * properties including Condorcet criterion, monotonicity, and clone independence.
+ *
  * Usage:
  * npx hardhat run scripts/run-tideman-calculation.js --network worldchain-sepolia
  */
@@ -39,8 +42,8 @@ async function getContractAddress() {
 }
 
 async function main() {
-  console.log("🗳️ Running Tideman Calculation");
-  console.log("==============================");
+  console.log("🗳️ Running Established Tideman Calculation (Graph-based)");
+  console.log("========================================================");
 
   try {
     // Get contract address
