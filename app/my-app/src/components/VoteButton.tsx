@@ -47,13 +47,14 @@ export function VoteButton({
       console.log("Submitting vote with ranking:", candidateIdsAsNumbers);
 
       // Send transaction to update ranking (PeerRanking system)
+      // Note: updateRanking expects a single array argument, so we pass [candidateIdsAsNumbers]
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
             address: contractAddress,
             abi: contractAbi,
             functionName: "updateRanking",
-            args: [candidateIdsAsNumbers],
+            args: [candidateIdsAsNumbers], // This is correct - candidateIdsAsNumbers is already an array
           },
         ],
       });

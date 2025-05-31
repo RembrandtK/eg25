@@ -26,10 +26,13 @@ export function usePeerRanking({
   const [isLoading, setIsLoading] = useState(true);
   const { data: session } = useSession();
 
-  // Create public client for reading contract state
+  // Create public client for reading contract state with retry logic
   const publicClient = createPublicClient({
     chain: worldchainSepolia,
-    transport: http(NETWORK_CONFIG.rpcUrl),
+    transport: http(NETWORK_CONFIG.rpcUrl, {
+      retryCount: 3,
+      retryDelay: 2000, // 2 second delay between retries
+    }),
   });
 
   // Load current ranking from contract
@@ -112,7 +115,7 @@ export function usePeerRanking({
             data: JSON.stringify({
               contractAddress,
               functionName: "updateRanking",
-              args: candidateIdsAsNumbers,
+              args: [candidateIdsAsNumbers], // Match the actual transaction args structure
               miniKitInstalled: MiniKit.isInstalled()
             }, null, 2)
           }),
@@ -226,7 +229,7 @@ export function usePeerRanking({
           data: JSON.stringify({
             contractAddress,
             functionName: "updateRanking",
-            args: candidateIdsAsNumbers,
+            args: [candidateIdsAsNumbers], // Match the actual transaction args structure
             miniKitInstalled: MiniKit.isInstalled()
           }, null, 2)
         }),
