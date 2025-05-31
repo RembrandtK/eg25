@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+require("@nomicfoundation/hardhat-chai-matchers");
 
 /**
  * Test-Driven Development for Ranked-Pair Tallying
@@ -66,7 +67,7 @@ describe("Ranked-Pair Tallying", function () {
 
   describe("Stage 1: Reading Votes from Contract", function () {
     it("should read empty votes initially", async function () {
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       const allVoters = await election.getAllVoters();
       
       expect(Number(totalVoters)).to.equal(0);
@@ -116,7 +117,7 @@ describe("Ranked-Pair Tallying", function () {
       const proof2 = getMockWorldIDProof(user2.address, 67890, vote2);
       await election.connect(user2).vote(proof2.signal, proof2.root, proof2.voterId, proof2.proof, vote2);
 
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       const allVoters = await election.getAllVoters();
       
       expect(Number(totalVoters)).to.equal(2);
@@ -161,7 +162,7 @@ describe("Ranked-Pair Tallying", function () {
     });
 
     it("should have correct test data setup", async function () {
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       expect(Number(totalVoters)).to.equal(3);
     });
 
@@ -230,7 +231,7 @@ describe("Ranked-Pair Tallying", function () {
       expect(Number(finalVote[2].candidateId)).to.equal(3); // Carol third
 
       // Should still only count as one voter
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       expect(Number(totalVoters)).to.equal(1);
     });
   });

@@ -118,7 +118,7 @@ contract WorldIDVerificationTest is Test {
         console.log("\n=== Testing Vote Storage and Retrieval ===");
 
         // Test basic contract state queries
-        uint256 totalVoters = election.getTotalVoters();
+        uint256 totalVoters = election.getVoteCount();
         console.log("Initial total voters:", totalVoters);
         assertEq(totalVoters, 0);
 

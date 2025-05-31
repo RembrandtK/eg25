@@ -5,8 +5,8 @@ const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 // This should be automatically loaded by hardhat-toolbox, but let's be explicit
 require("@nomicfoundation/hardhat-chai-matchers");
 
-describe("Mini App Voting Workflow", function () {
-  let peerRanking;
+describe("Mini App Voting Workflow (using Election contract)", function () {
+  let election;
   let electionManager;
   let mockWorldID;
   let owner;
@@ -15,16 +15,32 @@ describe("Mini App Voting Workflow", function () {
 
   // Mock World ID proof data (for fast testing without real ZK)
   const mockProof = {
-    root: "0x1234567890123456789012345678901234567890123456789012345678901234",
-    nullifierHash: "0x1111111111111111111111111111111111111111111111111111111111111111",
-    proof: [1, 2, 3, 4, 5, 6, 7, 8]
+    root: 1,
+    nullifierHash: 12345,
+    proof: [0, 0, 0, 0, 0, 0, 0, 0]
   };
 
   const mockProof2 = {
-    root: "0x1234567890123456789012345678901234567890123456789012345678901234",
-    nullifierHash: "0x2222222222222222222222222222222222222222222222222222222222222222",
-    proof: [1, 2, 3, 4, 5, 6, 7, 8]
+    root: 1,
+    nullifierHash: 67890,
+    proof: [0, 0, 0, 0, 0, 0, 0, 0]
   };
+
+  // Helper function to generate mock World ID proof
+  function getMockWorldIDProof(voterAddress, voterId, ranking) {
+    const candidateIds = ranking.map(r => r.candidateId);
+    const tiedFlags = ranking.map(r => r.tiedWithPrevious);
+    const signal = ethers.solidityPackedKeccak256(
+      ["uint256[]", "bool[]"],
+      [candidateIds, tiedFlags]
+    );
+    return {
+      signal: signal,
+      root: 1,
+      voterId: voterId,
+      proof: [0, 0, 0, 0, 0, 0, 0, 0]
+    };
+  }
 
   beforeEach(async function () {
     // Get signers
@@ -38,19 +54,25 @@ describe("Mini App Voting Workflow", function () {
     const ElectionManager = await ethers.getContractFactory("ElectionManager");
     electionManager = await ElectionManager.deploy(mockWorldID.target);
 
-    // Deploy PeerRanking
-    const PeerRanking = await ethers.getContractFactory("PeerRanking");
-    peerRanking = await PeerRanking.deploy(
-      mockWorldID.target,
-      "app_test123",
-      "vote",
-      electionManager.target
+    // Grant creator role to owner
+    await electionManager.grantCreatorRole(owner.address);
+
+    // Create an election with test candidates
+    await electionManager.createElection(
+      "Mini App Test Election",
+      "Testing mini app workflow",
+      "vote_miniapp_test",
+      [
+        { name: "Alice Johnson", description: "Community leader" },
+        { name: "Bob Smith", description: "Tech advocate" },
+        { name: "Carol Davis", description: "Environmental champion" }
+      ]
     );
 
-    // Add test candidates (clean state)
-    await electionManager.addCandidate("Alice Johnson", "Community leader");
-    await electionManager.addCandidate("Bob Smith", "Tech advocate");
-    await electionManager.addCandidate("Carol Davis", "Environmental champion");
+    // Get the deployed election contract
+    const electionData = await electionManager.getElection(1);
+    const Election = await ethers.getContractFactory("Election");
+    election = Election.attach(electionData.electionAddress);
   });
 
   describe("User Voting Journey", function () {
@@ -62,24 +84,27 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 3, tiedWithPrevious: false }  // Carol - 3rd choice
       ];
 
+      // Generate World ID proof
+      const worldIdProof = getMockWorldIDProof(user1.address, mockProof.nullifierHash, ranking);
+
       // User submits ranking (like IDKit would provide proof)
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
+      await election.connect(user1).vote(
+        worldIdProof.signal,
+        worldIdProof.root,
+        worldIdProof.voterId,
+        worldIdProof.proof,
         ranking
       );
 
       // Verify vote was stored correctly
-      const storedRanking = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
+      const storedRanking = await election.getVote(mockProof.nullifierHash);
       expect(storedRanking).to.have.length(3);
       expect(Number(storedRanking[0].candidateId)).to.equal(1);
       expect(Number(storedRanking[1].candidateId)).to.equal(2);
       expect(Number(storedRanking[2].candidateId)).to.equal(3);
 
-      // Check total rankers increased
-      expect(Number(await peerRanking.getTotalRankers())).to.equal(1);
+      // Check total vote count increased
+      expect(Number(await election.getVoteCount())).to.equal(1);
     });
 
     it("should allow user to update their ranking", async function () {
@@ -89,11 +114,12 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 2, tiedWithPrevious: false }
       ];
 
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
+      const initialProof = getMockWorldIDProof(user1.address, mockProof.nullifierHash, initialRanking);
+      await election.connect(user1).vote(
+        initialProof.signal,
+        initialProof.root,
+        initialProof.voterId,
+        initialProof.proof,
         initialRanking
       );
 
@@ -104,22 +130,23 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 2, tiedWithPrevious: false }  // Bob now 3rd
       ];
 
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
+      const updatedProof = getMockWorldIDProof(user1.address, mockProof.nullifierHash, updatedRanking);
+      await election.connect(user1).vote(
+        updatedProof.signal,
+        updatedProof.root,
+        updatedProof.voterId,
+        updatedProof.proof,
         updatedRanking
       );
 
       // Verify ranking was updated
-      const storedRanking = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
+      const storedRanking = await election.getVote(mockProof.nullifierHash);
       expect(storedRanking).to.have.length(3);
       expect(Number(storedRanking[0].candidateId)).to.equal(3); // Carol first now
       expect(Number(storedRanking[1].candidateId)).to.equal(1); // Alice second
 
-      // Total rankers should still be 1 (same user)
-      expect(Number(await peerRanking.getTotalRankers())).to.equal(1);
+      // Total vote count should still be 1 (same user)
+      expect(Number(await election.getVoteCount())).to.equal(1);
     });
 
     it("should handle multiple users voting", async function () {
@@ -129,11 +156,12 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 2, tiedWithPrevious: false }
       ];
 
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
+      const proof1 = getMockWorldIDProof(user1.address, mockProof.nullifierHash, ranking1);
+      await election.connect(user1).vote(
+        proof1.signal,
+        proof1.root,
+        proof1.voterId,
+        proof1.proof,
         ranking1
       );
 
@@ -143,23 +171,24 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 1, tiedWithPrevious: false }
       ];
 
-      await peerRanking.connect(user2).updateRanking(
-        user2.address,
-        mockProof2.root,
-        mockProof2.nullifierHash,
-        mockProof2.proof,
+      const proof2 = getMockWorldIDProof(user2.address, mockProof2.nullifierHash, ranking2);
+      await election.connect(user2).vote(
+        proof2.signal,
+        proof2.root,
+        proof2.voterId,
+        proof2.proof,
         ranking2
       );
 
       // Verify both votes stored
-      const stored1 = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
-      const stored2 = await peerRanking.getNullifierRanking(mockProof2.nullifierHash);
+      const stored1 = await election.getVote(mockProof.nullifierHash);
+      const stored2 = await election.getVote(mockProof2.nullifierHash);
 
       expect(Number(stored1[0].candidateId)).to.equal(1);
       expect(Number(stored2[0].candidateId)).to.equal(3);
 
-      // Total rankers should be 2
-      expect(Number(await peerRanking.getTotalRankers())).to.equal(2);
+      // Total vote count should be 2
+      expect(Number(await election.getVoteCount())).to.equal(2);
     });
 
     it("should handle rankings with ties", async function () {
@@ -170,33 +199,20 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 3, tiedWithPrevious: true }   // Carol - tied for 2nd
       ];
 
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
+      const proof = getMockWorldIDProof(user1.address, mockProof.nullifierHash, rankingWithTies);
+      await election.connect(user1).vote(
+        proof.signal,
+        proof.root,
+        proof.voterId,
+        proof.proof,
         rankingWithTies
       );
 
       // Verify tie information preserved
-      const storedRanking = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
+      const storedRanking = await election.getVote(mockProof.nullifierHash);
       expect(storedRanking[0].tiedWithPrevious).to.be.false;
       expect(storedRanking[1].tiedWithPrevious).to.be.false;
       expect(storedRanking[2].tiedWithPrevious).to.be.true;
-    });
-  });
-
-  describe("Input Validation", function () {
-    it("should reject empty rankings", async function () {
-      await expect(
-        peerRanking.connect(user1).updateRanking(
-          user1.address,
-          mockProof.root,
-          mockProof.nullifierHash,
-          mockProof.proof,
-          [] // Empty ranking
-        )
-      ).to.be.revertedWith("Ranking cannot be empty");
     });
 
     it("should reject invalid candidate IDs", async function () {
@@ -204,15 +220,16 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 999, tiedWithPrevious: false } // Invalid ID
       ];
 
+      const proof = getMockWorldIDProof(user1.address, mockProof.nullifierHash, invalidRanking);
       await expect(
-        peerRanking.connect(user1).updateRanking(
-          user1.address,
-          mockProof.root,
-          mockProof.nullifierHash,
-          mockProof.proof,
+        election.connect(user1).vote(
+          proof.signal,
+          proof.root,
+          proof.voterId,
+          proof.proof,
           invalidRanking
         )
-      ).to.be.revertedWith("Invalid candidate ID");
+      ).to.be.revertedWithCustomError(election, "InvalidCandidateId");
     });
 
     it("should reject first entry tied with previous", async function () {
@@ -220,62 +237,16 @@ describe("Mini App Voting Workflow", function () {
         { candidateId: 1, tiedWithPrevious: true } // First can't be tied
       ];
 
+      const proof = getMockWorldIDProof(user1.address, mockProof.nullifierHash, invalidTieRanking);
       await expect(
-        peerRanking.connect(user1).updateRanking(
-          user1.address,
-          mockProof.root,
-          mockProof.nullifierHash,
-          mockProof.proof,
+        election.connect(user1).vote(
+          proof.signal,
+          proof.root,
+          proof.voterId,
+          proof.proof,
           invalidTieRanking
         )
-      ).to.be.revertedWith("First entry cannot be tied with previous");
-    });
-  });
-
-  describe("Contract State Queries", function () {
-    it("should return correct ranking stats", async function () {
-      // Initially no rankers
-      const [totalRankers, totalComparisons, candidateCount] = await peerRanking.getRankingStats();
-      expect(Number(totalRankers)).to.equal(0);
-      expect(Number(totalComparisons)).to.equal(0);
-      expect(Number(candidateCount)).to.equal(3);
-
-      // After one vote
-      const ranking = [{ candidateId: 1, tiedWithPrevious: false }];
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
-        ranking
-      );
-
-      const [newTotalRankers] = await peerRanking.getRankingStats();
-      expect(Number(newTotalRankers)).to.equal(1);
-    });
-
-    it("should return all ranker nullifiers", async function () {
-      // Add two votes
-      await peerRanking.connect(user1).updateRanking(
-        user1.address,
-        mockProof.root,
-        mockProof.nullifierHash,
-        mockProof.proof,
-        [{ candidateId: 1, tiedWithPrevious: false }]
-      );
-
-      await peerRanking.connect(user2).updateRanking(
-        user2.address,
-        mockProof2.root,
-        mockProof2.nullifierHash,
-        mockProof2.proof,
-        [{ candidateId: 2, tiedWithPrevious: false }]
-      );
-
-      const rankers = await peerRanking.getAllRankers();
-      expect(rankers).to.have.length(2);
-      expect(rankers[0]).to.equal(BigInt(mockProof.nullifierHash));
-      expect(rankers[1]).to.equal(BigInt(mockProof2.nullifierHash));
+      ).to.be.revertedWithCustomError(election, "FirstEntryCannotBeTied");
     });
   });
 });

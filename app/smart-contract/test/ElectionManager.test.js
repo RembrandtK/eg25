@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("ElectionManager", function () {
   let electionManager;
@@ -139,7 +140,7 @@ describe("ElectionManager", function () {
           duplicateAction,
           [{ name: "Bob", description: "Candidate B" }]
         )
-      ).to.be.revertedWith("World ID action already used");
+      ).to.be.revertedWithCustomError(electionManager, "WorldIdActionAlreadyUsed");
     });
 
     it("should require at least one candidate", async function () {
@@ -150,7 +151,7 @@ describe("ElectionManager", function () {
           "vote_empty",
           []
         )
-      ).to.be.revertedWith("Must have at least one candidate");
+      ).to.be.revertedWithCustomError(electionManager, "NoCandidatesProvided");
     });
 
     it("should prevent non-creators from creating elections", async function () {
@@ -237,7 +238,7 @@ describe("ElectionManager", function () {
     it("should prevent unauthorized deactivation", async function () {
       await expect(
         electionManager.connect(user1).deactivateElection(1)
-      ).to.be.revertedWith("Only admin or creator can deactivate election");
+      ).to.be.revertedWithCustomError(electionManager, "UnauthorizedDeactivation");
     });
 
     it("should emit ElectionDeactivated event", async function () {
@@ -271,7 +272,7 @@ describe("ElectionManager", function () {
     it("should revert when election not found by action", async function () {
       await expect(
         electionManager.getElectionByAction("nonexistent_action")
-      ).to.be.revertedWith("Election not found for this action");
+      ).to.be.revertedWithCustomError(electionManager, "ActionNotFound");
     });
   });
 });

@@ -1,8 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+require("@nomicfoundation/hardhat-chai-matchers");
 
-describe("ElectionFactory", function () {
-  let electionFactory;
+describe("ElectionFactory (Legacy - using ElectionManager)", function () {
+  let electionManager;
   let mockWorldID;
   let owner, user1, user2;
 
@@ -13,9 +14,12 @@ describe("ElectionFactory", function () {
     const MockWorldID = await ethers.getContractFactory("MockWorldID");
     mockWorldID = await MockWorldID.deploy();
 
-    // Deploy ElectionFactory
-    const ElectionFactory = await ethers.getContractFactory("ElectionFactory");
-    electionFactory = await ElectionFactory.deploy(mockWorldID.target);
+    // Deploy ElectionManager (replaces ElectionFactory)
+    const ElectionManager = await ethers.getContractFactory("ElectionManager");
+    electionManager = await ElectionManager.deploy(mockWorldID.target);
+
+    // Grant creator role to owner for compatibility with old tests
+    await electionManager.grantCreatorRole(owner.address);
   });
 
   describe("Election Creation", function () {
@@ -28,7 +32,7 @@ describe("ElectionFactory", function () {
         { name: "Bob", description: "Candidate B" }
       ];
 
-      const tx = await electionFactory.createElection(
+      const tx = await electionManager.createElection(
         electionTitle,
         electionDescription,
         worldIdAction,
@@ -46,7 +50,7 @@ describe("ElectionFactory", function () {
       expect(event.args.creator).to.equal(owner.address);
 
       // Verify election was stored
-      const election = await electionFactory.getElection(1);
+      const election = await electionManager.getElection(1);
       expect(election.title).to.equal(electionTitle);
       expect(election.description).to.equal(electionDescription);
       expect(election.worldIdAction).to.equal(worldIdAction);
@@ -56,7 +60,7 @@ describe("ElectionFactory", function () {
 
     it("should deploy separate Election contract for each election", async function () {
       // Create first election
-      await electionFactory.createElection(
+      await electionManager.createElection(
         "Election 1",
         "First election",
         "vote_election_1",
@@ -64,15 +68,15 @@ describe("ElectionFactory", function () {
       );
 
       // Create second election
-      await electionFactory.createElection(
+      await electionManager.createElection(
         "Election 2",
         "Second election",
         "vote_election_2",
         [{ name: "Bob", description: "Candidate B" }]
       );
 
-      const election1 = await electionFactory.getElection(1);
-      const election2 = await electionFactory.getElection(2);
+      const election1 = await electionManager.getElection(1);
+      const election2 = await electionManager.getElection(2);
 
       // Should have different contract addresses
       expect(election1.electionAddress).to.not.equal(election2.electionAddress);
@@ -84,7 +88,7 @@ describe("ElectionFactory", function () {
       const duplicateAction = "vote_duplicate";
 
       // Create first election
-      await electionFactory.createElection(
+      await electionManager.createElection(
         "Election 1",
         "First election",
         duplicateAction,
@@ -93,42 +97,42 @@ describe("ElectionFactory", function () {
 
       // Try to create second election with same action
       await expect(
-        electionFactory.createElection(
+        electionManager.createElection(
           "Election 2",
-          "Second election", 
+          "Second election",
           duplicateAction,
           [{ name: "Bob", description: "Candidate B" }]
         )
-      ).to.be.revertedWith("World ID action already used");
+      ).to.be.revertedWithCustomError(electionManager, "WorldIdActionAlreadyUsed");
     });
 
     it("should require at least one candidate", async function () {
       await expect(
-        electionFactory.createElection(
+        electionManager.createElection(
           "Empty Election",
           "Election with no candidates",
           "vote_empty",
           []
         )
-      ).to.be.revertedWith("Must have at least one candidate");
+      ).to.be.revertedWithCustomError(electionManager, "NoCandidatesProvided");
     });
 
-    it("should only allow owner to create elections initially", async function () {
+    it("should only allow authorized users to create elections", async function () {
       await expect(
-        electionFactory.connect(user1).createElection(
+        electionManager.connect(user1).createElection(
           "Unauthorized Election",
           "Should fail",
           "vote_unauthorized",
           [{ name: "Alice", description: "Candidate A" }]
         )
-      ).to.be.revertedWith("Only owner can create elections");
+      ).to.be.reverted; // AccessControl will revert with custom error
     });
   });
 
   describe("Election Management", function () {
     beforeEach(async function () {
       // Create a test election
-      await electionFactory.createElection(
+      await electionManager.createElection(
         "Test Election",
         "A test election",
         "vote_test",
@@ -140,33 +144,33 @@ describe("ElectionFactory", function () {
     });
 
     it("should list all elections", async function () {
-      const elections = await electionFactory.getAllElections();
+      const elections = await electionManager.getAllElections();
       expect(elections.length).to.equal(1);
       expect(elections[0].title).to.equal("Test Election");
     });
 
     it("should get election count", async function () {
-      const count = await electionFactory.getElectionCount();
+      const count = await electionManager.getElectionCount();
       expect(count).to.equal(1);
     });
 
     it("should allow deactivating elections", async function () {
-      await electionFactory.deactivateElection(1);
-      
-      const election = await electionFactory.getElection(1);
+      await electionManager.deactivateElection(1);
+
+      const election = await electionManager.getElection(1);
       expect(election.active).to.be.false;
     });
 
     it("should emit ElectionDeactivated event", async function () {
-      await expect(electionFactory.deactivateElection(1))
-        .to.emit(electionFactory, "ElectionDeactivated")
+      await expect(electionManager.deactivateElection(1))
+        .to.emit(electionManager, "ElectionDeactivated")
         .withArgs(1);
     });
 
     it("should prevent deactivating non-existent elections", async function () {
       await expect(
-        electionFactory.deactivateElection(999)
-      ).to.be.revertedWith("Election does not exist");
+        electionManager.deactivateElection(999)
+      ).to.be.revertedWithCustomError(electionManager, "ElectionNotFound");
     });
   });
 
@@ -175,7 +179,7 @@ describe("ElectionFactory", function () {
 
     beforeEach(async function () {
       // Create election and get the election address
-      const tx = await electionFactory.createElection(
+      const tx = await electionManager.createElection(
         "Integration Test",
         "Testing integration",
         "vote_integration",
@@ -211,16 +215,28 @@ describe("ElectionFactory", function () {
       const Election = await ethers.getContractFactory("Election");
       const election = Election.attach(electionAddress);
 
-      // Cast a vote
-      await election.connect(user1).vote([1, 2]);
+      // Create a mock vote with World ID proof
+      const voterId = 12345;
+      const ranking = [
+        { candidateId: 1, tiedWithPrevious: false },
+        { candidateId: 2, tiedWithPrevious: false }
+      ];
+
+      // Mock World ID proof
+      const signal = ethers.solidityPackedKeccak256(
+        ["uint256[]", "bool[]"],
+        [ranking.map(r => r.candidateId), ranking.map(r => r.tiedWithPrevious)]
+      );
+      const proof = [0, 0, 0, 0, 0, 0, 0, 0];
+
+      // Cast a vote (this will work with mock World ID)
+      await election.connect(user1).vote(signal, 1, voterId, proof, ranking);
 
       // Verify vote was recorded
-      const hasVoted = await election.hasVoted(user1.address);
-      expect(hasVoted).to.be.true;
-
-      const vote = await election.getVote(user1.address);
-      expect(vote[0]).to.equal(1);
-      expect(vote[1]).to.equal(2);
+      const vote = await election.getVote(voterId);
+      expect(vote.length).to.equal(2);
+      expect(Number(vote[0].candidateId)).to.equal(1);
+      expect(Number(vote[1].candidateId)).to.equal(2);
     });
   });
 });
