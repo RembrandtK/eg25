@@ -1,63 +1,90 @@
-"use client"; // Required for Next.js
+"use client";
 
-import { ReactNode, useEffect, useState, useRef } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { MiniKit } from "@worldcoin/minikit-js";
 
-// Access to window.MiniKit for direct debugging access
+// Simple global type declaration
 declare global {
   interface Window {
-    MiniKit: typeof MiniKit & {
-      commands?: Record<string, any>;
-      commandsAsync?: Record<string, any>;
-      install?: (appId?: string) => void;
-      walletAddress?: string | null;
-      user?: {
-        username?: string | null;
-        profilePictureUrl?: string | null;
-      };
-      on?: (event: string, callback: Function) => void;
-      off?: (event: string, callback: Function) => void;
-      isInstalled?: () => boolean;
-    };
+    MiniKit: any;
   }
 }
 
 export default function MiniKitProvider({ children }: { children: ReactNode }) {
-  const [isInitialized, setIsInitialized] = useState(false);
-  const initAttempts = useRef(0);
-  const maxAttempts = 3;
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Simple debug logging
+  const debugLog = async (step: string, data?: any) => {
+    const message = `MiniKit: ${step}`;
+    console.log(message, data);
+    try {
+      await fetch("/api/debug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          data: data ? JSON.stringify(data, null, 2) : undefined,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          location: window.location.href
+        }),
+      });
+    } catch (e) {
+      // Ignore debug failures
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-    // Event handler references that need to be cleaned up
-    let handleWalletAuthStart: Function | null = null;
-    let handleWalletAuthComplete: Function | null = null;
-    let handleWalletAuthError: Function | null = null;
-
-    // Function to install MiniKit and ensure it's ready to use
-    const initializeMiniKit = async () => {
+    const initMiniKit = async () => {
       try {
-        initAttempts.current += 1;
-        console.log(
-          `Attempting to initialize MiniKit (attempt ${initAttempts.current})...`
-        );
+        await debugLog("Starting initialization", {
+          miniKitExists: typeof MiniKit !== 'undefined',
+          windowMiniKit: typeof window.MiniKit,
+          userAgent: navigator.userAgent
+        });
 
-        // Make sure MiniKit class is available
+        // Check if MiniKit is available
         if (!MiniKit) {
-          console.error("MiniKit class not available");
-          return false;
+          await debugLog("❌ MiniKit class not available");
+          if (initAttempts.current < maxAttempts) {
+            await debugLog("⏳ Retrying in 1 second...");
+            setTimeout(initializeMiniKit, 1000);
+            return;
+          } else {
+            const errorMsg = "MiniKit class not available after all attempts";
+            await debugLog("❌ Final failure", { errorMsg });
+            if (isMounted) setInitError(errorMsg);
+            return;
+          }
         }
 
-        // Install MiniKit with app configuration (without actionId for transactions)
-        if (typeof MiniKit.install === "function") {
-          MiniKit.install({
-            appId: "app_10719845a0977ef63ebe8eb9edb890ad",
-            // Don't specify actionId for transaction handling
+        await debugLog("✅ MiniKit class is available", {
+          miniKitType: typeof MiniKit,
+          miniKitMethods: Object.getOwnPropertyNames(MiniKit)
+        });
+
+        // Simple installation
+        try {
+          if (typeof MiniKit.install === "function") {
+            await debugLog("🔧 Calling MiniKit.install()");
+            MiniKit.install({
+              appId: "app_10719845a0977ef63ebe8eb9edb890ad",
+            });
+            await debugLog("✅ MiniKit.install() called successfully");
+          } else {
+            await debugLog("⚠️ MiniKit.install is not a function, but continuing...");
+          }
+        } catch (installError) {
+          await debugLog("⚠️ MiniKit.install failed, but continuing", {
+            error: installError instanceof Error ? installError.message : String(installError)
           });
-          console.log("✅ MiniKit installed with app ID only");
-        } else {
-          console.error("MiniKit.install is not a function");
-          return false;
+        }
+
+        // Make MiniKit globally available
+        if (typeof window !== 'undefined') {
+          window.MiniKit = MiniKit as any;
+          await debugLog("✅ MiniKit set on window object");
         }
 
         // Make sure the global instance is available
@@ -195,36 +222,40 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Check if commands are available
-        const checkCommands = () => {
+        const checkCommands = async () => {
+          await debugLog("🔍 Checking MiniKit commands availability");
+
           if (!window.MiniKit) {
-            console.error("MiniKit not available in window");
+            await debugLog("❌ MiniKit not available in window");
             return false;
           }
 
           if (!window.MiniKit.commands) {
-            console.error("MiniKit commands not available");
+            await debugLog("❌ MiniKit commands not available", {
+              windowMiniKitKeys: Object.keys(window.MiniKit)
+            });
             return false;
           }
 
           const availableCommands = Object.keys(window.MiniKit.commands);
-          console.log("Available MiniKit commands:", availableCommands);
+          await debugLog("📋 Available MiniKit commands", { availableCommands });
 
           if (availableCommands.includes("walletAuth")) {
-            console.log("walletAuth command is available!");
+            await debugLog("✅ walletAuth command is available!");
             return true;
           } else {
-            console.warn("walletAuth command not found in:", availableCommands);
+            await debugLog("❌ walletAuth command not found", { availableCommands });
             return false;
           }
         };
 
         // First check
-        if (!checkCommands()) {
-          console.log("Commands not ready, waiting longer...");
+        if (!(await checkCommands())) {
+          await debugLog("⏳ Commands not ready, waiting longer...");
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           // Reinstall MiniKit
-          console.log("Reinstalling MiniKit...");
+          await debugLog("🔄 Reinstalling MiniKit...");
           if (typeof MiniKit.install === "function") {
             MiniKit.install();
           }
@@ -233,22 +264,18 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
           // Check again
-          const commandsAvailable = checkCommands();
+          const commandsAvailable = await checkCommands();
 
           if (!commandsAvailable && isMounted) {
-            console.warn("walletAuth command still not available after retry");
+            await debugLog("⚠️ walletAuth command still not available after retry");
 
             // If we've tried less than max attempts, try again
             if (initAttempts.current < maxAttempts) {
-              console.log(
-                `Scheduling retry ${initAttempts.current + 1}/${maxAttempts}...`
-              );
+              await debugLog(`🔄 Scheduling retry ${initAttempts.current + 1}/${maxAttempts}...`);
               setTimeout(initializeMiniKit, 2000);
               return false;
             } else {
-              console.error(
-                `Failed to initialize MiniKit after ${maxAttempts} attempts`
-              );
+              await debugLog(`❌ Failed to initialize MiniKit after ${maxAttempts} attempts`);
             }
           }
 
@@ -257,14 +284,14 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
 
         if (isMounted) {
           setIsInitialized(true);
-          console.log("MiniKit initialization complete");
+          await debugLog("🎉 MiniKit initialization complete!");
 
           // Check if running inside World App
           const isInstalledCheck =
             typeof MiniKit.isInstalled === "function"
               ? MiniKit.isInstalled()
               : false;
-          console.log("Running inside World App:", isInstalledCheck);
+          await debugLog("🌍 Running inside World App check", { isInstalledCheck });
 
           return true;
         }
@@ -336,6 +363,52 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
       console.log("Cleaning up MiniKit provider");
     };
   }, []);
+
+  // Show loading state during initialization
+  if (!isInitialized && !initError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Initializing MiniKit...</p>
+          <p className="mt-1 text-xs text-gray-500">Attempt {initAttempts.current}/{maxAttempts}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if initialization failed
+  if (initError) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
+        <div className="max-w-md mx-auto text-center bg-white rounded-lg shadow-sm border border-red-200 p-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            MiniKit Initialization Failed
+          </h2>
+          <p className="text-gray-600 mb-4">
+            {initError}
+          </p>
+          <button
+            onClick={() => {
+              setInitError(null);
+              setIsInitialized(false);
+              initAttempts.current = 0;
+              // Trigger re-initialization
+              window.location.reload();
+            }}
+            className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm"
+          >
+            Retry Initialization
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

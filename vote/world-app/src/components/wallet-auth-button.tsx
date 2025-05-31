@@ -32,8 +32,45 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
 
 
   const handleWalletAuth = async () => {
-    if (!MiniKit.isInstalled()) {
-      await debugLog("ERROR: MiniKit not installed");
+    // Check if MiniKit is available
+    if (!MiniKit || !MiniKit.isInstalled()) {
+      await debugLog("ERROR: MiniKit not installed or not available");
+
+      // In development, show a more helpful message
+      if (process.env.NODE_ENV === 'development') {
+        const shouldContinue = confirm(
+          "MiniKit is not available. This is expected in development mode outside the World App.\n\n" +
+          "Click OK to simulate a successful wallet connection for testing, or Cancel to stop."
+        );
+
+        if (shouldContinue) {
+          // Simulate successful authentication for development
+          await debugLog("Development: Simulating successful wallet auth");
+          try {
+            const signInResult = await signIn("worldcoin-wallet", {
+              // Use mock data for development
+              message: "Development mode - simulated message",
+              signature: "0xdev_signature",
+              address: "0x1234567890123456789012345678901234567890",
+              nonce: "dev_nonce",
+              redirect: false,
+            });
+
+            await debugLog("Development: NextAuth sign in result", signInResult);
+
+            if (onSuccess) {
+              await debugLog("Development: Calling onSuccess callback");
+              onSuccess();
+            }
+          } catch (error) {
+            await debugLog("Development: Error in simulated auth", {
+              error: error instanceof Error ? error.message : String(error)
+            });
+          }
+        }
+      } else {
+        alert("MiniKit is not available. Please make sure you're running this in the World App or that MiniKit has been properly initialized.");
+      }
       return;
     }
 

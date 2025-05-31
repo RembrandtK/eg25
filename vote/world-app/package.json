@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "ngrok": "ngrok http --domain=pet-jackal-crucial.ngrok-free.app 3000",
     "test:fast": "node scripts/test-contract-simple.js",
     "test:build": "npm run type-check && npm run build",
     "sync-contracts": "node scripts/sync-contracts.js"

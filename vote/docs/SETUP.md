@@ -2,6 +2,28 @@
 
 This guide will walk you through setting up the World Mini App with smart contract integration from scratch.
 
+## Quick Start (For World App Testing)
+
+If you just want to run the app in World App quickly:
+
+1. **Start the dev server:**
+   ```bash
+   cd vote/world-app
+   pnpm dev
+   ```
+
+2. **Start ngrok in another terminal:**
+   ```bash
+   cd vote/world-app
+   pnpm ngrok
+   ```
+
+3. **Copy the ngrok HTTPS URL** and configure it in your [World ID app settings](https://developer.worldcoin.org)
+
+4. **Scan the QR code** in World App to test
+
+---
+
 ## Prerequisites
 
 Before you begin, ensure you have:
@@ -153,17 +175,30 @@ Your Mini App will be available at `http://localhost:3001`
 
 ## Step 9: Mobile Testing Setup
 
-### Using NGROK
+### Using NGROK (Proper Way)
 
-1. Install NGROK: `npm install -g ngrok`
-2. Expose your local app: `ngrok http 3001`
-3. Copy the HTTPS URL (e.g., `https://abc123.ngrok.io`)
+1. **Start the development server first:**
+   ```bash
+   cd vote/world-app
+   pnpm dev
+   ```
+   This runs on `http://localhost:3000`
+
+2. **Start ngrok using the package script:**
+   ```bash
+   # In a new terminal
+   cd vote/world-app
+   pnpm ngrok
+   ```
+   This will start ngrok and show you the public HTTPS URL
+
+3. **Copy the HTTPS URL** from the ngrok output (e.g., `https://pet-jackal-crucial.ngrok-free.app`)
 
 ### Configure World ID App
 
 1. Go to [World Developer Portal](https://developer.worldcoin.org)
 2. Navigate to your app's configuration
-3. Update the **App URL** to your NGROK URL
+3. Update the **App URL** to your ngrok HTTPS URL
 4. Save the changes
 
 ### Test on Mobile

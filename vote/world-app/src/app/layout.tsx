@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "@/providers/session-provider";
 import MiniKitProvider from "@/providers/minikit-provider";
 import { ErudaProvider } from "@/providers/eruda-provider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -29,11 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ErudaProvider>
-          <SessionProvider>
-            <MiniKitProvider>{children}</MiniKitProvider>
-          </SessionProvider>
-        </ErudaProvider>
+        <ErrorBoundary>
+          <ErudaProvider>
+            <SessionProvider>
+              <MiniKitProvider>{children}</MiniKitProvider>
+            </SessionProvider>
+          </ErudaProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
