@@ -18,7 +18,6 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
-    TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
     PeerRanking: ContractConfig;
@@ -35,7 +34,7 @@ const CACHE_TTL = 60000; // 1 minute cache
  */
 function readDeploymentAddresses(chainId: number): Record<string, string> {
   const now = Date.now();
-  
+
   // Return cached data if still valid
   if (deploymentCache[chainId] && (now - cacheTimestamp) < CACHE_TTL) {
     return deploymentCache[chainId];
@@ -79,12 +78,12 @@ function readDeploymentAddresses(chainId: number): Record<string, string> {
 function getDeployedAddress(chainId: number, deploymentKey: string): string {
   const deployments = readDeploymentAddresses(chainId);
   const address = deployments[deploymentKey];
-  
+
   if (!address) {
     console.warn(`⚠️  Contract ${deploymentKey} not found in deployments for chain ${chainId}`);
     return "";
   }
-  
+
   return address;
 }
 
@@ -95,10 +94,6 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
-    TUTE: {
-      get address() { return getDeployedAddress(4801, "TestnetDeployment#TUTE"); },
-      verified: false,
-    },
     WorldIDAddressBook: {
       get address() { return getDeployedAddress(4801, "TestnetDeployment#MockWorldIDAddressBook"); },
       verified: false,
@@ -120,10 +115,6 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   rpcUrl: "https://worldchain-mainnet.g.alchemy.com/public",
   blockExplorer: "https://worldchain.blockscout.com",
   contracts: {
-    TUTE: {
-      get address() { return getDeployedAddress(480, "MainnetDeployment#TUTE"); },
-      verified: false,
-    },
     WorldIDAddressBook: {
       address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
       verified: true,
@@ -182,12 +173,11 @@ export function refreshDeploymentCache(): void {
 export function getDeploymentStatus(chainId?: number): Record<string, any> {
   const targetChainId = chainId || getCurrentNetworkConfig().chainId;
   const deployments = readDeploymentAddresses(targetChainId);
-  
+
   return {
     chainId: targetChainId,
     deployments,
     contractAddresses: {
-      TUTE: getDeployedAddress(targetChainId, "TestnetDeployment#TUTE"),
       WorldIDAddressBook: getDeployedAddress(targetChainId, "TestnetDeployment#MockWorldIDAddressBook"),
       ElectionManager: getDeployedAddress(targetChainId, "ElectionDeployment#ElectionManager"),
       PeerRanking: getDeployedAddress(targetChainId, "PeerRankingDeployment#PeerRanking"),
@@ -197,7 +187,6 @@ export function getDeploymentStatus(chainId?: number): Record<string, any> {
 
 // Export for convenience (these will be dynamically resolved)
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
-export const TUTE_ADDRESS = getContractAddress('TUTE');
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
 export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');

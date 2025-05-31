@@ -128,21 +128,9 @@ export function usePeerRanking({
           return;
         }
 
-        // For now, let's simulate the transaction to test the UI flow
-        console.log("🚀 Simulating transaction for testing...");
-        console.log("📋 Would call updateRanking with:", candidateIdsAsNumbers);
-
-        // Simulate a quick successful transaction (reduced delay for better UX)
-        await new Promise(resolve => setTimeout(resolve, 300));
-        const mockTxId = `mock_tx_${Date.now()}`;
-        setLastTxId(mockTxId);
-        onSuccess?.(mockTxId);
-
-        console.log("✅ Mock transaction completed:", mockTxId);
-        return;
-
-        // TODO: Re-enable real transactions once we figure out the MiniKit issues
-        /*
+        // Real transaction with MiniKit
+        console.log("🚀 Sending real transaction with MiniKit...");
+        console.log("📋 Calling updateRanking with:", candidateIdsAsNumbers);
         const transactionConfig = {
           transaction: [
             {
@@ -154,13 +142,12 @@ export function usePeerRanking({
           ],
         };
 
-        console.log("📋 Transaction config:", JSON.stringify(transactionConfig, null, 2));
+        console.log("📡 Sending transaction config:", transactionConfig);
 
         const result = await MiniKit.commandsAsync.sendTransaction(transactionConfig);
         console.log("📦 Raw MiniKit result:", result);
 
         const { finalPayload } = result;
-        */
 
         // Log transaction result
         await fetch("/api/debug", {
@@ -249,18 +236,27 @@ export function usePeerRanking({
         return;
       }
 
-      // Simulate immediate transaction for testing
-      console.log("🚀 Simulating immediate transaction for testing...");
-      console.log("📋 Would call updateRanking immediately with:", candidateIdsAsNumbers);
+      // Real immediate transaction with MiniKit
+      console.log("🚀 Sending immediate real transaction with MiniKit...");
+      console.log("📋 Calling updateRanking immediately with:", candidateIdsAsNumbers);
 
-      // Simulate a quick successful transaction
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const mockTxId = `mock_immediate_tx_${Date.now()}`;
-      setLastTxId(mockTxId);
-      onSuccess?.(mockTxId);
+      const transactionConfig = {
+        transaction: [
+          {
+            address: contractAddress,
+            abi: contractAbi,
+            functionName: "updateRanking",
+            args: [candidateIdsAsNumbers],
+          },
+        ],
+      };
 
-      console.log("✅ Mock immediate transaction completed:", mockTxId);
-      return;
+      console.log("📡 Sending immediate transaction config:", transactionConfig);
+
+      const result = await MiniKit.commandsAsync.sendTransaction(transactionConfig);
+      console.log("📦 Raw immediate MiniKit result:", result);
+
+      const { finalPayload } = result;
 
       if (finalPayload.status === "error") {
         console.error("Error updating ranking:", finalPayload);

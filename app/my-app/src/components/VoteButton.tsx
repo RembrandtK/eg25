@@ -46,13 +46,13 @@ export function VoteButton({
 
       console.log("Submitting vote with ranking:", candidateIdsAsNumbers);
 
-      // Send transaction to cast vote
+      // Send transaction to update ranking (PeerRanking system)
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
             address: contractAddress,
             abi: contractAbi,
-            functionName: "vote",
+            functionName: "updateRanking",
             args: [candidateIdsAsNumbers],
           },
         ],

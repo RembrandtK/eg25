@@ -1,5 +1,12 @@
 # Voting App Hackathon — Interactive Ranking & Peer Tallying
 
+MUST:
+
+1. Keep updating this file with latest plans and tasks to work from.
+2. Regularly commit and push changes being made.
+3. Keep design doc of approach that evolves and is referenced.
+4. Keep going on resolving issues.
+
 ## 🎯 Project Overview
 
 **NEW REQUIREMENTS**: Interactive ranking system with real-time peer tallying where users can:
@@ -16,7 +23,8 @@
 - **ElectionManager.sol** deployed to worldchain-sepolia: `0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7`
 - 4 test candidates: Alice Johnson, Bob Smith, Carol Davis, David Wilson
 
-### NEW: Peer Ranking Smart Contract (Required)
+### NEW: Peer Ranking Smart Contract
+
 - **Separate contract** for storing peer comparison tallies
 - Matrix of pairwise comparisons (A > B, B > C, etc.)
 - Live updates without submission button
