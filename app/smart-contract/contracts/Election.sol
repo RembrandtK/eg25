@@ -26,7 +26,6 @@ contract Election is IElection, AccessControl, Pausable {
     IWorldID public immutable worldId;
 
     // Custom errors
-    error VotingNotActive();
     error RankingEmpty();
     error InvalidCandidateId(uint256 candidateId);
     error CandidateNotActive(uint256 candidateId);
@@ -68,7 +67,6 @@ contract Election is IElection, AccessControl, Pausable {
     address public factory;
 
     // State variables
-    bool public votingActive;
     uint256 public candidateCount;
     uint256 public createdAt;
 
@@ -88,14 +86,9 @@ contract Election is IElection, AccessControl, Pausable {
     // Events
     event CandidateAdded(uint256 indexed candidateId, string name);
     event RankingUpdated(address indexed user, RankingEntry[] newRanking);
-    event VotingStatusChanged(bool active);
     event SelectionCompleted(uint256[] selectedCandidates, uint256 selectionBlock);
-    event VotingClosed(uint256 finalVoterCount);
 
-    modifier votingIsActive() {
-        if (!votingActive) revert VotingNotActive();
-        _;
-    }
+
 
     constructor(
         IWorldID _worldId,
@@ -110,7 +103,6 @@ contract Election is IElection, AccessControl, Pausable {
         worldIdAction = _worldIdAction;
         creator = _creator;
         factory = msg.sender; // The factory is deploying this contract
-        votingActive = true; // Start with voting active
         candidateCount = 0;
         createdAt = block.timestamp;
 
@@ -197,7 +189,7 @@ contract Election is IElection, AccessControl, Pausable {
         uint256 voterId,
         uint256[8] calldata proof,
         RankingEntry[] memory ranking
-    ) external votingIsActive whenNotPaused {
+    ) external whenNotPaused {
         // We verify the provided proof is valid and the user is verified by World ID
         // Note: We allow vote updates, so we don't check if voter ID was used before
         worldId.verifyProof(
@@ -249,24 +241,18 @@ contract Election is IElection, AccessControl, Pausable {
         return votes[voterId];
     }
 
-    // Toggle voting status (operator role)
-    function toggleVoting() external onlyRole(OPERATOR_ROLE) {
-        votingActive = !votingActive;
-        emit VotingStatusChanged(votingActive);
-    }
-
     // Pause voting (emergency stop - operator role)
     function pauseVoting() external onlyRole(OPERATOR_ROLE) {
         _pause();
     }
 
-    // Unpause voting (operator role)
-    function unpauseVoting() external onlyRole(OPERATOR_ROLE) {
+    // Resume voting (operator role)
+    function resumeVoting() external onlyRole(OPERATOR_ROLE) {
         _unpause();
     }
 
-    // Get total number of voters
-    function getTotalVoters() external view returns (uint256) {
+    // Get total number of votes cast
+    function getVoteCount() external view returns (uint256) {
         return voters.length;
     }
 
@@ -293,7 +279,7 @@ contract Election is IElection, AccessControl, Pausable {
         uint256 _createdAt,
         bool _votingActive,
         uint256 _candidateCount,
-        uint256 _totalVoters
+        uint256 _voteCount
     ) {
         return (
             title,
@@ -301,18 +287,13 @@ contract Election is IElection, AccessControl, Pausable {
             worldIdAction,
             creator,
             createdAt,
-            votingActive,
+            !paused(),
             candidateCount,
             voters.length
         );
     }
 
-    // Close voting and prepare for selection (operator role)
-    function closeVoting() external onlyRole(OPERATOR_ROLE) {
-        votingActive = false;
-        emit VotingClosed(voters.length);
-        emit VotingStatusChanged(false);
-    }
+
 
     // Report selection results (reporter role)
     function reportSelection(uint256[] memory _selectedCandidates) external onlyRole(REPORTER_ROLE) {
@@ -351,21 +332,18 @@ contract Election is IElection, AccessControl, Pausable {
         }
     }
 
-    // Check if election has votes available for selection
-    function hasVotesForSelection() external view returns (bool) {
-        return voters.length > 0;
-    }
+
 
     // Get comprehensive election status
     function getElectionStatus() external view returns (
         bool _votingActive,
-        uint256 _totalVoters,
+        uint256 _voteCount,
         uint256 _candidateCount,
         uint256 _selectionBlock,
         uint256[] memory _selectedCandidates
     ) {
         return (
-            votingActive,
+            !paused(),
             voters.length,
             candidateCount,
             selectionBlock,

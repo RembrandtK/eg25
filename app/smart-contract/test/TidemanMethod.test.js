@@ -65,10 +65,10 @@ describe("Tideman Method - Ranked-Pair Tallying", function () {
 
   describe("Stage 1: Read Votes from Contract", function () {
     it("should read empty state initially", async function () {
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       const allVoters = await election.getAllVoters();
       const candidates = await election.getCandidates();
-      
+
       expect(Number(totalVoters)).to.equal(0);
       expect(allVoters.length).to.equal(0);
       expect(candidates.length).to.equal(4);
@@ -163,7 +163,7 @@ describe("Tideman Method - Ranked-Pair Tallying", function () {
     });
 
     it("should have correct test data setup", async function () {
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       expect(Number(totalVoters)).to.equal(3);
       
       // Verify each vote is stored correctly

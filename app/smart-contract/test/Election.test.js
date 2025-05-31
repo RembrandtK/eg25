@@ -54,9 +54,9 @@ describe("Election", function () {
       expect(info._description).to.equal("A test election for governance");
       expect(info._worldIdAction).to.equal("vote_test_2024");
       expect(info._creator).to.equal(creator.address);
-      expect(info._votingActive).to.be.true;
+      expect(info._votingActive).to.be.true; // !paused() should be true initially
       expect(Number(info._candidateCount)).to.equal(0);
-      expect(Number(info._totalVoters)).to.equal(0);
+      expect(Number(info._voteCount)).to.equal(0);
     });
 
     it("should set factory as deployer", async function () {
@@ -134,7 +134,7 @@ describe("Election", function () {
       expect(Number(vote[1].candidateId)).to.equal(3);
       expect(Number(vote[2].candidateId)).to.equal(2);
 
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       expect(Number(totalVoters)).to.equal(1);
     });
 
@@ -229,7 +229,7 @@ describe("Election", function () {
       expect(Number(vote[1].candidateId)).to.equal(1);
 
       // Should still only count as one voter
-      const totalVoters = await election.getTotalVoters();
+      const totalVoters = await election.getVoteCount();
       expect(Number(totalVoters)).to.equal(1);
     });
 
@@ -268,13 +268,13 @@ describe("Election", function () {
       ).to.be.revertedWithCustomError(election, "InvalidCandidateId");
     });
 
-    it("should prevent voting when inactive", async function () {
+    it("should prevent voting when paused", async function () {
       const voterId = 12345;
       const ranking = [{ candidateId: 1, tiedWithPrevious: false }];
       const worldIdProof = getMockWorldIDProof(user1.address, voterId, ranking);
 
-      // Deactivate voting
-      await election.connect(creator).toggleVoting();
+      // Pause voting
+      await election.connect(creator).pauseVoting();
 
       await expect(
         election.connect(user1).vote(
@@ -284,31 +284,35 @@ describe("Election", function () {
           worldIdProof.proof,
           ranking
         )
-      ).to.be.revertedWithCustomError(election, "VotingNotActive");
+      ).to.be.revertedWithCustomError(election, "EnforcedPause");
     });
   });
 
-  describe("Voting Status Management", function () {
-    it("should allow creator to toggle voting status", async function () {
-      expect(await election.votingActive()).to.be.true;
+  describe("Voting Pause Management", function () {
+    it("should allow operator to pause and resume voting", async function () {
+      expect(await election.paused()).to.be.false;
 
-      await election.connect(creator).toggleVoting();
-      expect(await election.votingActive()).to.be.false;
+      await election.connect(creator).pauseVoting();
+      expect(await election.paused()).to.be.true;
 
-      await election.connect(creator).toggleVoting();
-      expect(await election.votingActive()).to.be.true;
+      await election.connect(creator).resumeVoting();
+      expect(await election.paused()).to.be.false;
     });
 
-    it("should prevent non-creator from toggling voting", async function () {
+    it("should prevent non-operator from pausing voting", async function () {
       await expect(
-        election.connect(user1).toggleVoting()
+        election.connect(user1).pauseVoting()
       ).to.be.reverted; // AccessControl will revert with custom error
     });
 
-    it("should emit VotingStatusChanged event", async function () {
-      await expect(election.connect(creator).toggleVoting())
-        .to.emit(election, "VotingStatusChanged")
-        .withArgs(false);
+    it("should emit Paused and Unpaused events", async function () {
+      await expect(election.connect(creator).pauseVoting())
+        .to.emit(election, "Paused")
+        .withArgs(creator.address);
+
+      await expect(election.connect(creator).resumeVoting())
+        .to.emit(election, "Unpaused")
+        .withArgs(creator.address);
     });
   });
 
@@ -377,7 +381,7 @@ describe("Election", function () {
     });
 
     it("should track total voters correctly", async function () {
-      expect(Number(await election.getTotalVoters())).to.equal(0);
+      expect(Number(await election.getVoteCount())).to.equal(0);
 
       const voterId1 = 12345;
       const voterId2 = 67890;
@@ -397,12 +401,12 @@ describe("Election", function () {
       await election.connect(user1).vote(
         proof1.signal, proof1.root, proof1.voterId, proof1.proof, ranking1
       );
-      expect(Number(await election.getTotalVoters())).to.equal(1);
+      expect(Number(await election.getVoteCount())).to.equal(1);
 
       await election.connect(user2).vote(
         proof2.signal, proof2.root, proof2.voterId, proof2.proof, ranking2
       );
-      expect(Number(await election.getTotalVoters())).to.equal(2);
+      expect(Number(await election.getVoteCount())).to.equal(2);
     });
 
     it("should return correct election info", async function () {
@@ -419,8 +423,8 @@ describe("Election", function () {
 
       const info = await election.getElectionInfo();
       expect(Number(info._candidateCount)).to.equal(2);
-      expect(Number(info._totalVoters)).to.equal(1);
-      expect(info._votingActive).to.be.true;
+      expect(Number(info._voteCount)).to.equal(1);
+      expect(info._votingActive).to.be.true; // !paused() should be true
     });
 
     it("should return voting statistics", async function () {
