@@ -97,13 +97,26 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
         // Method 1: Set global handler function (most reliable)
         (window as any).handleMiniAppSendTransaction = async (payload: any) => {
           console.log("🔗 Global MiniKit send-transaction handler called:", payload);
+          console.log("🌍 Current origin:", window.location.origin);
+          console.log("🌍 Current href:", window.location.href);
 
           try {
-            const response = await fetch("/api/minikit", {
+            // Use absolute URL to handle ngrok tunneling
+            const apiUrl = `${window.location.origin}/api/minikit`;
+            console.log("📡 Calling API at:", apiUrl);
+
+            const response = await fetch(apiUrl, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "X-Requested-With": "MiniKit-Handler"
+              },
               body: JSON.stringify({ payload }),
             });
+
+            if (!response.ok) {
+              throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+            }
 
             const result = await response.json();
             console.log("✅ Global handler response:", result);
@@ -161,6 +174,21 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
         };
 
         console.log("🎯 All MiniKit action handler methods configured");
+
+        // Debug: Log available MiniKit methods
+        if (window.MiniKit) {
+          console.log("🔍 Available MiniKit methods:", Object.keys(window.MiniKit));
+          if ((window.MiniKit as any).commands) {
+            console.log("🔍 Available MiniKit commands:", Object.keys((window.MiniKit as any).commands));
+          }
+          if ((window.MiniKit as any).commandsAsync) {
+            console.log("🔍 Available MiniKit commandsAsync:", Object.keys((window.MiniKit as any).commandsAsync));
+          }
+        }
+
+        // Debug: Test if our handlers are accessible
+        console.log("🔍 Global handler accessible:", typeof (window as any).handleMiniAppSendTransaction);
+        console.log("🔍 MiniKit handler accessible:", typeof (window.MiniKit as any)?.handleSendTransaction);
 
         // Give commands time to initialize
         await new Promise((resolve) => setTimeout(resolve, 500));

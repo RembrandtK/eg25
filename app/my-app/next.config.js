@@ -37,7 +37,7 @@ const nextConfig = {
     },
   }),
 
-  // Headers for better debugging
+  // Headers for better debugging and CORS handling
   async headers() {
     return [
       {
@@ -51,10 +51,31 @@ const nextConfig = {
             key: 'X-Timestamp',
             value: new Date().toISOString(),
           },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-Requested-With',
+          },
         ],
       },
     ];
   },
+
+  // Handle ngrok tunneling
+  ...(process.env.NODE_ENV === 'development' && {
+    allowedDevOrigins: [
+      'pet-jackal-crucial.ngrok-free.app',
+      'localhost:3000',
+      '127.0.0.1:3000',
+    ],
+  }),
 };
 
 module.exports = nextConfig;
