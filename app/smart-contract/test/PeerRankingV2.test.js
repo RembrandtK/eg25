@@ -1,6 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
+// Import Hardhat Chai matchers
+require("@nomicfoundation/hardhat-chai-matchers");
+
 // Helper function to convert BigInt to Number for comparisons
 function bn(value) {
   return Number(value);

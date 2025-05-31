@@ -65,19 +65,30 @@
    - ✅ Debounced updates for gas optimization
    - ✅ Error handling and success notifications
 
-### 🔥 CURRENT PRIORITY: Testing & Polish
+### � CRITICAL ISSUES TO FIX IMMEDIATELY
 
-4. **Frontend Integration Testing**
-   - [ ] Test complete interactive ranking flow
-   - [ ] Verify real-time blockchain updates work
-   - [ ] Test gas costs on World Chain mainnet
-   - [ ] Polish user experience and animations
+4. **Test Framework Issues (URGENT)**
+   - [ ] Fix Hardhat Chai matchers configuration (24 failing tests)
+   - [ ] Install @nomicfoundation/hardhat-chai-matchers properly
+   - [ ] Fix BigInt comparison issues in tests
+   - [ ] Ensure all contract tests pass before proceeding
 
-5. **User Experience Enhancements**
-   - [ ] Smooth animations for ranking changes
-   - [ ] Visual feedback for blockchain updates
-   - [ ] Loading states optimization
-   - [ ] Mobile responsiveness testing
+5. **Contract Reading Failures (URGENT)**
+   - [ ] Verify PeerRanking contract deployment on Worldchain Sepolia
+   - [ ] Test RPC connectivity: `https://worldchain-sepolia.g.alchemy.com/public`
+   - [ ] Fix `getUserRanking(address)` function calls
+   - [ ] Test contract reading with different RPC endpoints
+
+6. **Mock Transaction Mode (HIGH PRIORITY)**
+   - [ ] Remove mock transaction simulation in `usePeerRanking.ts`
+   - [ ] Fix MiniKit action handler registration
+   - [ ] Enable real blockchain writes with proper error handling
+   - [ ] Test transaction persistence between app sessions
+
+7. **Gas Optimization (MEDIUM PRIORITY)**
+   - [ ] Optimize large ranking operations (currently 1.9M gas for 10 candidates)
+   - [ ] Implement batching for multiple ranking updates
+   - [ ] Test gas costs on World Chain mainnet vs testnet
 
 ### 🚀 FUTURE ENHANCEMENTS (Post-Hackathon)
 
