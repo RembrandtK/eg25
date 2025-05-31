@@ -36,6 +36,13 @@
 - **Tie Support**: Equal ranks (2=, 2=, 4) with proper numbering
 - **Real-time Updates**: Immediate peer tally updates on reordering
 
+## 🚨 **CRITICAL REQUIREMENT: REGULAR COMMITS**
+**MUST commit and push changes regularly throughout development!**
+- After completing each task or significant change
+- Before switching between major components
+- At least every 30 minutes of active development
+- Always commit before asking for help or reporting issues
+
 ## 📋 HACKATHON TASKS
 
 ### ✅ COMPLETED TASKS
