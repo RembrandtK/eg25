@@ -25,11 +25,12 @@ export interface NetworkConfig {
   contracts: {
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
+    PeerRanking: ContractConfig;
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T16:40:05.868Z
+// Last updated: 2025-05-31T16:46:09.711Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
@@ -45,11 +46,15 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     WorldIDAddressBook: {
-      address: "0x469449f251692e0779667583026b5a1e99512157", // World ID Address Book on Sepolia
-      verified: true,
+      address: DEPLOYED_ADDRESSES[4801]["MockWorldIDDeployment#MockWorldIDAddressBook"] || "",
+      verified: false,
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -68,6 +73,10 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -109,3 +118,4 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
+export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');
