@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {IWorldID} from "@worldcoin/world-id-contracts/src/interfaces/IWorldID.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 library ByteHasher {
     /// @dev Creates a keccak256 hash of a bytestring.
@@ -19,7 +20,7 @@ interface IElection {
     function candidates(uint256) external view returns (uint256 id, string memory name, string memory description, bool active);
 }
 
-contract Election is IElection, AccessControl {
+contract Election is IElection, AccessControl, Pausable {
     using ByteHasher for bytes;
 
     IWorldID public immutable worldId;
@@ -32,10 +33,13 @@ contract Election is IElection, AccessControl {
     error FirstEntryCannotBeTied();
     error VoterNotFound(uint256 voterId);
 
+
     // Role definitions
-    bytes32 public constant CREATOR_ROLE = keccak256("CREATOR_ROLE");
     bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
     bytes32 public constant CANDIDATE_MANAGER_ROLE = keccak256("CANDIDATE_MANAGER_ROLE");
+    bytes32 public constant REPORTER_ROLE = keccak256("REPORTER_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    // Note: DEFAULT_ADMIN_ROLE is inherited from AccessControl for granting/revoking roles
 
     /// @dev The keccak256 hash of the externalNullifier (unique identifier of the action performed), combination of appId and action
     uint256 public immutable externalNullifierHash;
@@ -67,6 +71,10 @@ contract Election is IElection, AccessControl {
     bool public votingActive;
     uint256 public candidateCount;
     uint256 public createdAt;
+
+    // Selection state
+    uint256 public selectionBlock;  // Block number used for selection calculation (0 = not completed)
+    uint256[] public selectedCandidates;  // Array of selected candidate IDs (empty = not completed)
     
     // Mappings
     mapping(uint256 => Candidate) public candidates;
@@ -81,6 +89,8 @@ contract Election is IElection, AccessControl {
     event CandidateAdded(uint256 indexed candidateId, string name);
     event RankingUpdated(address indexed user, RankingEntry[] newRanking);
     event VotingStatusChanged(bool active);
+    event SelectionCompleted(uint256[] selectedCandidates, uint256 selectionBlock);
+    event VotingClosed(uint256 finalVoterCount);
 
     modifier votingIsActive() {
         if (!votingActive) revert VotingNotActive();
@@ -111,13 +121,14 @@ contract Election is IElection, AccessControl {
             .hashToField();
 
         // Set up roles
-        _grantRole(DEFAULT_ADMIN_ROLE, _creator);
-        _grantRole(CREATOR_ROLE, _creator);
-        _grantRole(FACTORY_ROLE, msg.sender);
-        _grantRole(CANDIDATE_MANAGER_ROLE, msg.sender); // Factory can add candidates during creation
+        _grantRole(DEFAULT_ADMIN_ROLE, _creator); // Admin can grant/revoke all roles
+        _grantRole(FACTORY_ROLE, msg.sender); // Factory can add candidates during creation
+        _grantRole(CANDIDATE_MANAGER_ROLE, _creator); // Creator can manage candidates
+        _grantRole(REPORTER_ROLE, _creator); // Creator can report selection results
+        _grantRole(OPERATOR_ROLE, _creator); // Creator can manage lifecycle and pausing
     }
     
-    // Add a candidate (only factory during creation)
+    // Add a candidate (factory role during creation)
     function addCandidate(string memory _name, string memory _description) external onlyRole(FACTORY_ROLE) {
         candidateCount++;
         candidates[candidateCount] = Candidate({
@@ -127,8 +138,24 @@ contract Election is IElection, AccessControl {
             active: true
         });
         candidateIds.push(candidateCount);
-        
+
         emit CandidateAdded(candidateCount, _name);
+    }
+
+    // Deactivate a candidate (candidate manager role)
+    function deactivateCandidate(uint256 candidateId) external onlyRole(CANDIDATE_MANAGER_ROLE) {
+        if (candidateId == 0 || candidateId > candidateCount) {
+            revert InvalidCandidateId(candidateId);
+        }
+        candidates[candidateId].active = false;
+    }
+
+    // Reactivate a candidate (candidate manager role)
+    function reactivateCandidate(uint256 candidateId) external onlyRole(CANDIDATE_MANAGER_ROLE) {
+        if (candidateId == 0 || candidateId > candidateCount) {
+            revert InvalidCandidateId(candidateId);
+        }
+        candidates[candidateId].active = true;
     }
     
     // Get all active candidates
@@ -170,7 +197,7 @@ contract Election is IElection, AccessControl {
         uint256 voterId,
         uint256[8] calldata proof,
         RankingEntry[] memory ranking
-    ) external votingIsActive {
+    ) external votingIsActive whenNotPaused {
         // We verify the provided proof is valid and the user is verified by World ID
         // Note: We allow vote updates, so we don't check if voter ID was used before
         worldId.verifyProof(
@@ -222,10 +249,20 @@ contract Election is IElection, AccessControl {
         return votes[voterId];
     }
 
-    // Toggle voting status (only creator)
-    function toggleVoting() external onlyRole(CREATOR_ROLE) {
+    // Toggle voting status (operator role)
+    function toggleVoting() external onlyRole(OPERATOR_ROLE) {
         votingActive = !votingActive;
         emit VotingStatusChanged(votingActive);
+    }
+
+    // Pause voting (emergency stop - operator role)
+    function pauseVoting() external onlyRole(OPERATOR_ROLE) {
+        _pause();
+    }
+
+    // Unpause voting (operator role)
+    function unpauseVoting() external onlyRole(OPERATOR_ROLE) {
+        _unpause();
     }
 
     // Get total number of voters
@@ -267,6 +304,72 @@ contract Election is IElection, AccessControl {
             votingActive,
             candidateCount,
             voters.length
+        );
+    }
+
+    // Close voting and prepare for selection (operator role)
+    function closeVoting() external onlyRole(OPERATOR_ROLE) {
+        votingActive = false;
+        emit VotingClosed(voters.length);
+        emit VotingStatusChanged(false);
+    }
+
+    // Report selection results (reporter role)
+    function reportSelection(uint256[] memory _selectedCandidates) external onlyRole(REPORTER_ROLE) {
+        // Use the last complete block for deterministic results
+        // This ensures all nodes will use the same block for calculations
+        selectionBlock = block.number - 1;  // Previous block is guaranteed to be complete
+
+        // Store selected candidates (currently expecting single winner, but array for future)
+        // Allow updates - clear previous selection and set new one
+        delete selectedCandidates;
+        for (uint256 i = 0; i < _selectedCandidates.length; i++) {
+            selectedCandidates.push(_selectedCandidates[i]);
+        }
+
+        emit SelectionCompleted(_selectedCandidates, selectionBlock);
+    }
+
+    // Get selection results
+    function getSelectionResults() external view returns (
+        uint256[] memory _selectedCandidates,
+        uint256 _selectionBlock
+    ) {
+        return (
+            selectedCandidates,
+            selectionBlock
+        );
+    }
+
+    // Get the block number that should be used for selection calculations
+    function getSelectionBlock() external view returns (uint256) {
+        if (selectionBlock != 0) {
+            return selectionBlock;
+        } else {
+            // Return what would be used if selection was completed now
+            return block.number - 1;
+        }
+    }
+
+    // Check if election has votes available for selection
+    function hasVotesForSelection() external view returns (bool) {
+        return voters.length > 0;
+    }
+
+    // Get comprehensive election status
+    function getElectionStatus() external view returns (
+        bool _votingActive,
+        uint256 _totalVoters,
+        uint256 _candidateCount,
+        uint256 _selectionBlock,
+        uint256[] memory _selectedCandidates
+    ) {
+        return (
+            votingActive,
+            voters.length,
+            candidateCount,
+            selectionBlock,
+            selectedCandidates
         );
     }
 }
