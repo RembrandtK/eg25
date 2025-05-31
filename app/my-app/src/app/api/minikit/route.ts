@@ -4,7 +4,7 @@ import { MiniKit, ResponseSuccessPayload } from "@worldcoin/minikit-js";
 export async function POST(request: NextRequest) {
   try {
     const { payload } = await request.json();
-    
+
     console.log('🔗 MiniKit Action received:', {
       command: payload.command,
       reference: payload.reference,
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     await fetch(`${request.nextUrl.origin}/api/debug`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         message: "MiniKit Action Handler",
         data: JSON.stringify({
           command: payload.command,
@@ -25,26 +25,30 @@ export async function POST(request: NextRequest) {
       }),
     }).catch(() => {});
 
-    // Handle send-transaction command
-    if (payload.command === "send-transaction") {
-      console.log('💰 Processing send-transaction action');
-      
-      // For peer ranking transactions, we just need to acknowledge receipt
-      // The actual transaction will be handled by the MiniKit SDK
+    // Handle send-transaction command for the 'vote' action
+    if (payload.command === "send-transaction" || payload.action === "vote") {
+      console.log('🗳️ Processing vote action send-transaction');
+
+      // For peer ranking transactions, we acknowledge and allow the transaction
       const response: ResponseSuccessPayload = {
         status: "success",
         reference: payload.reference,
       };
 
-      console.log('✅ Send-transaction action acknowledged:', response);
-      
+      console.log('✅ Vote action send-transaction acknowledged:', response);
+
       // Send debug info about the response
       await fetch(`${request.nextUrl.origin}/api/debug`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          message: "MiniKit Action Response",
-          data: JSON.stringify(response, null, 2)
+        body: JSON.stringify({
+          message: "MiniKit Vote Action Response",
+          data: JSON.stringify({
+            action: "vote",
+            command: payload.command,
+            reference: payload.reference,
+            response
+          }, null, 2)
         }),
       }).catch(() => {});
 
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     // Handle other commands
     console.log('❓ Unknown command:', payload.command);
-    
+
     return NextResponse.json({
       status: "error",
       error_code: "unknown_command",
@@ -62,12 +66,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ MiniKit Action error:', error);
-    
+
     // Send debug info about the error
     await fetch(`${request.nextUrl.origin}/api/debug`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         message: "MiniKit Action Error",
         data: JSON.stringify({
           error: error instanceof Error ? error.message : String(error)

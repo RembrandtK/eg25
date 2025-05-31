@@ -48,9 +48,12 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           return false;
         }
 
-        // Install MiniKit based on official documentation
+        // Install MiniKit with app configuration
         if (typeof MiniKit.install === "function") {
-          MiniKit.install();
+          MiniKit.install({
+            appId: "app_10719845a0977ef63ebe8eb9edb890ad",
+            actionId: "vote",
+          });
         } else {
           console.error("MiniKit.install is not a function");
           return false;
@@ -88,12 +91,13 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        // Configure MiniKit action handler for send-transaction
+        // Configure MiniKit action handler for the 'vote' action
         if (typeof window.MiniKit.subscribe === "function") {
-          console.log("Setting up MiniKit action handler...");
+          console.log("Setting up MiniKit vote action handler...");
 
-          window.MiniKit.subscribe("miniapp-send-transaction", async (payload: any) => {
-            console.log("🔗 MiniKit send-transaction event received:", payload);
+          // Subscribe to the vote action events
+          window.MiniKit.subscribe("vote", async (payload: any) => {
+            console.log("🗳️ MiniKit vote action event received:", payload);
 
             try {
               // Send the payload to our action handler
@@ -104,20 +108,45 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
               });
 
               const result = await response.json();
-              console.log("✅ Action handler response:", result);
+              console.log("✅ Vote action handler response:", result);
 
               return result;
             } catch (error) {
-              console.error("❌ Action handler error:", error);
+              console.error("❌ Vote action handler error:", error);
               return {
                 status: "error",
                 error_code: "handler_error",
-                error_message: "Failed to process action",
+                error_message: "Failed to process vote action",
               };
             }
           });
 
-          console.log("MiniKit action handler configured");
+          // Also subscribe to send-transaction events as fallback
+          window.MiniKit.subscribe("miniapp-send-transaction", async (payload: any) => {
+            console.log("🔗 MiniKit send-transaction event received:", payload);
+
+            try {
+              const response = await fetch("/api/minikit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payload }),
+              });
+
+              const result = await response.json();
+              console.log("✅ Send-transaction handler response:", result);
+
+              return result;
+            } catch (error) {
+              console.error("❌ Send-transaction handler error:", error);
+              return {
+                status: "error",
+                error_code: "handler_error",
+                error_message: "Failed to process transaction",
+              };
+            }
+          });
+
+          console.log("MiniKit vote and send-transaction action handlers configured");
         } else {
           console.warn("MiniKit.subscribe not available, action handling may not work");
         }
