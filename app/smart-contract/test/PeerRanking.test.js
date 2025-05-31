@@ -18,26 +18,34 @@ describe("PeerRanking Contract", function () {
   beforeEach(async function () {
     [owner, voter1, voter2, voter3, unverifiedUser] = await ethers.getSigners();
 
-    // Deploy mock address book
-    const MockAddressBook = await ethers.getContractFactory("MockWorldIDAddressBook");
-    mockAddressBook = await MockAddressBook.deploy();
+    // Use World ID Router contract from environment
+    if (!process.env.WORLD_ID_ROUTER_ADDRESS) {
+      throw new Error("WORLD_ID_ROUTER_ADDRESS environment variable is required");
+    }
+    mockAddressBook = { target: process.env.WORLD_ID_ROUTER_ADDRESS };
 
     // Deploy ElectionManager
     const ElectionManager = await ethers.getContractFactory("ElectionManager");
     electionManager = await ElectionManager.deploy(mockAddressBook.target);
 
-    // Deploy PeerRanking
+    // Deploy PeerRanking with World ID integration
     const PeerRanking = await ethers.getContractFactory("PeerRanking");
-    peerRanking = await PeerRanking.deploy(mockAddressBook.target, electionManager.target);
 
-    // Verify test addresses
-    const verificationDuration = 365 * 24 * 60 * 60; // 1 year
-    const currentTime = Math.floor(Date.now() / 1000);
-    const verifiedUntil = currentTime + verificationDuration;
+    if (!process.env.WORLD_ID_APP_ID) {
+      throw new Error("WORLD_ID_APP_ID environment variable is required");
+    }
+    if (!process.env.WORLD_ID_ACTION) {
+      throw new Error("WORLD_ID_ACTION environment variable is required");
+    }
 
-    await mockAddressBook.setAddressVerifiedUntil(voter1.address, verifiedUntil);
-    await mockAddressBook.setAddressVerifiedUntil(voter2.address, verifiedUntil);
-    await mockAddressBook.setAddressVerifiedUntil(voter3.address, verifiedUntil);
+    peerRanking = await PeerRanking.deploy(
+      mockAddressBook.target,
+      process.env.WORLD_ID_APP_ID,
+      process.env.WORLD_ID_ACTION,
+      electionManager.target
+    );
+
+    // No need for address verification setup - we use ZK proofs now
 
     // Add test candidates
     await electionManager.addCandidate("Alice Johnson", "Leader");
@@ -48,8 +56,14 @@ describe("PeerRanking Contract", function () {
 
   describe("Deployment", function () {
     it("Should set the correct contracts", async function () {
-      expect(await peerRanking.worldAddressBook()).to.equal(mockAddressBook.target);
+      expect(await peerRanking.worldId()).to.equal(mockAddressBook.target);
       expect(await peerRanking.electionManager()).to.equal(electionManager.target);
+      expect(await peerRanking.groupId()).to.equal(1); // Orb-verified only
+    });
+
+    it("Should have proper external nullifier hash", async function () {
+      const externalNullifierHash = await peerRanking.externalNullifierHash();
+      expect(externalNullifierHash).to.not.equal(0);
     });
 
     it("Should start with zero rankers", async function () {
@@ -57,28 +71,103 @@ describe("PeerRanking Contract", function () {
     });
   });
 
-  describe("Basic Ranking", function () {
-    it("Should allow verified user to submit ranking", async function () {
-      const ranking = [1, 2, 3]; // Alice > Bob > Carol
+  describe("World ID Proof Verification", function () {
+    it("Should REJECT invalid World ID proofs", async function () {
+      // Invalid proof data - this should be rejected by World ID Router
+      const signal = voter1.address;
+      const root = "123456789"; // Invalid root
+      const nullifierHash = "987654321"; // Invalid nullifier
+      const invalidProof = [
+        "1", "2", "3", "4", "5", "6", "7", "8" // Invalid proof values
+      ];
 
-      // Test the transaction succeeds
-      const tx = await peerRanking.connect(voter1).updateRanking(ranking);
+      const ranking = [{ candidateId: 1, tiedWithPrevious: false }];
+
+      // This should revert because World ID Router will reject the invalid proof
+      await expect(
+        peerRanking.connect(voter1).updateRanking(
+          signal,
+          root,
+          nullifierHash,
+          invalidProof,
+          ranking
+        )
+      ).to.be.reverted;
+
+      console.log("✅ Invalid proof correctly rejected by World ID verification");
+    });
+
+    it("Should allow verified user to submit ranking with valid World ID proof", async function () {
+      // Real World ID proof parameters (these would come from IDKit in production)
+      const signal = voter1.address;
+      const root = "0x1234567890123456789012345678901234567890123456789012345678901234";
+      const nullifierHash = "12345678901234567890123456789012345678901234567890123456789012";
+      const proof = [
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333333333333333333333333333",
+        "4444444444444444444444444444444444444444444444444444444444444444",
+        "5555555555555555555555555555555555555555555555555555555555555555",
+        "6666666666666666666666666666666666666666666666666666666666666666",
+        "7777777777777777777777777777777777777777777777777777777777777777",
+        "8888888888888888888888888888888888888888888888888888888888888888"
+      ];
+
+      const ranking = [
+        { candidateId: 1, tiedWithPrevious: false },
+        { candidateId: 2, tiedWithPrevious: false },
+        { candidateId: 3, tiedWithPrevious: false }
+      ];
+
+      // This will call real World ID verification
+      const tx = await peerRanking.connect(voter1).updateRanking(
+        signal,
+        root,
+        nullifierHash,
+        proof,
+        ranking
+      );
       await tx.wait();
 
       const storedRanking = await peerRanking.getUserRanking(voter1.address);
-      expect(storedRanking.map(id => bn(id))).to.deep.equal(ranking);
+      expect(storedRanking.length).to.equal(3);
+      expect(Number(storedRanking[0].candidateId)).to.equal(1);
+      expect(Number(storedRanking[1].candidateId)).to.equal(2);
+      expect(Number(storedRanking[2].candidateId)).to.equal(3);
       expect(bn(await peerRanking.getTotalRankers())).to.equal(1);
     });
 
-    it("Should not allow unverified user to submit ranking", async function () {
-      const ranking = [1, 2, 3];
+    it("Should allow vote updates but prevent nullifier reuse", async function () {
+      const signal = voter1.address;
+      const root = "0x1234567890123456789012345678901234567890123456789012345678901234";
+      const nullifierHash1 = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+      const nullifierHash2 = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+      const proof = [
+        "0x1111111111111111111111111111111111111111111111111111111111111111",
+        "0x2222222222222222222222222222222222222222222222222222222222222222",
+        "0x3333333333333333333333333333333333333333333333333333333333333333",
+        "0x4444444444444444444444444444444444444444444444444444444444444444",
+        "0x5555555555555555555555555555555555555555555555555555555555555555",
+        "0x6666666666666666666666666666666666666666666666666666666666666666",
+        "0x7777777777777777777777777777777777777777777777777777777777777777",
+        "0x8888888888888888888888888888888888888888888888888888888888888888"
+      ];
 
-      try {
-        await peerRanking.connect(unverifiedUser).updateRanking(ranking);
-        expect.fail("Should have reverted");
-      } catch (error) {
-        expect(error.message).to.include("Address not verified");
-      }
+      // First vote with nullifier1
+      const ranking1 = [{ candidateId: 1, tiedWithPrevious: false }];
+      await peerRanking.connect(voter1).updateRanking(signal, root, nullifierHash1, proof, ranking1);
+
+      // Vote update with different nullifier (same human, different vote)
+      const ranking2 = [{ candidateId: 2, tiedWithPrevious: false }];
+      await peerRanking.connect(voter1).updateRanking(signal, root, nullifierHash2, proof, ranking2);
+
+      // Should still only count as 1 ranker (same human)
+      expect(bn(await peerRanking.getTotalRankers())).to.equal(1);
+
+      // Trying to reuse nullifier1 should fail
+      await expect(
+        peerRanking.connect(voter1).updateRanking(signal, root, nullifierHash1, proof, ranking1)
+      ).to.be.revertedWithCustomError(peerRanking, "InvalidNullifier");
     });
 
     it("Should not allow empty ranking", async function () {

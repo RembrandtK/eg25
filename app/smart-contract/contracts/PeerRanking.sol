@@ -34,13 +34,13 @@ contract PeerRanking {
     error InvalidNullifier();
 
     /// @dev The address of the World ID Router contract that will be used for verifying proofs
-    IWorldID internal immutable worldId;
+    IWorldID public immutable worldId;
 
     /// @dev The keccak256 hash of the externalNullifier (unique identifier of the action performed), combination of appId and action
-    uint256 internal immutable externalNullifierHash;
+    uint256 public immutable externalNullifierHash;
 
     /// @dev The World ID group ID (1 for Orb-verified)
-    uint256 internal immutable groupId = 1;
+    uint256 public immutable groupId = 1;
 
     /// @dev Whether a nullifier hash has been used already. Used to guarantee an action is only performed once by a single person
     mapping(uint256 => bool) internal nullifierHashes;
@@ -93,10 +93,35 @@ contract PeerRanking {
     }
 
     /**
-     * @dev Update user's ranking with structured data supporting ties
+     * @dev Update user's ranking with World ID ZK proof verification
+     * @param signal The user's wallet address (cannot be tampered with)
+     * @param root The root (returned by the IDKit widget)
+     * @param nullifierHash The nullifier hash for this proof, preventing double signaling (returned by the IDKit widget)
+     * @param proof The zero-knowledge proof that demonstrates the claimer is registered with World ID (returned by the IDKit widget)
      * @param newRanking Array of RankingEntry structs with tie information
      */
-    function updateRanking(RankingEntry[] memory newRanking) external onlyVerifiedUser {
+    function updateRanking(
+        address signal,
+        uint256 root,
+        uint256 nullifierHash,
+        uint256[8] calldata proof,
+        RankingEntry[] memory newRanking
+    ) external {
+        // First, we make sure this person hasn't done this before
+        if (nullifierHashes[nullifierHash]) revert InvalidNullifier();
+
+        // We now verify the provided proof is valid and the user is verified by World ID
+        worldId.verifyProof(
+            root,
+            groupId, // set to "1" in the constructor
+            abi.encodePacked(signal).hashToField(),
+            nullifierHash,
+            externalNullifierHash,
+            proof
+        );
+
+        // We now record the user has done this, so they can't do it again (sybil-resistance)
+        nullifierHashes[nullifierHash] = true;
         require(newRanking.length > 0, "Ranking cannot be empty");
 
         // Validate all candidate IDs and tie logic

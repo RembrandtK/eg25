@@ -10,6 +10,10 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 31337,
+      forking: process.env.FORK_URL ? {
+        url: process.env.FORK_URL,
+        blockNumber: process.env.FORK_BLOCK_NUMBER ? parseInt(process.env.FORK_BLOCK_NUMBER) : undefined,
+      } : undefined,
     },
     localhost: {
       url: "http://127.0.0.1:8545",
