@@ -1,0 +1,3 @@
+packages:
+  - 'vote/world-app'
+  - 'vote/contracts'

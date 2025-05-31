@@ -1,6 +1,7 @@
 {
-  "name": "hardhat-test",
+  "name": "contracts",
   "version": "1.0.0",
+  "description": "Smart contracts for Election voting system with World ID verification",
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
@@ -19,8 +20,8 @@
     "manage-addresses": "node scripts/manage-addresses.js",
     "ignition-utils": "node scripts/ignition-utils.js",
     "extract-abi": "node scripts/update-frontend-abi.js",
-    "build": "npm run compile && npm run extract-abi",
-    "deploy:full": "npm run build && npm run deploy:election:sepolia && cd ../my-app && npm run sync-contracts",
+    "build": "pnpm run compile && pnpm run extract-abi",
+    "deploy:full": "pnpm run build && pnpm run deploy:election:sepolia && cd ../world-app && pnpm run sync-contracts",
     "node": "hardhat node"
   },
   "keywords": [],

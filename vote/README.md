@@ -4,9 +4,7 @@ A complete World Mini App template that integrates with on-chain smart contracts
 
 ## 🏗️ Project Structure
 
-// TODO: app -> vote
-// app/my-app -> vote/world-app
-// app/smart-contracts -> vote/contracts
+This project contains a complete Election Voting System with World ID verification:
 
 ```text
 app/

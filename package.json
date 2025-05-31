@@ -1,0 +1,28 @@
+{
+  "name": "eg25-election-system",
+  "version": "1.0.0",
+  "description": "Election voting system with World ID verification",
+  "private": true,
+  "workspaces": [
+    "vote/world-app",
+    "vote/contracts"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter world-app dev",
+    "build": "pnpm --filter contracts build && pnpm --filter world-app build",
+    "test": "pnpm --filter contracts test && pnpm --filter world-app test",
+    "deploy:contracts": "pnpm --filter contracts deploy:election:sepolia",
+    "sync-contracts": "pnpm --filter world-app sync-contracts",
+    "deploy:full": "pnpm deploy:contracts && pnpm sync-contracts",
+    "clean": "pnpm --filter contracts clean && pnpm --filter world-app clean",
+    "install:all": "pnpm install"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}

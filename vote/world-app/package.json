@@ -1,5 +1,5 @@
 {
-  "name": "election-voting-app",
+  "name": "world-app",
   "version": "0.1.0",
   "description": "A World Mini App for conducting ranked-choice elections with World ID verification",
   "private": true,
