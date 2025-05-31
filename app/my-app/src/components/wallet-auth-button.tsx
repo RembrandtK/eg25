@@ -12,24 +12,34 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
 
   const handleWalletAuth = async () => {
     if (!MiniKit.isInstalled()) {
+      console.error("MiniKit is not installed");
       return;
     }
 
     setIsLoading(true);
     try {
+      console.log("Step 1: Fetching nonce...");
       const res = await fetch("/api/nonce");
+      if (!res.ok) {
+        throw new Error(`Failed to fetch nonce: ${res.status}`);
+      }
       const { nonce } = await res.json();
-      console.log("nonce", nonce);
+      console.log("Step 2: Got nonce:", nonce);
+
+      console.log("Step 3: Calling MiniKit walletAuth...");
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce,
         expirationTime: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
         statement: "Sign in with your World ID wallet",
       });
 
+      console.log("Step 4: Got wallet auth response:", finalPayload);
+
       if (finalPayload.status === "error") {
-        throw new Error(finalPayload.error_code);
+        throw new Error(`Wallet auth failed: ${finalPayload.error_code}`);
       }
 
+      console.log("Step 5: Verifying SIWE message...");
       const verifyRes = await fetch("/api/complete-siwe", {
         method: "POST",
         headers: {
@@ -40,12 +50,17 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
           nonce,
         }),
       });
-      console.log("verifyRes", verifyRes);
+
+      if (!verifyRes.ok) {
+        throw new Error(`SIWE verification failed: ${verifyRes.status}`);
+      }
+
       const verification = await verifyRes.json();
-      console.log("verification", verification);
+      console.log("Step 6: SIWE verification result:", verification);
 
       if (verification.isValid) {
-        await signIn("worldcoin-wallet", {
+        console.log("Step 7: Signing in with NextAuth...");
+        const signInResult = await signIn("worldcoin-wallet", {
           message: finalPayload.message,
           signature: finalPayload.signature,
           address: finalPayload.address,
@@ -53,8 +68,15 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
           redirect: false,
         });
 
+        console.log("Step 8: NextAuth sign in result:", signInResult);
+
         // Call onSuccess if provided
-        if (onSuccess) onSuccess();
+        if (onSuccess) {
+          console.log("Step 9: Calling onSuccess callback");
+          onSuccess();
+        }
+      } else {
+        throw new Error("SIWE message verification failed");
       }
     } catch (error) {
       console.error("Wallet auth error:", error);
