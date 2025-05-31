@@ -13,7 +13,7 @@ import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { InteractiveRankingTab } from "@/components/InteractiveRankingTab";
 import { ELECTION_ABI, Candidate } from "@/election-abi";
-import { ELECTION_MANAGER_ADDRESS } from "@/config/dynamic-contracts";
+import { ELECTION_MANAGER_ADDRESS } from "@/config/contract-addresses";
 
 export default function Page() {
   const { data: session } = useSession();

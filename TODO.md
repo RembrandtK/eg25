@@ -43,27 +43,15 @@ MUST:
 - Before switching between major components
 - At least every 30 minutes of active development
 
-### � CRITICAL ISSUES TO FIX IMMEDIATELY
+### � CRITICAL ISSUES TO FIX
 
-4. **Test Framework Issues (URGENT)**
-   - [ ] Fix Hardhat Chai matchers configuration (24 failing tests)
-   - [ ] Install @nomicfoundation/hardhat-chai-matchers properly
-   - [ ] Fix BigInt comparison issues in tests
-   - [ ] Ensure all contract tests pass before proceeding
-
-5. **Contract Reading Failures (URGENT)**
-   - [ ] Verify PeerRanking contract deployment on Worldchain Sepolia
-   - [ ] Test RPC connectivity: `https://worldchain-sepolia.g.alchemy.com/public`
-   - [ ] Fix `getUserRanking(address)` function calls
-   - [ ] Test contract reading with different RPC endpoints
-
-6. **Mock Transaction Mode (HIGH PRIORITY)**
+1. **Mock Transaction Mode (HIGH PRIORITY)**
    - [ ] Remove mock transaction simulation in `usePeerRanking.ts`
    - [ ] Fix MiniKit action handler registration
    - [ ] Enable real blockchain writes with proper error handling
    - [ ] Test transaction persistence between app sessions
 
-7. **Gas Optimization (MEDIUM PRIORITY)**
+2. **Gas Optimization (MEDIUM PRIORITY)**
    - [ ] Optimize large ranking operations (currently 1.9M gas for 10 candidates)
    - [ ] Implement batching for multiple ranking updates
    - [ ] Test gas costs on World Chain mainnet vs testnet
@@ -71,6 +59,7 @@ MUST:
 ### 🚀 FUTURE ENHANCEMENTS (Post-Hackathon)
 
 6. **Multiple Elections System**
+
    - [ ] Design election factory contract pattern
    - [ ] Each election = separate smart contract instance
    - [ ] Elections tab with list of available elections

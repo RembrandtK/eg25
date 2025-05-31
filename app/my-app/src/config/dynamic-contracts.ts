@@ -1,11 +1,8 @@
 /**
  * Dynamic Contract Configuration
- * Reads contract addresses directly from Ignition deployment files on-demand
+ * Reads contract addresses from API endpoints (server-side only)
  * This eliminates the need for manual synchronization and reduces deployment errors
  */
-
-import fs from 'fs';
-import path from 'path';
 
 export interface ContractConfig {
   address: string;

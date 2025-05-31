@@ -7,13 +7,14 @@
     "dev": "next dev",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev",
     "dev:debug-brk": "NODE_OPTIONS='--inspect-brk' next dev",
-    "build": "next build",
+    "build": "npm run generate-addresses && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test:fast": "node scripts/test-contract-simple.js",
     "test:build": "npm run type-check && npm run build",
-    "sync-contracts": "node scripts/sync-contracts.js"
+    "sync-contracts": "node scripts/sync-contracts.js",
+    "generate-addresses": "node scripts/generate-contract-addresses.js"
   },
   "dependencies": {
     "@worldcoin/minikit-js": "^1.7.0",

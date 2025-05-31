@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS } from "@/config/dynamic-contracts";
+import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS } from "@/config/contract-addresses";
 
 // Simplified ABI for the functions we need
 const PEER_RANKING_ABI = [
