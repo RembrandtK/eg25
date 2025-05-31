@@ -9,6 +9,7 @@ import { WalletAuthButton } from "./wallet-auth-button";
 import { ELECTION_ABI } from "@/election-abi";
 import { Candidate } from "@/election-abi";
 import { useSession } from "next-auth/react";
+import { loadElectionCandidates } from "@/lib/candidateLoader";
 
 // Candidates will be loaded from the selected Election contract
 
@@ -132,6 +133,23 @@ export function ElectionDashboard() {
 
   // Load candidates when election is selected
   useEffect(() => {
+    // Debug: Log what selectedElection contains
+    fetch('/api/debug', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `🔍 CANDIDATE LOADING: useEffect triggered`,
+        data: {
+          selectedElection: selectedElection ? {
+            id: selectedElection.id?.toString(),
+            address: selectedElection.address,
+            name: selectedElection.name,
+            hasAddress: !!selectedElection.address
+          } : null
+        }
+      })
+    });
+
     if (!selectedElection?.address) {
       setCandidates([]);
       return;
@@ -141,46 +159,38 @@ export function ElectionDashboard() {
       try {
         console.log("Loading candidates for election:", selectedElection.address);
 
-        // Create a public client to read from the Election contract
-        const { createPublicClient, http } = await import('viem');
-        const { worldchainSepolia } = await import('@/lib/chains');
-        const { CURRENT_NETWORK } = await import('@/config/contracts');
-
-        const publicClient = createPublicClient({
-          chain: worldchainSepolia,
-          transport: http(CURRENT_NETWORK.rpcUrl)
+        // Debug API call to track candidate loading
+        await fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🔍 CANDIDATE LOADING: Starting for election ${selectedElection.address}`,
+            data: { electionAddress: selectedElection.address }
+          })
         });
 
-        // Get candidate count
-        const candidateCount = await publicClient.readContract({
-          address: selectedElection.address as `0x${string}`,
-          abi: ELECTION_ABI,
-          functionName: 'candidateCount',
-        });
-
-        console.log("Candidate count:", candidateCount);
-
-        // Load all candidates
-        const candidatePromises = [];
-        for (let i = 1; i <= Number(candidateCount); i++) {
-          candidatePromises.push(
-            publicClient.readContract({
-              address: selectedElection.address as `0x${string}`,
-              abi: ELECTION_ABI,
-              functionName: 'candidates',
-              args: [BigInt(i)],
-            })
-          );
-        }
-
-        const candidateResults = await Promise.all(candidatePromises);
-        const loadedCandidates: Candidate[] = candidateResults.map((result: any, index) => ({
-          id: BigInt(index + 1),
-          name: result.name || "", // NO FALLBACK - empty if not set
-          description: result.description || ""
-        }));
+        // Use the tested candidate loading function
+        const loadedCandidates = await loadElectionCandidates(selectedElection.address as `0x${string}`);
 
         console.log("Loaded candidates:", loadedCandidates);
+
+        // Debug: Log final processed candidates
+        await fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🔍 CANDIDATE LOADING: Final processed candidates`,
+            data: {
+              candidateCount: loadedCandidates.length,
+              candidates: loadedCandidates.map(c => ({
+                id: c.id.toString(),
+                name: c.name,
+                description: c.description
+              }))
+            }
+          })
+        });
+
         setCandidates(loadedCandidates);
       } catch (error) {
         console.error("Error loading candidates:", error);
