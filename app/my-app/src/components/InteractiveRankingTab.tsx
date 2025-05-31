@@ -66,12 +66,15 @@ export function InteractiveRankingTab({
   // Handle ranking changes from the interactive component
   const handleRankingChange = useCallback((newRankedIds: bigint[]) => {
     setRankedCandidateIds(newRankedIds);
+    // Don't auto-submit to blockchain - wait for explicit submit
+  }, []);
 
-    // Only update blockchain if user is ready and has made a ranking
-    if (isReady && newRankedIds.length > 0) {
-      updateRanking(newRankedIds);
+  // Handle explicit ranking submission
+  const handleSubmitRanking = useCallback(() => {
+    if (isReady && rankedCandidateIds.length > 0) {
+      updateRanking(rankedCandidateIds);
     }
-  }, [isReady, updateRanking]);
+  }, [isReady, rankedCandidateIds, updateRanking]);
 
   // Clear messages when ranking changes
   useEffect(() => {
@@ -205,7 +208,7 @@ export function InteractiveRankingTab({
           <h2 className="text-xl font-bold text-gray-900 mb-2">Interactive Ranking</h2>
           <p className="text-gray-600 text-sm">
             Build your ranking by adding candidates from the pool below.
-            Changes are saved to the blockchain in real-time.
+            Click "Submit Ranking" when ready to save to blockchain.
           </p>
         </div>
       </div>
@@ -232,6 +235,31 @@ export function InteractiveRankingTab({
         isUpdating={isUpdating}
       />
 
+      {/* Submit Button */}
+      {rankedCandidateIds.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            onClick={handleSubmitRanking}
+            disabled={!isReady || isUpdating || rankedCandidateIds.length === 0}
+            className="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            {isUpdating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Submit Ranking</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Info Panel */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <h3 className="text-sm font-medium text-gray-900 mb-2">How It Works</h3>
@@ -239,8 +267,8 @@ export function InteractiveRankingTab({
           <li>• Add candidates from the pool to your ranking</li>
           <li>• Reorder candidates by dragging or using arrow buttons</li>
           <li>• Remove candidates by clicking the X button</li>
-          <li>• Changes are automatically saved to the blockchain</li>
-          <li>• No submission button needed - updates are real-time!</li>
+          <li>• Click "Submit Ranking" to save your final ranking to blockchain</li>
+          <li>• World ID verification required once per submission</li>
         </ul>
       </div>
 

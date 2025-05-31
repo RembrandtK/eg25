@@ -17,7 +17,8 @@ import { ELECTION_MANAGER_ADDRESS } from "@/config/contract-addresses";
 
 export default function Page() {
   const { data: session } = useSession();
-  const [verified, setVerified] = useState(false);
+  // Use session to determine if wallet is connected (cached)
+  const isWalletConnected = !!session?.user?.address;
   const [hasVoted, setHasVoted] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
@@ -53,23 +54,11 @@ export default function Page() {
     }
   }, [isConfirmed, hasVoted]);
 
-  // Handle verification success
-  const handleVerificationSuccess = () => {
-    console.log("Verification success callback triggered in Election App");
-    setVerified(true);
+  // Handle wallet connection success
+  const handleWalletConnectionSuccess = () => {
+    console.log("Wallet connection success - session will be updated automatically");
+    // No need to set state, session will update automatically
   };
-
-  // Auto-trigger verification when app loads
-  useEffect(() => {
-    if (!verified) {
-      // Automatically trigger verification process
-      const timer = setTimeout(() => {
-        // This will be handled by the VerifyButton component automatically
-        console.log("Auto-triggering World ID verification...");
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [verified]);
 
   // Handle vote success
   const handleVoteSuccess = (txId: string) => {
@@ -81,7 +70,7 @@ export default function Page() {
   // Load candidates from contract
   useEffect(() => {
     const loadCandidates = async () => {
-      if (!verified) return; // Only load after verification
+      if (!isWalletConnected) return; // Only load after wallet connection
 
       try {
         console.log("🔍 Loading candidates from contract...");
@@ -105,7 +94,7 @@ export default function Page() {
     };
 
     loadCandidates();
-  }, [verified, client, memoizedElectionAbi]);
+  }, [isWalletConnected, client, memoizedElectionAbi]);
 
   // Handle ranking change - memoized to prevent infinite loops
   const handleRankingChange = useCallback((rankedIds: bigint[]) => {
@@ -152,10 +141,10 @@ export default function Page() {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto pb-16">
         <div className="px-6 py-4">
-          {!verified ? (
+          {!isWalletConnected ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
-              {/* Auto-verification in progress */}
-              <WalletConnectButton onConnectionSuccess={handleVerificationSuccess} />
+              {/* Wallet connection */}
+              <WalletConnectButton onConnectionSuccess={handleWalletConnectionSuccess} />
             </div>
           ) : (
             <>
@@ -192,7 +181,7 @@ export default function Page() {
               {activeTab === 'vote' && (
                 <InteractiveRankingTab
                   candidates={candidates}
-                  verified={verified}
+                  verified={isWalletConnected}
                   hasVoted={hasVoted}
                 />
               )}
@@ -201,8 +190,8 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Bottom Navigation - only show when verified */}
-      {verified && (
+      {/* Bottom Navigation - only show when wallet connected */}
+      {isWalletConnected && (
         <BottomNavigation
           activeTab={activeTab}
           onTabChange={setActiveTab}
