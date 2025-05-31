@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { MiniKit } from "@worldcoin/minikit-js";
+import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
@@ -75,6 +75,37 @@ export function usePeerRanking({
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingRankingRef = useRef<bigint[] | null>(null);
 
+  // World ID verification for voting action - just get the proof for logging
+  const verifyVoteAction = useCallback(async (rankedCandidateIds: bigint[]) => {
+    if (!MiniKit.isInstalled()) {
+      throw new Error("MiniKit is not installed");
+    }
+
+    // Create signal with vote data
+    const voteSignal = JSON.stringify({
+      action: "vote",
+      candidateIds: rankedCandidateIds.map(id => id.toString()),
+      timestamp: Date.now()
+    });
+
+    console.log("Starting World ID verification for vote:", voteSignal);
+
+    const verifyPayload: VerifyCommandInput = {
+      action: process.env.NEXT_PUBLIC_WLD_ACTION_ID || "vote",
+      signal: voteSignal,
+      verification_level: VerificationLevel.Orb,
+    };
+
+    const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload);
+
+    if (finalPayload.status === "error") {
+      throw new Error(`World ID verification failed: ${finalPayload.error_code}`);
+    }
+
+    console.log("✅ World ID verification successful for vote - proof will be verified on-chain");
+    return finalPayload as ISuccessResult;
+  }, []);
+
   const updateRanking = useCallback(async (rankedCandidateIds: bigint[]) => {
     if (!MiniKit.isInstalled()) {
       console.error("MiniKit is not installed");
@@ -122,7 +153,9 @@ export function usePeerRanking({
               contractAddress,
               functionName: "updateRanking",
               args: [rankingEntries], // Match the actual transaction args structure
-              miniKitInstalled: MiniKit.isInstalled()
+              miniKitInstalled: MiniKit.isInstalled(),
+              userAddress: session?.user?.address,
+              sessionData: session?.user
             }, null, 2)
           }),
         }).catch(() => {});
@@ -138,7 +171,17 @@ export function usePeerRanking({
           return;
         }
 
-        // Real transaction with MiniKit
+        // Step 1: World ID verification with vote data
+        console.log("🔐 Starting World ID verification for vote...");
+        try {
+          await verifyVoteAction(rankingToUpdate);
+        } catch (verifyError) {
+          console.error("World ID verification failed:", verifyError);
+          onError?.(verifyError instanceof Error ? verifyError : new Error('World ID verification failed'));
+          return;
+        }
+
+        // Step 2: Real transaction with MiniKit
         console.log("🚀 Sending real transaction with MiniKit...");
         console.log("📋 Calling updateRanking with:", rankingEntries);
         const transactionConfig = {
@@ -167,15 +210,20 @@ export function usePeerRanking({
             message: "PeerRanking: Transaction result",
             data: JSON.stringify({
               status: finalPayload.status,
-              transaction_id: finalPayload.transaction_id,
-              error_message: finalPayload.error_message
+              transaction_id: finalPayload.status === "success" ? (finalPayload as any).transaction_id : undefined,
+              error_code: finalPayload.status === "error" ? (finalPayload as any).error_code : undefined,
+              details: finalPayload.status === "error" ? (finalPayload as any).details : undefined
             }, null, 2)
           }),
         }).catch(() => {});
 
         if (finalPayload.status === "error") {
           console.error("Error updating ranking:", finalPayload);
-          onError?.(new Error(`Transaction failed: ${finalPayload.error_message || 'Unknown error'}`));
+          const errorCode = (finalPayload as any).error_code || 'unknown_error';
+          const errorMessage = errorCode === 'user_rejected'
+            ? 'Transaction was rejected. This might be due to insufficient World ID verification.'
+            : `Transaction failed: ${errorCode}`;
+          onError?.(new Error(errorMessage));
           return;
         }
 
@@ -196,7 +244,7 @@ export function usePeerRanking({
         pendingRankingRef.current = null;
       }
     }, 800); // 0.8 second debounce for better responsiveness
-  }, [contractAddress, contractAbi, session?.user?.address, onSuccess, onError]);
+  }, [contractAddress, contractAbi, session?.user?.address, onSuccess, onError, verifyVoteAction]);
 
   // Immediate update (no debounce) for critical actions
   const updateRankingImmediate = useCallback(async (rankedCandidateIds: bigint[]) => {
@@ -255,7 +303,17 @@ export function usePeerRanking({
         return;
       }
 
-      // Real immediate transaction with MiniKit
+      // Step 1: World ID verification with vote data
+      console.log("🔐 Starting World ID verification for immediate vote...");
+      try {
+        await verifyVoteAction(rankedCandidateIds);
+      } catch (verifyError) {
+        console.error("World ID verification failed:", verifyError);
+        onError?.(verifyError instanceof Error ? verifyError : new Error('World ID verification failed'));
+        return;
+      }
+
+      // Step 2: Real immediate transaction with MiniKit
       console.log("🚀 Sending immediate real transaction with MiniKit...");
       console.log("📋 Calling updateRanking immediately with:", rankingEntries);
 
@@ -279,7 +337,11 @@ export function usePeerRanking({
 
       if (finalPayload.status === "error") {
         console.error("Error updating ranking:", finalPayload);
-        onError?.(new Error(`Transaction failed: ${finalPayload.error_message || 'Unknown error'}`));
+        const errorCode = (finalPayload as any).error_code || 'unknown_error';
+        const errorMessage = errorCode === 'user_rejected'
+          ? 'Transaction was rejected. This might be due to insufficient World ID verification.'
+          : `Transaction failed: ${errorCode}`;
+        onError?.(new Error(errorMessage));
         return;
       }
 
@@ -298,7 +360,7 @@ export function usePeerRanking({
     } finally {
       setIsUpdating(false);
     }
-  }, [contractAddress, contractAbi, session?.user?.address, onSuccess, onError]);
+  }, [contractAddress, contractAbi, session?.user?.address, onSuccess, onError, verifyVoteAction]);
 
   // Cancel any pending updates
   const cancelPendingUpdate = useCallback(() => {

@@ -82,7 +82,6 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
-    TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
     PeerRanking: ContractConfig;
@@ -100,12 +99,8 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
-    TUTE: {
-      address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#TUTE"] || "",
-      verified: false,
-    },
     WorldIDAddressBook: {
-      address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#MockWorldIDAddressBook"] || "",
+      address: DEPLOYED_ADDRESSES[4801]["MockWorldIDDeployment#MockWorldIDAddressBook"] || "",
       verified: false,
     },
     ElectionManager: {
@@ -126,10 +121,6 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   rpcUrl: "https://worldchain-mainnet.g.alchemy.com/public",
   blockExplorer: "https://worldscan.org",
   contracts: {
-    TUTE: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#TUTE"] || "",
-      verified: false,
-    },
     WorldIDAddressBook: {
       address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
       verified: true,
@@ -179,7 +170,6 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 
 // Export for convenience
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
-export const TUTE_ADDRESS = getContractAddress('TUTE');
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
 export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');

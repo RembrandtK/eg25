@@ -1,124 +1,119 @@
 "use client";
 
 import { useState } from "react";
-import { Shield } from "lucide-react";
-import {
-  MiniKit,
-  VerifyCommandInput,
-  VerificationLevel,
-  ISuccessResult,
-} from "@worldcoin/minikit-js";
+import { Wallet } from "lucide-react";
+import { MiniKit } from "@worldcoin/minikit-js";
+import { signIn } from "next-auth/react";
 
-interface VerifyButtonProps {
-  onVerificationSuccess: () => void;
+interface WalletConnectButtonProps {
+  onConnectionSuccess: () => void;
 }
 
-export function VerifyButton({ onVerificationSuccess }: VerifyButtonProps) {
-  const [isVerifying, setIsVerifying] = useState(false);
+export function WalletConnectButton({ onConnectionSuccess }: WalletConnectButtonProps) {
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(
     null
   );
 
-  const handleVerify = async () => {
-    // Don't start verification if it's already in progress
-    if (isVerifying) {
-      console.log("Verification already in progress");
-      return;
-    }
-
+  // Wallet connection function
+  const handleWalletConnect = async () => {
     if (!MiniKit.isInstalled()) {
       setVerificationError("World App is not installed");
       return;
     }
 
+    setIsConnectingWallet(true);
     try {
-      console.log("Starting verification process");
-      setIsVerifying(true);
-      setVerificationError(null);
+      console.log("Starting wallet connection...");
 
-      const verifyPayload: VerifyCommandInput = {
-        action: process.env.NEXT_PUBLIC_WLD_ACTION_ID || "web3-template",
-        signal: "",
-        verification_level: VerificationLevel.Orb,
-      };
-
-      // Use async approach with commandsAsync
-      console.log("Using async verification approach");
-
-      // Ensure the MiniKit is correctly initialized before using it
-      if (
-        !MiniKit.commandsAsync ||
-        typeof MiniKit.commandsAsync.verify !== "function"
-      ) {
-        throw new Error(
-          "MiniKit.commandsAsync.verify is not available. Make sure you're using the latest version of the MiniKit library."
-        );
+      // Get nonce for wallet auth
+      const res = await fetch("/api/nonce");
+      if (!res.ok) {
+        throw new Error(`Failed to fetch nonce: ${res.status}`);
       }
+      const { nonce } = await res.json();
+      console.log("Got nonce for wallet auth:", nonce);
 
-      // Execute the verify command and wait for the result
-      const { finalPayload } = await MiniKit.commandsAsync.verify(
-        verifyPayload
-      );
+      // Perform wallet authentication
+      const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
+        nonce,
+        expirationTime: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
+        statement: "Connect your wallet to participate in elections",
+      });
+
+      console.log("Wallet auth response:", finalPayload);
 
       if (finalPayload.status === "error") {
-        console.log("Error payload", finalPayload);
-        setVerificationError(`Verification failed: Please try again`);
-        setIsVerifying(false);
-        return;
+        throw new Error(`Wallet auth failed: ${finalPayload.error_code}`);
       }
 
-      try {
-        const verifyResponse = await fetch("/api/verify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            payload: finalPayload as ISuccessResult,
-            action: process.env.NEXT_PUBLIC_WLD_ACTION_ID || "web3-template",
-            signal: "",
-          }),
+      // Verify SIWE message
+      const verifyRes = await fetch("/api/complete-siwe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payload: finalPayload,
+          nonce,
+        }),
+      });
+
+      if (!verifyRes.ok) {
+        throw new Error(`SIWE verification failed: ${verifyRes.status}`);
+      }
+
+      const verification = await verifyRes.json();
+      console.log("SIWE verification result:", verification);
+
+      if (verification.isValid) {
+        // Sign in with NextAuth
+        const signInResult = await signIn("worldcoin-wallet", {
+          message: finalPayload.message,
+          signature: finalPayload.signature,
+          address: finalPayload.address,
+          nonce,
+          redirect: false,
         });
 
-        setIsVerifying(false);
-        setVerificationError(null);
-        onVerificationSuccess();
-      } catch (error) {
-        console.error("Server verification error:", error);
-        setVerificationError(
-          error instanceof Error
-            ? `Verification error: ${error.message}`
-            : "Unknown verification error occurred"
-        );
-      }
+        console.log("NextAuth sign in result:", signInResult);
 
-      // Process successful verification
-      //   await verifyOnServer(finalPayload as ISuccessResult);
+        // Complete the connection process
+        setIsConnectingWallet(false);
+        onConnectionSuccess();
+      } else {
+        throw new Error("SIWE message verification failed");
+      }
     } catch (error) {
-      console.error("Verification error:", error);
+      console.error("Wallet connection error:", error);
       setVerificationError(
         error instanceof Error
-          ? `Verification error: ${error.message}`
-          : "Unknown verification error occurred"
+          ? `Wallet connection failed: ${error.message}`
+          : "Unknown wallet connection error"
       );
-      setIsVerifying(false);
+      setIsConnectingWallet(false);
     }
   };
 
+
+
   return (
-    <>
+    <div className="flex flex-col items-center space-y-4">
       {verificationError && (
-        <div className="text-red-500 text-sm mb-2">{verificationError}</div>
+        <div className="text-red-500 text-sm mb-2 text-center">{verificationError}</div>
       )}
 
-      <button
-        onClick={handleVerify}
-        disabled={isVerifying}
-        className="w-full max-w-xs px-8 py-4 bg-blue-500 text-white font-medium text-lg rounded-xl shadow-sm hover:bg-blue-600 active:bg-blue-700 transition-colors touch-manipulation flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-      >
-        <Shield className="w-5 h-5" />
-        {isVerifying ? "Verifying..." : "Verify to Vote"}
-      </button>
-    </>
+      <div className="flex flex-col items-center space-y-2">
+        <div className="text-sm text-gray-600 text-center">
+          Connect your wallet to participate
+        </div>
+        <button
+          onClick={handleWalletConnect}
+          disabled={isConnectingWallet}
+          className="w-full max-w-xs px-8 py-4 bg-purple-500 text-white font-medium text-lg rounded-xl shadow-sm hover:bg-purple-600 active:bg-purple-700 transition-colors touch-manipulation flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          <Wallet className="w-5 h-5" />
+          {isConnectingWallet ? "Connecting..." : "Connect Wallet"}
+        </button>
+      </div>
+    </div>
   );
 }

@@ -23,7 +23,6 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
-    TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
     PeerRanking: ContractConfig;
@@ -31,7 +30,7 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T08:42:41.242Z
+// Last updated: 2025-05-31T09:47:45.305Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {

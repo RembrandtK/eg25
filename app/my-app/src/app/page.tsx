@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { VerifyButton } from "@/components/VerifyButton";
+import { WalletConnectButton } from "@/components/VerifyButton";
 
 import { useWaitForTransactionReceipt } from "@worldcoin/minikit-react";
 import { createPublicClient, http } from "viem";
@@ -155,7 +155,7 @@ export default function Page() {
           {!verified ? (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
               {/* Auto-verification in progress */}
-              <VerifyButton onVerificationSuccess={handleVerificationSuccess} />
+              <WalletConnectButton onConnectionSuccess={handleVerificationSuccess} />
             </div>
           ) : (
             <>

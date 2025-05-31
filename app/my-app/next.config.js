@@ -5,9 +5,10 @@ const nextConfig = {
   experimental: {
     // Enable more detailed error reporting
     optimizePackageImports: ['viem'],
-    // Enable server-side debugging
-    serverComponentsExternalPackages: [],
   },
+
+  // Server external packages (moved from experimental)
+  serverExternalPackages: [],
 
   // Enable detailed logging
   logging: {
@@ -24,9 +25,6 @@ const nextConfig = {
     // Enable detailed webpack stats
     webpack: (config, { dev, isServer }) => {
       if (dev) {
-        // Enable source maps
-        config.devtool = 'eval-source-map';
-
         // Add debugging info for server-side code
         if (isServer) {
           console.log('🔧 Webpack building server-side code with debugging enabled');

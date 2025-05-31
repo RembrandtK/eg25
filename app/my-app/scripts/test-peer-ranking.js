@@ -6,11 +6,47 @@
  */
 
 const { createPublicClient, http } = require("viem");
+const fs = require('fs');
+const path = require('path');
+
+// Read contract addresses from the same source as frontend
+function getContractAddresses() {
+  const contractsPath = path.join(__dirname, '../src/config/contracts.ts');
+
+  if (!fs.existsSync(contractsPath)) {
+    throw new Error('contracts.ts not found. Run "npm run sync-contracts" first.');
+  }
+
+  const contractsContent = fs.readFileSync(contractsPath, 'utf8');
+
+  // Extract DEPLOYED_ADDRESSES from the file
+  const deployedAddressesMatch = contractsContent.match(/const DEPLOYED_ADDRESSES = ({[\s\S]*?});/);
+  if (!deployedAddressesMatch) {
+    throw new Error('Could not parse DEPLOYED_ADDRESSES from contracts.ts');
+  }
+
+  const deployedAddresses = JSON.parse(deployedAddressesMatch[1]);
+  const chainId = 4801; // World Chain Sepolia
+
+  if (!deployedAddresses[chainId]) {
+    throw new Error(`No deployments found for chain ID ${chainId}`);
+  }
+
+  return {
+    peerRanking: deployedAddresses[chainId]["PeerRankingDeployment#PeerRanking"],
+    electionManager: deployedAddresses[chainId]["ElectionDeployment#ElectionManager"],
+    worldIdAddressBook: deployedAddresses[chainId]["MockWorldIDDeployment#MockWorldIDAddressBook"]
+  };
+}
+
+// Get addresses from contracts config
+const addresses = getContractAddresses();
 
 // Configuration
 const CONFIG = {
-  peerRankingAddress: "0x2caDc553c4B98863A3937fF0E710b79F7E855d8a",
-  electionManagerAddress: "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7",
+  peerRankingAddress: addresses.peerRanking,
+  electionManagerAddress: addresses.electionManager,
+  worldIdAddressBookAddress: addresses.worldIdAddressBook,
   rpcUrls: [
     "https://worldchain-sepolia.g.alchemy.com/public",
     "https://worldchain-sepolia.gateway.tenderly.co",
