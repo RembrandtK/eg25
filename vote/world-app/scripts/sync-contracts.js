@@ -163,16 +163,6 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
 export const MOCK_WORLD_ID_ADDRESS = getContractAddress('MockWorldID');
-
-// Optional contracts - may not be deployed on all networks
-export const PEER_RANKING_ADDRESS = (() => {
-  try {
-    return getContractAddress('PeerRanking');
-  } catch (error) {
-    console.warn('PeerRanking not deployed on current network');
-    return '';
-  }
-})();
 `;
 
   return config;

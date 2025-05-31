@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDeploymentStatus, refreshDeploymentCache } from "@/config/dynamic-contracts";
+import { CURRENT_NETWORK, ELECTION_MANAGER_ADDRESS, MOCK_WORLD_ID_ADDRESS } from "@/config/contracts";
 
 /**
  * Deployment Status API
@@ -13,9 +13,19 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔍 Deployment status request: action=${action}, chainId=${chainId}`);
 
+    // Simplified deployment status using the main contracts config
+    const status = {
+      chainId: CURRENT_NETWORK.chainId,
+      networkName: CURRENT_NETWORK.name,
+      rpcUrl: CURRENT_NETWORK.rpcUrl,
+      contractAddresses: {
+        ElectionManager: ELECTION_MANAGER_ADDRESS,
+        MockWorldID: MOCK_WORLD_ID_ADDRESS,
+      }
+    };
+
     switch (action) {
       case 'status':
-        const status = getDeploymentStatus(chainId ? parseInt(chainId) : undefined);
         return NextResponse.json({
           success: true,
           ...status,
@@ -23,12 +33,11 @@ export async function GET(request: NextRequest) {
         });
 
       case 'refresh':
-        refreshDeploymentCache();
-        const refreshedStatus = getDeploymentStatus(chainId ? parseInt(chainId) : undefined);
+        // No cache to refresh in simplified version
         return NextResponse.json({
           success: true,
-          message: "Deployment cache refreshed",
-          ...refreshedStatus,
+          message: "Using static configuration (no cache to refresh)",
+          ...status,
           timestamp: new Date().toISOString()
         });
 

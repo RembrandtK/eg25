@@ -144,11 +144,11 @@ export function ElectionDashboard() {
         // Create a public client to read from the Election contract
         const { createPublicClient, http } = await import('viem');
         const { worldchainSepolia } = await import('@/lib/chains');
-        const { ELECTION_ABI } = await import('@/config/contracts');
+        const { CURRENT_NETWORK } = await import('@/config/contracts');
 
         const publicClient = createPublicClient({
           chain: worldchainSepolia,
-          transport: http()
+          transport: http(CURRENT_NETWORK.rpcUrl)
         });
 
         // Get candidate count

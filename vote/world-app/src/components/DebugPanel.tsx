@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ELECTION_MANAGER_ADDRESS } from "@/config/dynamic-contracts";
+import { ELECTION_MANAGER_ADDRESS } from "@/config/contracts";
 
 interface DebugPanelProps {
   candidates?: any[];

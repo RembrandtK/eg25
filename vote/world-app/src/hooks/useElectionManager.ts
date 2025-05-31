@@ -31,13 +31,18 @@ export function useElectionManager(options: UseElectionManagerOptions = {}) {
   const [error, setError] = useState<string | null>(null);
 
   // Create public client for reading contract state (memoized to prevent infinite loops)
-  const publicClient = useMemo(() => createPublicClient({
-    chain: worldchainSepolia,
-    transport: http(CURRENT_NETWORK.rpcUrl, {
-      retryCount: 3,
-      retryDelay: 2000,
-    }),
-  }), []);
+  const publicClient = useMemo(() => {
+    console.log("🔧 Creating public client with RPC URL:", CURRENT_NETWORK.rpcUrl);
+    console.log("🔧 Full CURRENT_NETWORK config:", CURRENT_NETWORK);
+
+    return createPublicClient({
+      chain: worldchainSepolia,
+      transport: http(CURRENT_NETWORK.rpcUrl, {
+        retryCount: 3,
+        retryDelay: 2000,
+      }),
+    });
+  }, []);
 
   // Load all elections from ElectionManager using getAllElections()
   const loadElections = useCallback(async () => {

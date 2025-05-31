@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS, CURRENT_NETWORK } from "@/config/contracts";
+import { ELECTION_MANAGER_ADDRESS, CURRENT_NETWORK } from "@/config/contracts";
 
-// Simplified ABI for the functions we need
-const PEER_RANKING_ABI = [
+// Election contract ABI for the functions we need
+const ELECTION_ABI = [
   {
-    "inputs": [{"internalType": "uint256", "name": "candidateA", "type": "uint256"}, {"internalType": "uint256", "name": "candidateB", "type": "uint256"}],
-    "name": "getComparisonCount",
+    "inputs": [],
+    "name": "getVoteCount",
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "getTotalRankers",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "name": "getAllVoters",
+    "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "voterId", "type": "uint256"}],
+    "name": "getVote",
+    "outputs": [{"components": [{"internalType": "uint256", "name": "candidateId", "type": "uint256"}, {"internalType": "bool", "name": "tiedWithPrevious", "type": "bool"}], "internalType": "struct Election.RankingEntry[]", "name": "", "type": "tuple[]"}],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "rankers",
-    "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
-    "name": "getUserRanking",
-    "outputs": [{"components": [{"internalType": "uint256", "name": "candidateId", "type": "uint256"}, {"internalType": "bool", "name": "tiedWithPrevious", "type": "bool"}], "internalType": "struct PeerRanking.RankingEntry[]", "name": "", "type": "tuple[]"}],
+    "name": "getCandidates",
+    "outputs": [{"components": [{"internalType": "uint256", "name": "id", "type": "uint256"}, {"internalType": "string", "name": "name", "type": "string"}, {"internalType": "string", "name": "description", "type": "string"}, {"internalType": "bool", "name": "active", "type": "bool"}], "internalType": "struct Election.Candidate[]", "name": "", "type": "tuple[]"}],
     "stateMutability": "view",
     "type": "function"
   }
@@ -100,16 +100,21 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const algorithm = searchParams.get('algorithm') || 'condorcet';
-    
-    console.log(`🗳️ Calculating election results using ${algorithm} method`);
+    const electionAddress = searchParams.get('election');
+
+    if (!electionAddress) {
+      return NextResponse.json({ error: 'Election address is required' }, { status: 400 });
+    }
+
+    console.log(`🗳️ Calculating election results for election ${electionAddress} using ${algorithm} method`);
 
     // Get basic election data
-    const [candidates, totalRankers] = await Promise.all([
-      getCandidates(),
-      getTotalRankers()
+    const [candidates, totalVoters] = await Promise.all([
+      getCandidates(electionAddress),
+      getTotalVoters(electionAddress)
     ]);
 
-    if (totalRankers === 0) {
+    if (totalVoters === 0) {
       return NextResponse.json({
         error: 'No votes have been cast yet',
         totalVoters: 0,
@@ -121,17 +126,17 @@ export async function GET(request: NextRequest) {
 
     switch (algorithm.toLowerCase()) {
       case 'condorcet':
-        results = await calculateCondorcetResults(candidates, totalRankers);
+        results = await calculateCondorcetResults(candidates, totalVoters, electionAddress);
         break;
       case 'borda':
-        results = await calculateBordaCountResults(candidates, totalRankers);
+        results = await calculateBordaCountResults(candidates, totalVoters, electionAddress);
         break;
       case 'plurality':
-        results = await calculatePluralityResults(candidates, totalRankers);
+        results = await calculatePluralityResults(candidates, totalVoters, electionAddress);
         break;
       case 'instant-runoff':
       case 'irv':
-        results = await calculateInstantRunoffResults(candidates, totalRankers);
+        results = await calculateInstantRunoffResults(candidates, totalVoters, electionAddress);
         break;
       default:
         return NextResponse.json({ error: 'Unsupported algorithm. Use: condorcet, borda, plurality, instant-runoff' }, { status: 400 });
@@ -147,58 +152,67 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function getCandidates(): Promise<Candidate[]> {
-  const candidateCount = await publicClient.readContract({
-    address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
-    abi: ELECTION_MANAGER_ABI,
-    functionName: 'candidateCount',
-  });
+async function getCandidates(electionAddress: string): Promise<Candidate[]> {
+  const candidates = await publicClient.readContract({
+    address: electionAddress as `0x${string}`,
+    abi: ELECTION_ABI,
+    functionName: 'getCandidates',
+  }) as any[];
 
-  const candidates: Candidate[] = [];
-  for (let i = 1; i <= Number(candidateCount); i++) {
-    const candidate = await publicClient.readContract({
-      address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
-      abi: ELECTION_MANAGER_ABI,
-      functionName: 'candidates',
-      args: [BigInt(i)],
-    });
-
-    candidates.push({
-      id: Number(candidate[0]),
-      name: candidate[1],
-      description: candidate[2],
-      active: candidate[3]
-    });
-  }
-
-  return candidates.filter(c => c.active);
+  return candidates.map(candidate => ({
+    id: Number(candidate.id),
+    name: candidate.name,
+    description: candidate.description,
+    active: candidate.active
+  }));
 }
 
-async function getTotalRankers(): Promise<number> {
-  const totalRankers = await publicClient.readContract({
-    address: PEER_RANKING_ADDRESS as `0x${string}`,
-    abi: PEER_RANKING_ABI,
-    functionName: 'getTotalRankers',
+async function getTotalVoters(electionAddress: string): Promise<number> {
+  const totalVoters = await publicClient.readContract({
+    address: electionAddress as `0x${string}`,
+    abi: ELECTION_ABI,
+    functionName: 'getVoteCount',
   });
-  return Number(totalRankers);
+  return Number(totalVoters);
 }
 
-async function getComparisonMatrix(candidateIds: number[]): Promise<{ [key: string]: { [key: string]: number } }> {
+async function getComparisonMatrix(candidateIds: number[], electionAddress: string): Promise<{ [key: string]: { [key: string]: number } }> {
   const matrix: { [key: string]: { [key: string]: number } } = {};
 
+  // Initialize matrix
   for (const candidateA of candidateIds) {
     matrix[candidateA.toString()] = {};
     for (const candidateB of candidateIds) {
-      if (candidateA !== candidateB) {
-        const comparisonCount = await publicClient.readContract({
-          address: PEER_RANKING_ADDRESS as `0x${string}`,
-          abi: PEER_RANKING_ABI,
-          functionName: 'getComparisonCount',
-          args: [BigInt(candidateA), BigInt(candidateB)],
-        });
-        matrix[candidateA.toString()][candidateB.toString()] = Number(comparisonCount);
-      } else {
-        matrix[candidateA.toString()][candidateB.toString()] = 0;
+      matrix[candidateA.toString()][candidateB.toString()] = 0;
+    }
+  }
+
+  // Get all voters and their rankings
+  const voters = await publicClient.readContract({
+    address: electionAddress as `0x${string}`,
+    abi: ELECTION_ABI,
+    functionName: 'getAllVoters',
+  }) as bigint[];
+
+  // Process each voter's ranking to build pairwise comparison matrix
+  for (const voterId of voters) {
+    const ranking = await publicClient.readContract({
+      address: electionAddress as `0x${string}`,
+      abi: ELECTION_ABI,
+      functionName: 'getVote',
+      args: [voterId],
+    }) as any[];
+
+    // Convert ranking to pairwise preferences
+    for (let i = 0; i < ranking.length; i++) {
+      for (let j = i + 1; j < ranking.length; j++) {
+        const higherCandidate = Number(ranking[i].candidateId);
+        const lowerCandidate = Number(ranking[j].candidateId);
+
+        // Higher ranked candidate beats lower ranked candidate
+        if (candidateIds.includes(higherCandidate) && candidateIds.includes(lowerCandidate)) {
+          matrix[higherCandidate.toString()][lowerCandidate.toString()]++;
+        }
       }
     }
   }
@@ -206,9 +220,9 @@ async function getComparisonMatrix(candidateIds: number[]): Promise<{ [key: stri
   return matrix;
 }
 
-async function calculateCondorcetResults(candidates: Candidate[], totalVoters: number): Promise<ElectionResults> {
+async function calculateCondorcetResults(candidates: Candidate[], totalVoters: number, electionAddress: string): Promise<ElectionResults> {
   const candidateIds = candidates.map(c => c.id);
-  const matrix = await getComparisonMatrix(candidateIds);
+  const matrix = await getComparisonMatrix(candidateIds, electionAddress);
   
   // Find Condorcet winner (beats all other candidates in pairwise comparisons)
   let condorcetWinner: Candidate | undefined;
@@ -271,12 +285,12 @@ async function calculateCondorcetResults(candidates: Candidate[], totalVoters: n
   };
 }
 
-async function calculateBordaCountResults(candidates: Candidate[], totalVoters: number): Promise<ElectionResults> {
+async function calculateBordaCountResults(candidates: Candidate[], totalVoters: number, electionAddress: string): Promise<ElectionResults> {
   // For Borda count, we need to get all individual rankings and calculate points
   // This is a simplified version - in a full implementation, we'd need to access all user rankings
-  
+
   const candidateIds = candidates.map(c => c.id);
-  const matrix = await getComparisonMatrix(candidateIds);
+  const matrix = await getComparisonMatrix(candidateIds, electionAddress);
   
   // Approximate Borda scores using pairwise comparison data
   const bordaScores = candidates.map(candidate => {
@@ -313,12 +327,12 @@ async function calculateBordaCountResults(candidates: Candidate[], totalVoters: 
   };
 }
 
-async function calculatePluralityResults(candidates: Candidate[], totalVoters: number): Promise<ElectionResults> {
+async function calculatePluralityResults(candidates: Candidate[], totalVoters: number, electionAddress: string): Promise<ElectionResults> {
   // For plurality, we count first-place votes
   // This requires getting all user rankings and counting first preferences
-  
+
   const candidateIds = candidates.map(c => c.id);
-  const matrix = await getComparisonMatrix(candidateIds);
+  const matrix = await getComparisonMatrix(candidateIds, electionAddress);
   
   // Approximate first-place votes using pairwise data
   const firstPlaceVotes = candidates.map(candidate => {
@@ -356,12 +370,12 @@ async function calculatePluralityResults(candidates: Candidate[], totalVoters: n
   };
 }
 
-async function calculateInstantRunoffResults(candidates: Candidate[], totalVoters: number): Promise<ElectionResults> {
+async function calculateInstantRunoffResults(candidates: Candidate[], totalVoters: number, electionAddress: string): Promise<ElectionResults> {
   // Instant runoff voting (IRV) simulation
   // This is a simplified approximation using pairwise comparison data
-  
+
   const candidateIds = candidates.map(c => c.id);
-  const matrix = await getComparisonMatrix(candidateIds);
+  const matrix = await getComparisonMatrix(candidateIds, electionAddress);
   
   // Calculate strength scores for each candidate
   const strengthScores = candidates.map(candidate => {

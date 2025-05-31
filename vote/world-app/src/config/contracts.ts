@@ -24,13 +24,12 @@ export interface NetworkConfig {
   blockExplorer: string;
   contracts: {
     ElectionManager: ContractConfig;
-    PeerRanking: ContractConfig;
     MockWorldID: ContractConfig;
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T20:32:11.788Z
+// Last updated: 2025-05-31T20:40:15.721Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
@@ -43,7 +42,7 @@ const DEPLOYED_ADDRESSES = {
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     MockWorldID: {
@@ -52,10 +51,6 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -74,10 +69,6 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -119,13 +110,3 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
 export const MOCK_WORLD_ID_ADDRESS = getContractAddress('MockWorldID');
-
-// Optional contracts - may not be deployed on all networks
-export const PEER_RANKING_ADDRESS = (() => {
-  try {
-    return getContractAddress('PeerRanking');
-  } catch (error) {
-    console.warn('PeerRanking not deployed on current network');
-    return '';
-  }
-})();

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPublicClient, http } from "viem";
-import { worldchain } from "@/lib/chains";
+import { worldchainSepolia } from "viem/chains";
+import { CURRENT_NETWORK } from "@/config/contracts";
 
 const MAX_RETRIES = 3;
 
@@ -45,8 +46,8 @@ export function CandidateList({
 
   // Memoize Viem client to prevent recreation on every render
   const client = useMemo(() => createPublicClient({
-    chain: worldchain,
-    transport: http(), // Use default RPC from chain config with fallbacks
+    chain: worldchainSepolia,
+    transport: http(CURRENT_NETWORK.rpcUrl),
   }), []);
 
   useEffect(() => {
