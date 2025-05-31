@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
+    "compile": "hardhat compile",
     "deploy": "hardhat run scripts/deploy.js",
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:worldchain": "hardhat run scripts/deploy.js --network worldchain",
@@ -17,6 +18,9 @@
     "verify:worldchain": "hardhat verify --network worldchain",
     "manage-addresses": "node scripts/manage-addresses.js",
     "ignition-utils": "node scripts/ignition-utils.js",
+    "extract-abi": "node scripts/update-frontend-abi.js",
+    "build": "npm run compile && npm run extract-abi",
+    "deploy:full": "npm run build && npm run deploy:election:sepolia && cd ../my-app && npm run sync-contracts",
     "node": "hardhat node"
   },
   "keywords": [],
