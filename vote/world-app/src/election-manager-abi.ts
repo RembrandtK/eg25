@@ -2,7 +2,7 @@
 // Use ELECTION_MANAGER_ADDRESS from there instead
 //
 // This ABI was auto-generated from the compiled contract
-// Last updated: 2025-05-31T16:45:55.985Z
+// Last updated: 2025-05-31T20:26:23.574Z
 
 export const ELECTION_MANAGER_ABI = [
   {

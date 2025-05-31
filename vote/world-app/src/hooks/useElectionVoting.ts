@@ -10,6 +10,7 @@ import { CURRENT_NETWORK } from "@/config/contracts";
 interface UseElectionVotingProps {
   electionAddress: string;
   electionAbi: readonly any[];
+  worldIdAction?: string; // Add worldIdAction for proper verification
   onSuccess?: (txId: string) => void;
   onError?: (error: Error) => void;
 }
@@ -22,6 +23,7 @@ interface RankingEntry {
 export function useElectionVoting({
   electionAddress,
   electionAbi,
+  worldIdAction = "vote", // Default fallback
   onSuccess,
   onError
 }: UseElectionVotingProps) {
@@ -93,7 +95,7 @@ export function useElectionVoting({
     const signal = JSON.stringify(voteData);
 
     const verifyPayload: VerifyCommandInput = {
-      action: "vote", // This should match the Election contract's worldIdAction
+      action: worldIdAction, // Use the election's specific worldIdAction
       signal,
       verification_level: VerificationLevel.Orb,
     };
@@ -121,22 +123,50 @@ export function useElectionVoting({
     };
   }, []);
 
+  // Debug logging for voting
+  const debugVoteLog = async (step: string, data?: any) => {
+    const message = `VoteSubmission: ${step}`;
+    console.log(message, data);
+    try {
+      await fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          data: data ? JSON.stringify(data, null, 2) : undefined,
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          location: window.location.href
+        })
+      });
+    } catch (e) {
+      // Ignore debug failures
+    }
+  };
+
   // Submit vote to Election contract
   const submitVote = useCallback(async (rankedCandidateIds: bigint[]) => {
+    await debugVoteLog("Starting vote submission", {
+      electionAddress,
+      worldIdAction,
+      rankedCandidateIds: rankedCandidateIds.map(id => id.toString()),
+      userAddress: session?.user?.address
+    });
+
     if (!MiniKit.isInstalled()) {
-      console.error("MiniKit is not installed");
+      await debugVoteLog("❌ MiniKit not installed");
       onError?.(new Error("MiniKit is not installed"));
       return;
     }
 
     if (!session?.user?.address) {
-      console.error("User not authenticated");
+      await debugVoteLog("❌ User not authenticated");
       onError?.(new Error("User not authenticated"));
       return;
     }
 
     if (rankedCandidateIds.length === 0) {
-      console.error("No candidates ranked");
+      await debugVoteLog("❌ No candidates ranked");
       onError?.(new Error("No candidates ranked"));
       return;
     }
@@ -145,8 +175,9 @@ export function useElectionVoting({
       setIsVoting(true);
 
       // Step 1: World ID verification
-      console.log("🔐 Starting World ID verification...");
+      await debugVoteLog("🔐 Starting World ID verification");
       const worldIdProof = await verifyVoteAction(rankedCandidateIds);
+      await debugVoteLog("✅ World ID verification successful", worldIdProof);
 
       // Step 2: Convert to RankingEntry format for Election contract
       const rankingEntries: RankingEntry[] = rankedCandidateIds.map(id => ({
@@ -154,8 +185,7 @@ export function useElectionVoting({
         tiedWithPrevious: false  // No ties for now
       }));
 
-      console.log("🚀 Submitting vote to Election contract...");
-      console.log("📋 Vote data:", rankingEntries);
+      await debugVoteLog("🚀 Submitting vote to Election contract", { rankingEntries });
 
       // Step 3: Submit transaction with World ID proof
       const transactionConfig = {
@@ -175,15 +205,15 @@ export function useElectionVoting({
         ],
       };
 
-      console.log("📡 Sending transaction config:", transactionConfig);
+      await debugVoteLog("📡 Sending transaction config", transactionConfig);
 
       const result = await MiniKit.commandsAsync.sendTransaction(transactionConfig);
-      console.log("📦 Transaction result:", result);
+      await debugVoteLog("📦 Transaction result", result);
 
       const { finalPayload } = result;
 
       if (finalPayload.status === "error") {
-        console.error("Error submitting vote:", finalPayload);
+        await debugVoteLog("❌ Transaction failed", finalPayload);
         const errorCode = (finalPayload as any).error_code || 'unknown_error';
         const errorMessage = errorCode === 'user_rejected'
           ? 'Transaction was rejected. Please try again.'
@@ -192,7 +222,7 @@ export function useElectionVoting({
         return;
       }
 
-      console.log("Vote submitted successfully:", finalPayload);
+      await debugVoteLog("✅ Vote submitted successfully", finalPayload);
       setLastTxId(finalPayload.transaction_id);
       setCurrentVote(rankedCandidateIds);
 
@@ -203,12 +233,15 @@ export function useElectionVoting({
 
       onSuccess?.(finalPayload.transaction_id);
     } catch (error) {
-      console.error("Error submitting vote:", error);
+      await debugVoteLog("❌ Vote submission error", {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
       onError?.(error instanceof Error ? error : new Error('Unknown error occurred'));
     } finally {
       setIsVoting(false);
     }
-  }, [electionAddress, electionAbi, session?.user?.address, onSuccess, onError, verifyVoteAction, loadCurrentVote]);
+  }, [electionAddress, electionAbi, worldIdAction, session?.user?.address, onSuccess, onError, verifyVoteAction, loadCurrentVote]);
 
   return {
     // State

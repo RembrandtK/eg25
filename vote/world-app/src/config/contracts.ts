@@ -23,13 +23,14 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
-    WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
+    PeerRanking: ContractConfig;
+    MockWorldID: ContractConfig;
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T17:35:47.141Z
+// Last updated: 2025-05-31T20:32:11.788Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
@@ -42,15 +43,19 @@ const DEPLOYED_ADDRESSES = {
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.gateway.tenderly.co",
+  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
-    WorldIDAddressBook: {
+    MockWorldID: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#MockWorldID"] || "",
       verified: false,
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -69,6 +74,10 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -108,7 +117,15 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 
 // Export for convenience
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
-
-// Direct exports for deployed contracts
-export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
+export const MOCK_WORLD_ID_ADDRESS = getContractAddress('MockWorldID');
+
+// Optional contracts - may not be deployed on all networks
+export const PEER_RANKING_ADDRESS = (() => {
+  try {
+    return getContractAddress('PeerRanking');
+  } catch (error) {
+    console.warn('PeerRanking not deployed on current network');
+    return '';
+  }
+})();

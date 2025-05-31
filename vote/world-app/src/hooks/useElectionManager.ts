@@ -23,6 +23,9 @@ interface UseElectionManagerOptions {
 
 export function useElectionManager(options: UseElectionManagerOptions = {}) {
   const { enabled = true } = options;
+  console.log("🔧 useElectionManager hook called with enabled:", enabled);
+  console.log("🔧 useElectionManager: Hook is executing!");
+
   const [elections, setElections] = useState<Election[]>([]);
   const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
@@ -36,61 +39,52 @@ export function useElectionManager(options: UseElectionManagerOptions = {}) {
     }),
   }), []);
 
-  // Load all elections from ElectionManager
+  // Load all elections from ElectionManager using getAllElections()
   const loadElections = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      console.log("📖 Loading elections from ElectionManager...");
+      console.log("📖 Loading elections from ElectionManager using getAllElections()...");
 
-      // Get election count
-      const electionCount = await publicClient.readContract({
+      // Use the getAllElections() function which is simpler and more reliable
+      const allElections = await publicClient.readContract({
         address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
         abi: ELECTION_MANAGER_ABI,
-        functionName: "getElectionCount",
-      }) as bigint;
+        functionName: "getAllElections",
+      }) as any[];
 
-      console.log(`Found ${electionCount} elections`);
+      console.log("🔍 Raw election results from getAllElections():", allElections);
 
-      if (electionCount === 0n) {
+      if (allElections.length === 0) {
+        console.log("No elections found");
         setElections([]);
         setIsLoading(false);
         return;
       }
 
-      // Load each election's details
-      const electionPromises = [];
-      for (let i = 0n; i < electionCount; i++) {
-        electionPromises.push(
-          publicClient.readContract({
-            address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
-            abi: ELECTION_MANAGER_ABI,
-            functionName: "elections",
-            args: [i],
-          })
-        );
-      }
-
-      const electionResults = await Promise.all(electionPromises);
-      
       // Transform results into Election objects
-      const loadedElections: Election[] = electionResults.map((result: any, index) => {
-        // The result should be a tuple from the elections mapping
-        // Based on the ElectionManager contract structure
-        return {
-          id: BigInt(index),
-          address: result[0] || "", // election contract address
-          name: result[1] || `Election ${index + 1}`, // name
-          description: result[2] || "", // description
-          worldIdAction: result[3] || "vote", // worldIdAction
-          candidateCount: Number(result[4] || 0), // candidate count
-          isActive: Boolean(result[5]), // isActive
-          creator: result[6] || "", // creator address
+      const loadedElections: Election[] = allElections.map((result: any, index) => {
+        console.log(`🔍 Processing election ${index + 1}:`, result);
+
+        // The result is an ElectionInfo struct:
+        // (id, title, description, worldIdAction, creator, electionAddress, createdAt, active)
+        const election = {
+          id: result.id,
+          address: result.electionAddress, // election contract address
+          name: result.title, // title
+          description: result.description, // description
+          worldIdAction: result.worldIdAction, // worldIdAction
+          candidateCount: 0, // We'll get this from the Election contract if needed
+          isActive: Boolean(result.active), // active status
+          creator: result.creator, // creator address
         };
+
+        console.log(`✅ Transformed election ${index + 1}:`, election);
+        return election;
       });
 
-      console.log("📋 Loaded elections:", loadedElections);
+      console.log("📋 Final loaded elections:", loadedElections);
       setElections(loadedElections);
     } catch (error) {
       console.error("Error loading elections:", error);
@@ -112,14 +106,17 @@ export function useElectionManager(options: UseElectionManagerOptions = {}) {
 
   // Load elections when enabled
   useEffect(() => {
+    console.log("🔧 useElectionManager useEffect triggered:", { enabled });
     if (enabled) {
+      console.log("🔧 useElectionManager: calling loadElections()");
       loadElections();
     } else {
+      console.log("🔧 useElectionManager: disabled, clearing elections");
       setElections([]);
       setIsLoading(false);
       setError(null);
     }
-  }, [enabled]); // Remove loadElections from dependencies to prevent infinite loop
+  }, [enabled, loadElections]); // Include loadElections in dependencies
 
   return {
     // State

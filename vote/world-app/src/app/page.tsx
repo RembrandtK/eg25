@@ -1,19 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ElectionDashboard } from "@/components/ElectionDashboard";
 import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { InteractiveRankingTab } from "@/components/InteractiveRankingTab";
-import { ELECTION_ABI, Candidate } from "@/election-abi";
-
-// Mock candidates for legacy tabs
-const MOCK_CANDIDATES: Candidate[] = [
-  { id: 1n, name: "Alice Johnson" },
-  { id: 2n, name: "Bob Smith" },
-  { id: 3n, name: "Carol Davis" },
-  { id: 4n, name: "David Wilson" },
-];
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('elections');
@@ -37,15 +28,15 @@ export default function Page() {
 
           {activeTab === 'candidates' && (
             <CandidatesTab
-              candidates={MOCK_CANDIDATES}
+              candidates={[]}
               loading={false}
-              error={null}
+              error="Please select an election from the Elections tab to view candidates."
             />
           )}
 
           {activeTab === 'vote' && (
             <InteractiveRankingTab
-              candidates={MOCK_CANDIDATES}
+              candidates={[]}
               verified={true}
               hasVoted={false}
             />
@@ -57,7 +48,7 @@ export default function Page() {
       <BottomNavigation
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        candidateCount={MOCK_CANDIDATES.length}
+        candidateCount={0}
         rankedCount={0}
       />
     </div>

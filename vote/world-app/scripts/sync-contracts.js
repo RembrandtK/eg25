@@ -82,9 +82,8 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
-    WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
-    PeerRanking: ContractConfig;
+    MockWorldID: ContractConfig;
   };
 }
 
@@ -99,16 +98,12 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
-    WorldIDAddressBook: {
-      address: DEPLOYED_ADDRESSES[4801]["MockWorldIDDeployment#MockWorldIDAddressBook"] || "",
+    MockWorldID: {
+      address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#MockWorldID"] || "",
       verified: false,
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -127,10 +122,6 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -170,9 +161,18 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 
 // Export for convenience
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
-export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
-export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');
+export const MOCK_WORLD_ID_ADDRESS = getContractAddress('MockWorldID');
+
+// Optional contracts - may not be deployed on all networks
+export const PEER_RANKING_ADDRESS = (() => {
+  try {
+    return getContractAddress('PeerRanking');
+  } catch (error) {
+    console.warn('PeerRanking not deployed on current network');
+    return '';
+  }
+})();
 `;
 
   return config;

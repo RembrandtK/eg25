@@ -44,29 +44,8 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
         );
 
         if (shouldContinue) {
-          // Simulate successful authentication for development
-          await debugLog("Development: Simulating successful wallet auth");
-          try {
-            const signInResult = await signIn("worldcoin-wallet", {
-              // Use mock data for development
-              message: "Development mode - simulated message",
-              signature: "0xdev_signature",
-              address: "0x1234567890123456789012345678901234567890",
-              nonce: "dev_nonce",
-              redirect: false,
-            });
-
-            await debugLog("Development: NextAuth sign in result", signInResult);
-
-            if (onSuccess) {
-              await debugLog("Development: Calling onSuccess callback");
-              onSuccess();
-            }
-          } catch (error) {
-            await debugLog("Development: Error in simulated auth", {
-              error: error instanceof Error ? error.message : String(error)
-            });
-          }
+          // This development mode simulation should be removed in production
+          console.warn("Development mode: Mock wallet auth is enabled. This should be removed in production.");
         }
       } else {
         alert("MiniKit is not available. Please make sure you're running this in the World App or that MiniKit has been properly initialized.");

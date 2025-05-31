@@ -10,13 +10,7 @@ import { ELECTION_ABI } from "@/election-abi";
 import { Candidate } from "@/election-abi";
 import { useSession } from "next-auth/react";
 
-// Mock candidates for now - in real implementation, these would come from the Election contract
-const MOCK_CANDIDATES: Candidate[] = [
-  { id: 1n, name: "Alice Johnson" },
-  { id: 2n, name: "Bob Smith" },
-  { id: 3n, name: "Carol Davis" },
-  { id: 4n, name: "David Wilson" },
-];
+// Candidates will be loaded from the selected Election contract
 
 interface Election {
   id: bigint;
@@ -34,26 +28,59 @@ export function ElectionDashboard() {
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   // Check if user is authenticated
   const isAuthenticated = !!session?.user?.address;
 
-  // Load elections from ElectionManager (always initialize, but only load when authenticated)
+  // Load elections from ElectionManager (always load - elections are public)
+  console.log("🔧 ElectionDashboard: About to call useElectionManager");
   const {
     elections,
     isLoading: electionsLoading,
     error: electionsError,
     loadElections,
     getActiveElections
-  } = useElectionManager({ enabled: isAuthenticated });
+  } = useElectionManager({ enabled: true });
+  console.log("🔧 ElectionDashboard: useElectionManager returned:", { elections, electionsLoading, electionsError });
 
-  // Debug: Log component state
+  // Debug: Log component state with session details
   console.log("ElectionDashboard render:", {
     isAuthenticated,
     sessionExists: !!session,
+    sessionUser: session?.user,
+    userAddress: session?.user?.address,
     electionsCount: elections.length,
     electionsLoading
   });
+
+  // Send session debug to server
+  useEffect(() => {
+    const sendSessionDebug = async () => {
+      try {
+        await fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: 'ElectionDashboard: Session State',
+            data: JSON.stringify({
+              isAuthenticated,
+              sessionExists: !!session,
+              sessionUser: session?.user,
+              userAddress: session?.user?.address,
+              timestamp: new Date().toISOString()
+            }, null, 2),
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent,
+            location: window.location.href
+          })
+        });
+      } catch (e) {
+        // Ignore debug failures
+      }
+    };
+    sendSessionDebug();
+  }, [session, isAuthenticated]);
 
   // Voting hook for selected election
   const {
@@ -67,6 +94,7 @@ export function ElectionDashboard() {
   } = useElectionVoting({
     electionAddress: selectedElection?.address || "",
     electionAbi: ELECTION_ABI,
+    worldIdAction: selectedElection?.worldIdAction || "vote",
     onSuccess: (txId) => {
       console.log("Vote submitted successfully:", txId);
       setErrorMessage(null);
@@ -99,7 +127,69 @@ export function ElectionDashboard() {
     setSelectedElection(election);
     setRankedCandidateIds([]); // Reset ranking when switching elections
     setErrorMessage(null);
+    setCandidates([]); // Reset candidates when switching elections
   };
+
+  // Load candidates when election is selected
+  useEffect(() => {
+    if (!selectedElection?.address) {
+      setCandidates([]);
+      return;
+    }
+
+    const loadCandidates = async () => {
+      try {
+        console.log("Loading candidates for election:", selectedElection.address);
+
+        // Create a public client to read from the Election contract
+        const { createPublicClient, http } = await import('viem');
+        const { worldchainSepolia } = await import('@/lib/chains');
+        const { ELECTION_ABI } = await import('@/config/contracts');
+
+        const publicClient = createPublicClient({
+          chain: worldchainSepolia,
+          transport: http()
+        });
+
+        // Get candidate count
+        const candidateCount = await publicClient.readContract({
+          address: selectedElection.address as `0x${string}`,
+          abi: ELECTION_ABI,
+          functionName: 'candidateCount',
+        });
+
+        console.log("Candidate count:", candidateCount);
+
+        // Load all candidates
+        const candidatePromises = [];
+        for (let i = 1; i <= Number(candidateCount); i++) {
+          candidatePromises.push(
+            publicClient.readContract({
+              address: selectedElection.address as `0x${string}`,
+              abi: ELECTION_ABI,
+              functionName: 'candidates',
+              args: [BigInt(i)],
+            })
+          );
+        }
+
+        const candidateResults = await Promise.all(candidatePromises);
+        const loadedCandidates: Candidate[] = candidateResults.map((result: any, index) => ({
+          id: BigInt(index + 1),
+          name: result.name || "", // NO FALLBACK - empty if not set
+          description: result.description || ""
+        }));
+
+        console.log("Loaded candidates:", loadedCandidates);
+        setCandidates(loadedCandidates);
+      } catch (error) {
+        console.error("Error loading candidates:", error);
+        setCandidates([]);
+      }
+    };
+
+    loadCandidates();
+  }, [selectedElection]);
 
   const handleRankingChange = (newRankedIds: bigint[]) => {
     setRankedCandidateIds(newRankedIds);
@@ -219,7 +309,7 @@ export function ElectionDashboard() {
 
             {/* Interactive Ranking */}
             <InteractiveRanking
-              candidates={MOCK_CANDIDATES}
+              candidates={candidates}
               onRankingChange={handleRankingChange}
               disabled={isVoting}
               isUpdating={isVoting}
@@ -265,7 +355,7 @@ export function ElectionDashboard() {
                 </div>
                 <div>
                   <span className="font-medium">Candidates:</span>
-                  <span className="ml-1">{selectedElection.candidateCount}</span>
+                  <span className="ml-1">{candidates.length}</span>
                 </div>
                 <div>
                   <span className="font-medium">Status:</span>

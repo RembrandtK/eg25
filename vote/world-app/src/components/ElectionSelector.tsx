@@ -53,9 +53,18 @@ export function ElectionSelector({
             </svg>
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Elections Available</h3>
-          <p className="text-gray-600 text-sm">
-            There are currently no elections to participate in. Check back later or contact an administrator.
+          <p className="text-gray-600 text-sm mb-4">
+            There are currently no elections to participate in.
           </p>
+          <button
+            onClick={() => {
+              // For now, show instructions for creating elections
+              alert("To create elections, you need to:\n\n1. Deploy the ElectionManager contract\n2. Get ELECTION_CREATOR_ROLE\n3. Call createElection() function\n\nThis will be added to the UI soon!");
+            }}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            How to Create Elections
+          </button>
         </div>
       </div>
     );
