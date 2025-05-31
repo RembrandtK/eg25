@@ -45,13 +45,13 @@ MUST:
 
 ## ✅ COMPLETED ENHANCEMENTS & TESTING
 
-### ✅ Smart Contract Enhancements (COMPLETED)
+### ✅ Smart Contract Enhancements
 
 #### ✅ Enhanced PeerRanking Contract Features
 - **✅ COMPLETED**: Added comprehensive view functions for better data access
 - **✅ COMPLETED**: Implemented `getFullComparisonMatrix()` for complete pairwise data
-- **✅ COMPLETED**: Added `getCondorcetWinner()` for automatic winner detection
-- **✅ COMPLETED**: Created `getCandidateWinCount()` for individual candidate analysis
+- **✅ COMPLETED**: Added `getCondorcetWinner()` for automatic winner detection. The implementation of is utterly wrong, and needs to be redone. The calculation will for now not be performed on-chain either.
+- **✅ COMPLETED**: Created `getCandidateWinCount()` for individual candidate analysis. There is no use for this currently, and it is not clear there will ever be. Should probably be removed as a distration.
 - **✅ COMPLETED**: Implemented `getRankingStats()` for election overview
 - **✅ COMPLETED**: Added `getAllRankers()` for voter tracking
 

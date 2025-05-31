@@ -17,8 +17,18 @@ contract PeerRanking {
     // Maximum rank value (first place)
     uint256 public constant MAX_RANK = type(uint256).max;
 
-    // Efficient vote tracking per user
-    mapping(address => uint256[]) public userRankings;  // user -> ordered candidate array
+    // Ranking entry structure for extensible ranking data
+    struct RankingEntry {
+        uint256 candidateId;
+        bool tiedWithPrevious;  // true if this candidate is tied with the previous entry
+        // Future extensions could add:
+        // uint256 confidence;     // voter's confidence level (1-10)
+        // string note;           // optional voter note
+        // uint256 timestamp;     // when this preference was set
+    }
+
+    // Enhanced vote tracking per user
+    mapping(address => RankingEntry[]) public userRankings;  // user -> structured ranking array
     mapping(address => mapping(uint256 => uint256)) public userCandidateRanks;  // user -> candidate -> rank value
 
     // Pairwise comparison tallies
@@ -30,6 +40,7 @@ contract PeerRanking {
 
     // Events
     event RankingUpdated(address indexed user, uint256[] newRanking);
+    event RankingUpdatedWithTies(address indexed user, RankingEntry[] newRanking);
     event ComparisonUpdated(uint256 indexed candidateA, uint256 indexed candidateB, uint256 newCount);
 
     modifier onlyVerifiedUser() {
@@ -43,8 +54,57 @@ contract PeerRanking {
     }
 
     /**
-     * @dev Update user's ranking and recalculate pairwise comparisons
-     * @param newRanking Array of candidate IDs in preference order (ties allowed by position)
+     * @dev Update user's ranking with structured data supporting ties
+     * @param newRanking Array of RankingEntry structs with tie information
+     */
+    function updateRankingWithTies(RankingEntry[] memory newRanking) external onlyVerifiedUser {
+        require(newRanking.length > 0, "Ranking cannot be empty");
+
+        // Validate all candidate IDs and tie logic
+        uint256 candidateCount = electionManager.candidateCount();
+        for (uint256 i = 0; i < newRanking.length; i++) {
+            require(newRanking[i].candidateId > 0 && newRanking[i].candidateId <= candidateCount, "Invalid candidate ID");
+
+            // Check candidate is active
+            (, , , bool active) = electionManager.candidates(newRanking[i].candidateId);
+            require(active, "Candidate is not active");
+
+            // First entry cannot be tied with previous
+            if (i == 0) {
+                require(!newRanking[i].tiedWithPrevious, "First entry cannot be tied with previous");
+            }
+        }
+
+        // Remove old comparisons if user had previous ranking
+        if (hasRanking[msg.sender]) {
+            removeOldComparisons(msg.sender);
+            clearOldRanks(msg.sender);
+        }
+
+        // Set new ranking values and store ranking array
+        setNewRanksWithTies(msg.sender, newRanking);
+
+        // Clear old ranking array and set new one
+        delete userRankings[msg.sender];
+        for (uint256 i = 0; i < newRanking.length; i++) {
+            userRankings[msg.sender].push(newRanking[i]);
+        }
+
+        // Add new comparisons based on rank values
+        addNewComparisons(msg.sender);
+
+        // Track new ranker
+        if (!hasRanking[msg.sender]) {
+            hasRanking[msg.sender] = true;
+            rankers.push(msg.sender);
+        }
+
+        emit RankingUpdatedWithTies(msg.sender, newRanking);
+    }
+
+    /**
+     * @dev Legacy function for backward compatibility - converts simple array to RankingEntry array
+     * @param newRanking Array of candidate IDs in preference order (no ties)
      */
     function updateRanking(uint256[] memory newRanking) external onlyVerifiedUser {
         require(newRanking.length > 0, "Ranking cannot be empty");
@@ -59,6 +119,15 @@ contract PeerRanking {
             require(active, "Candidate is not active");
         }
 
+        // Convert to RankingEntry array (no ties)
+        RankingEntry[] memory rankingEntries = new RankingEntry[](newRanking.length);
+        for (uint256 i = 0; i < newRanking.length; i++) {
+            rankingEntries[i] = RankingEntry({
+                candidateId: newRanking[i],
+                tiedWithPrevious: false  // No ties in legacy format
+            });
+        }
+
         // Remove old comparisons if user had previous ranking
         if (hasRanking[msg.sender]) {
             removeOldComparisons(msg.sender);
@@ -66,8 +135,13 @@ contract PeerRanking {
         }
 
         // Set new ranking values and store ranking array
-        setNewRanks(msg.sender, newRanking);
-        userRankings[msg.sender] = newRanking;
+        setNewRanksWithTies(msg.sender, rankingEntries);
+
+        // Clear old ranking array and set new one
+        delete userRankings[msg.sender];
+        for (uint256 i = 0; i < rankingEntries.length; i++) {
+            userRankings[msg.sender].push(rankingEntries[i]);
+        }
 
         // Add new comparisons based on rank values
         addNewComparisons(msg.sender);
@@ -78,6 +152,7 @@ contract PeerRanking {
             rankers.push(msg.sender);
         }
 
+        // Emit legacy event for backward compatibility
         emit RankingUpdated(msg.sender, newRanking);
     }
 
@@ -85,7 +160,7 @@ contract PeerRanking {
      * @dev Remove user's previous comparisons from tallies
      */
     function removeOldComparisons(address user) internal {
-        uint256[] memory oldRanking = userRankings[user];
+        // Note: We don't need the old ranking array since we work with rank values directly
         uint256 candidateCount = electionManager.candidateCount();
 
         // Check all candidate pairs and remove comparisons where this user had a preference
@@ -109,16 +184,39 @@ contract PeerRanking {
      * @dev Clear user's old rank values
      */
     function clearOldRanks(address user) internal {
-        uint256[] memory oldRanking = userRankings[user];
+        RankingEntry[] memory oldRanking = userRankings[user];
         for (uint256 i = 0; i < oldRanking.length; i++) {
-            userCandidateRanks[user][oldRanking[i]] = 0;
+            userCandidateRanks[user][oldRanking[i].candidateId] = 0;
         }
     }
 
     /**
-     * @dev Set new rank values for user's ranking
-     * For now, treats array position as rank (no ties in array representation)
-     * Ties will be handled by frontend sending candidates in same "tier"
+     * @dev Set new rank values for user's ranking with tie support
+     * @param user The user address
+     * @param newRanking Array of RankingEntry structs with tie information
+     */
+    function setNewRanksWithTies(address user, RankingEntry[] memory newRanking) internal {
+        uint256 currentRank = MAX_RANK;
+
+        for (uint256 i = 0; i < newRanking.length; i++) {
+            // If tied with previous, use same rank as previous
+            if (i > 0 && newRanking[i].tiedWithPrevious) {
+                // Use the same rank as the previous candidate
+                uint256 previousCandidateId = newRanking[i - 1].candidateId;
+                uint256 previousRank = userCandidateRanks[user][previousCandidateId];
+                userCandidateRanks[user][newRanking[i].candidateId] = previousRank;
+            } else {
+                // New rank tier - assign current rank and decrement for next tier
+                userCandidateRanks[user][newRanking[i].candidateId] = currentRank;
+                currentRank--; // Next rank tier will be lower
+            }
+        }
+    }
+
+    /**
+     * @dev Legacy function: Set new rank values for user's ranking (no ties)
+     * @param user The user address
+     * @param newRanking Array of candidate IDs in preference order
      */
     function setNewRanks(address user, uint256[] memory newRanking) internal {
         uint256 currentRank = MAX_RANK;
@@ -133,14 +231,14 @@ contract PeerRanking {
      * @dev Add new comparisons based on rank values
      */
     function addNewComparisons(address user) internal {
-        uint256[] memory newRanking = userRankings[user];
+        RankingEntry[] memory newRanking = userRankings[user];
 
         // Compare all pairs in the ranking
         for (uint256 i = 0; i < newRanking.length; i++) {
             for (uint256 j = 0; j < newRanking.length; j++) {
                 if (i != j) {
-                    uint256 candidateA = newRanking[i];
-                    uint256 candidateB = newRanking[j];
+                    uint256 candidateA = newRanking[i].candidateId;
+                    uint256 candidateB = newRanking[j].candidateId;
 
                     uint256 rankA = userCandidateRanks[user][candidateA];
                     uint256 rankB = userCandidateRanks[user][candidateB];
@@ -160,8 +258,19 @@ contract PeerRanking {
         return pairwiseComparisons[candidateA][candidateB];
     }
 
-    function getUserRanking(address user) external view returns (uint256[] memory) {
+    function getUserRanking(address user) external view returns (RankingEntry[] memory) {
         return userRankings[user];
+    }
+
+    function getUserRankingLegacy(address user) external view returns (uint256[] memory) {
+        RankingEntry[] memory ranking = userRankings[user];
+        uint256[] memory legacyRanking = new uint256[](ranking.length);
+
+        for (uint256 i = 0; i < ranking.length; i++) {
+            legacyRanking[i] = ranking[i].candidateId;
+        }
+
+        return legacyRanking;
     }
 
     function getUserCandidateRank(address user, uint256 candidateId) external view returns (uint256) {
@@ -198,30 +307,30 @@ contract PeerRanking {
         return matrix;
     }
 
+    /**
+     * @dev DEPRECATED: This function's Condorcet calculation is fundamentally flawed.
+     * The algorithm implementation is incorrect and should NOT be used for actual winner determination.
+     * Condorcet winner calculation should be performed off-chain using the pairwise comparison matrix.
+     * This function exists only as a reminder of the flawed approach - DO NOT USE IN PRODUCTION.
+     *
+     * Use getFullComparisonMatrix() instead and calculate Condorcet winner off-chain.
+     */
     function getCondorcetWinner() external view returns (uint256, bool) {
-        uint256 candidateCount = electionManager.candidateCount();
+        // WARNING: This implementation is WRONG - do not use!
+        // The logic for determining Condorcet winners is flawed.
+        // Proper Condorcet calculation requires more sophisticated algorithms
+        // that handle cycles, ties, and edge cases correctly.
 
-        for (uint256 candidate = 1; candidate <= candidateCount; candidate++) {
-            bool isWinner = true;
-
-            // Check if this candidate beats all others
-            for (uint256 opponent = 1; opponent <= candidateCount; opponent++) {
-                if (candidate != opponent) {
-                    if (pairwiseComparisons[candidate][opponent] <= pairwiseComparisons[opponent][candidate]) {
-                        isWinner = false;
-                        break;
-                    }
-                }
-            }
-
-            if (isWinner) {
-                return (candidate, true);
-            }
-        }
-
-        return (0, false); // No Condorcet winner
+        // Always return no winner to prevent misuse
+        return (0, false); // Calculation disabled - use off-chain analysis
     }
 
+    /**
+     * @dev NOTE: This function has limited utility in current implementation.
+     * Simple pairwise win counting doesn't provide meaningful election analysis.
+     * Better to use getFullComparisonMatrix() and perform sophisticated analysis off-chain.
+     * Kept for backward compatibility but consider using off-chain calculations instead.
+     */
     function getCandidateWinCount(uint256 candidateId) external view returns (uint256) {
         require(candidateId > 0 && candidateId <= electionManager.candidateCount(), "Invalid candidate ID");
 
