@@ -48,12 +48,13 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           return false;
         }
 
-        // Install MiniKit with app configuration
+        // Install MiniKit with app configuration (without actionId for transactions)
         if (typeof MiniKit.install === "function") {
           MiniKit.install({
             appId: "app_10719845a0977ef63ebe8eb9edb890ad",
-            actionId: "vote",
+            // Don't specify actionId for transaction handling
           });
+          console.log("✅ MiniKit installed with app ID only");
         } else {
           console.error("MiniKit.install is not a function");
           return false;

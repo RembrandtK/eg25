@@ -85,8 +85,10 @@ export function usePeerRanking({
           return;
         }
 
-        // Send transaction to update ranking
-        const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+        // Send transaction to update ranking with better error handling
+        console.log("🚀 Calling MiniKit.commandsAsync.sendTransaction...");
+
+        const transactionConfig = {
           transaction: [
             {
               address: contractAddress,
@@ -95,7 +97,14 @@ export function usePeerRanking({
               args: [candidateIdsAsNumbers],
             },
           ],
-        });
+        };
+
+        console.log("📋 Transaction config:", JSON.stringify(transactionConfig, null, 2));
+
+        const result = await MiniKit.commandsAsync.sendTransaction(transactionConfig);
+        console.log("📦 Raw MiniKit result:", result);
+
+        const { finalPayload } = result;
 
         // Log transaction result
         await fetch("/api/debug", {
@@ -184,8 +193,10 @@ export function usePeerRanking({
         return;
       }
 
-      // Send transaction to update ranking
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      // Send transaction to update ranking (immediate)
+      console.log("🚀 Calling MiniKit.commandsAsync.sendTransaction (immediate)...");
+
+      const transactionConfig = {
         transaction: [
           {
             address: contractAddress,
@@ -194,7 +205,14 @@ export function usePeerRanking({
             args: [candidateIdsAsNumbers],
           },
         ],
-      });
+      };
+
+      console.log("📋 Immediate transaction config:", JSON.stringify(transactionConfig, null, 2));
+
+      const result = await MiniKit.commandsAsync.sendTransaction(transactionConfig);
+      console.log("📦 Raw MiniKit immediate result:", result);
+
+      const { finalPayload } = result;
 
       if (finalPayload.status === "error") {
         console.error("Error updating ranking:", finalPayload);
