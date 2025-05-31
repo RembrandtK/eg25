@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Paths
-const SMART_CONTRACT_DIR = path.join(__dirname, '../../smart-contract');
+const SMART_CONTRACT_DIR = path.join(__dirname, '../../contracts');
 const CONTRACTS_CONFIG_PATH = path.join(__dirname, '../src/config/contracts.ts');
 
 // Network configurations

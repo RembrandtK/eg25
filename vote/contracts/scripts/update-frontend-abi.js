@@ -6,13 +6,13 @@ const contracts = [
   {
     name: 'Election',
     artifactPath: path.join(__dirname, '../artifacts/contracts/Election.sol/Election.json'),
-    frontendPath: path.join(__dirname, '../../my-app/src/election-abi.ts'),
+    frontendPath: path.join(__dirname, '../../world-app/src/election-abi.ts'),
     exportName: 'ELECTION_ABI'
   },
   {
     name: 'ElectionManager',
     artifactPath: path.join(__dirname, '../artifacts/contracts/ElectionManager.sol/ElectionManager.json'),
-    frontendPath: path.join(__dirname, '../../my-app/src/election-manager-abi.ts'),
+    frontendPath: path.join(__dirname, '../../world-app/src/election-manager-abi.ts'),
     exportName: 'ELECTION_MANAGER_ABI'
   }
 ];

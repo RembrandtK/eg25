@@ -7,8 +7,8 @@ A complete World Mini App template that integrates with on-chain smart contracts
 This project contains a complete Election Voting System with World ID verification:
 
 ```text
-app/
-├── my-app/                 # Next.js Mini App
+vote/
+├── world-app/              # Next.js World Mini App (Election Voting Interface)
 │   ├── src/
 │   │   ├── app/           # App router pages
 │   │   ├── components/    # React components
@@ -16,9 +16,9 @@ app/
 │   │   └── providers/    # Context providers
 │   ├── .env.local        # Environment variables
 │   └── package.json      # Dependencies
-├── smart-contract/        # Hardhat smart contract project
-│   ├── contracts/        # Solidity contracts
-│   ├── scripts/          # Deployment scripts
+├── contracts/             # Hardhat smart contract project (Election System)
+│   ├── contracts/        # Solidity contracts (Election.sol, ElectionManager.sol)
+│   ├── scripts/          # Deployment and ABI extraction scripts
 │   ├── .env             # Contract deployment config
 │   └── hardhat.config.js # Hardhat configuration
 └── README.md             # This file

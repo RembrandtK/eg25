@@ -12,7 +12,32 @@ importers:
         specifier: ^5.0.0
         version: 5.8.3
 
-  app/my-app:
+  vote/contracts:
+    dependencies:
+      '@worldcoin/world-id-contracts':
+        specifier: ^0.1.1
+        version: 0.1.1
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.5.0
+    devDependencies:
+      '@nomicfoundation/hardhat-ignition-ethers':
+        specifier: ^0.15.11
+        version: 0.15.11(@nomicfoundation/hardhat-ethers@3.0.8)(@nomicfoundation/hardhat-ignition@0.15.11)(@nomicfoundation/ignition-core@0.15.11)(ethers@6.14.3)(hardhat@2.24.1)
+      '@nomicfoundation/hardhat-toolbox':
+        specifier: 5.0.0
+        version: 5.0.0(@nomicfoundation/hardhat-chai-matchers@2.0.8)(@nomicfoundation/hardhat-ethers@3.0.8)(@nomicfoundation/hardhat-ignition-ethers@0.15.11)(@nomicfoundation/hardhat-network-helpers@1.0.12)(@nomicfoundation/hardhat-verify@2.0.14)(@typechain/ethers-v6@0.5.1)(@typechain/hardhat@9.1.0)(@types/chai@4.3.20)(@types/mocha@10.0.10)(@types/node@20.17.57)(chai@4.5.0)(ethers@6.14.3)(hardhat-gas-reporter@1.0.10)(hardhat@2.24.1)(solidity-coverage@0.8.16)(ts-node@10.9.2)(typechain@8.3.2)(typescript@5.8.3)
+      '@openzeppelin/contracts':
+        specifier: 5.3.0
+        version: 5.3.0
+      ethers:
+        specifier: 6.14.3
+        version: 6.14.3
+      hardhat:
+        specifier: 2.24.1
+        version: 2.24.1(ts-node@10.9.2)(typescript@5.8.3)
+
+  vote/world-app:
     dependencies:
       '@worldcoin/minikit-js':
         specifier: ^1.7.0
@@ -93,31 +118,6 @@ importers:
       typescript:
         specifier: ^5
         version: 5.8.3
-
-  app/smart-contract:
-    dependencies:
-      '@worldcoin/world-id-contracts':
-        specifier: ^0.1.1
-        version: 0.1.1
-      dotenv:
-        specifier: ^16.4.7
-        version: 16.5.0
-    devDependencies:
-      '@nomicfoundation/hardhat-ignition-ethers':
-        specifier: ^0.15.11
-        version: 0.15.11(@nomicfoundation/hardhat-ethers@3.0.8)(@nomicfoundation/hardhat-ignition@0.15.11)(@nomicfoundation/ignition-core@0.15.11)(ethers@6.14.3)(hardhat@2.24.1)
-      '@nomicfoundation/hardhat-toolbox':
-        specifier: 5.0.0
-        version: 5.0.0(@nomicfoundation/hardhat-chai-matchers@2.0.8)(@nomicfoundation/hardhat-ethers@3.0.8)(@nomicfoundation/hardhat-ignition-ethers@0.15.11)(@nomicfoundation/hardhat-network-helpers@1.0.12)(@nomicfoundation/hardhat-verify@2.0.14)(@typechain/ethers-v6@0.5.1)(@typechain/hardhat@9.1.0)(@types/chai@4.3.20)(@types/mocha@10.0.10)(@types/node@20.17.57)(chai@4.5.0)(ethers@6.14.3)(hardhat-gas-reporter@1.0.10)(hardhat@2.24.1)(solidity-coverage@0.8.16)(ts-node@10.9.2)(typechain@8.3.2)(typescript@5.8.3)
-      '@openzeppelin/contracts':
-        specifier: 5.3.0
-        version: 5.3.0
-      ethers:
-        specifier: 6.14.3
-        version: 6.14.3
-      hardhat:
-        specifier: 2.24.1
-        version: 2.24.1(ts-node@10.9.2)(typescript@5.8.3)
 
 packages:
 
@@ -630,7 +630,7 @@ packages:
     resolution: {integrity: sha512-LylnJoZ0CTdgErnKY8OxohvW4K+p6UHD3sxt+3P9AmMyBQjYR4IpoqoYZZ+9aMj89cmCQ21UvdhndAx04er3NA==}
     dependencies:
       fastfile: 0.0.20
-      ffjavascript: 0.2.55
+      ffjavascript: 0.2.63
     dev: false
 
   /@img/sharp-darwin-arm64@0.34.2:
