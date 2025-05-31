@@ -1,5 +1,3 @@
 {
-  "PeerRankingDeployment#PeerRanking": "0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1",
-  "ElectionDeployment#ElectionManager": "0xC0f83dF1d76c19C2b3c3ac8484ef4417b85EC873",
-  "MockWorldIDDeployment#MockWorldIDAddressBook": "0x97E098C600F5EF24e93Cbf455F2625e147D5FD40"
+  "ElectionDeployment#ElectionManager": "0xa3ee18dc44C24DDd48DDe3B37a377D7664f69511"
 }
