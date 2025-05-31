@@ -84,6 +84,8 @@ export interface NetworkConfig {
   contracts: {
     TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
+    ElectionManager: ContractConfig;
+    PeerRanking: ContractConfig;
   };
 }
 
@@ -106,6 +108,14 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
       address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#MockWorldIDAddressBook"] || "",
       verified: false,
     },
+    ElectionManager: {
+      address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
+      verified: false,
+    },
   },
 };
 
@@ -123,6 +133,14 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     WorldIDAddressBook: {
       address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
       verified: true,
+    },
+    ElectionManager: {
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
+      verified: false,
     },
   },
 };
@@ -163,6 +181,8 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const TUTE_ADDRESS = getContractAddress('TUTE');
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
+export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
+export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');
 `;
 
   return config;

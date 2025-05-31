@@ -25,16 +25,20 @@ export interface NetworkConfig {
   contracts: {
     TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
+    ElectionManager: ContractConfig;
+    PeerRanking: ContractConfig;
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-30T20:24:12.626Z
+// Last updated: 2025-05-31T02:01:26.940Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
     "TestnetDeployment#MockWorldIDAddressBook": "0xA26948dA2413b7a009ae38334Cc787f292A290fe",
-    "TestnetDeployment#TUTE": "0x1BFD23D12834Dd82c2e8Fc3aF22ffd141D1E51F3"
+    "TestnetDeployment#TUTE": "0x1BFD23D12834Dd82c2e8Fc3aF22ffd141D1E51F3",
+    "ElectionDeployment#ElectionManager": "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7",
+    "PeerRankingDeployment#PeerRanking": "0x2caDc553c4B98863A3937fF0E710b79F7E855d8a"
   }
 };
 
@@ -51,6 +55,14 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
     },
     WorldIDAddressBook: {
       address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#MockWorldIDAddressBook"] || "",
+      verified: false,
+    },
+    ElectionManager: {
+      address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -70,6 +82,14 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     WorldIDAddressBook: {
       address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
       verified: true,
+    },
+    ElectionManager: {
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
+      verified: false,
+    },
+    PeerRanking: {
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
+      verified: false,
     },
   },
 };
@@ -110,3 +130,5 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const TUTE_ADDRESS = getContractAddress('TUTE');
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
+export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
+export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');

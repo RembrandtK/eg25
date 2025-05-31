@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-
-// Contract addresses and ABIs
-const PEER_RANKING_CONTRACT_ADDRESS = "0x2caDc553c4B98863A3937fF0E710b79F7E855d8a";
-const ELECTION_MANAGER_CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS } from "@/config/contracts";
 
 // Simplified ABI for the functions we need
 const PEER_RANKING_ABI = [
@@ -93,7 +90,7 @@ export async function GET(request: NextRequest) {
 async function getUserRanking(userAddress: string) {
   try {
     const ranking = await publicClient.readContract({
-      address: PEER_RANKING_CONTRACT_ADDRESS as `0x${string}`,
+      address: PEER_RANKING_ADDRESS as `0x${string}`,
       abi: PEER_RANKING_ABI,
       functionName: 'getUserRanking',
       args: [userAddress as `0x${string}`],
