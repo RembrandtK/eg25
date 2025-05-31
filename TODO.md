@@ -1,4 +1,4 @@
-# Voting App Hackathon — Interactive Ranking & Peer Tallying
+# Voting App Migration & Enhancement — Election + ElectionManager Integration
 
 MUST:
 
@@ -9,25 +9,29 @@ MUST:
 
 ## 🎯 Project Overview
 
-**NEW REQUIREMENTS**: Interactive ranking system with real-time peer tallying where users can:
+**MIGRATION COMPLETE**: PeerRanking contract removed, all functionality consolidated into Election + ElectionManager contracts.
 
-1. Build up a ranked list of candidates interactively from unranked candidates
-2. Reorder candidates with drag-and-drop, supporting ties (equal ranks)
-3. Move away from tallying real-time, will need to add server-based selection step.
+**NEW REQUIREMENTS**: Full election lifecycle management where users can:
+
+1. **Create Elections**: Set up new elections with candidates and World ID actions
+2. **Vote with Rankings**: Submit ranked votes with World ID verification
+3. **Trigger Selection**: Server-based selection calculation and reporting
+4. **View Results**: Display election results and analytics
 
 ## 🏗️ Architecture & Design
 
-### Current Smart Contract
+### Current Smart Contracts (UPDATED)
 
-- **ElectionManager.sol** deployed to worldchain-sepolia: `0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7`
+- **ElectionManager.sol** deployed to worldchain-sepolia: `0xAA75C772ca977F89125B3592355346b9eFD37AC9`
+- **Election.sol** instances created by ElectionManager for each election
 - 4 test candidates: Alice Johnson, Bob Smith, Carol Davis, David Wilson
 
-### Peer Ranking Smart Contract
+### Contract Capabilities (CONFIRMED)
 
-- **Unranked Candidates Pool**: Bottom section showing available candidates
-- **Ranked Candidates List**: Top section showing current ranking with proper numbering
-- **Interactive Ranking**: Add candidates from pool to ranked list
-- **Tie Support**: Equal ranks (2=, 2=, 4) with proper numbering
+- **Election Creation**: ElectionManager creates separate Election contracts
+- **World ID Verification**: Proper ZK proof verification per vote
+- **Ranking Storage**: RankingEntry[] with tie support
+- **Selection Reporting**: Reporter role can trigger and store results
 
 ## 🚨 **CRITICAL REQUIREMENT: REGULAR COMMITS**
 
@@ -37,50 +41,83 @@ MUST:
 - Before switching between major components
 - At least every 30 minutes of active development
 
-## ✅ COMPLETED ENHANCEMENTS & TESTING
+## 🚨 CRITICAL MIGRATION TASKS (HIGH PRIORITY)
 
-### ✅ Smart Contract Enhancements
+### Phase 1: Contract Interface Migration
 
-## 🚨 REMAINING FRONTEND INTEGRATION TASKS
+#### 1.1 Remove PeerRanking Dependencies (URGENT)
+- [ ] Update mini app to use Election contracts instead of PeerRanking
+- [ ] Remove all PeerRanking ABI imports and references
+- [ ] Update contract address configuration to use ElectionManager
+- [ ] Fix VoteButton component to use Election.vote() method
+- [ ] Update usePeerRanking hook to use Election contract methods
 
-### Priority 1: Frontend Integration (HIGH PRIORITY)
+#### 1.2 Add Election Contract Integration
+- [ ] Create Election ABI imports and interfaces
+- [ ] Add Election contract reading functionality
+- [ ] Implement proper World ID verification flow for Election.vote()
+- [ ] Update ranking data structures to match RankingEntry[]
+- [ ] Test contract interactions with deployed Election instances
 
-#### 1.1 Rankings Not Persisting on Reentry (HIGH PRIORITY)
+### Phase 2: Multi-Election Support
 
-- **Issue**: Transactions succeed but rankings don't load back when user returns
-- **Root Cause**: Contract reading issues or blockchain confirmation delays
-- **Tasks**:
-  - [ ] Debug contract reading with proper logging
-  - [ ] Add blockchain confirmation waiting (increase from 2s to 10s)
-  - [ ] Implement proper error handling for failed reads
-  - [ ] Add manual "Refresh" button for debugging
-  - [ ] Test with different RPC endpoints to isolate issue
+#### 2.1 Election Management Interface
+- [ ] Add election list/selection UI component
+- [ ] Implement election creation form with candidates
+- [ ] Add election status and metadata display
+- [ ] Create election switching functionality
 
-### Priority 3: User Experience Improvements (LOW PRIORITY)
+#### 2.2 Election Creation Workflow
+- [ ] Design election creation form with World ID action input
+- [ ] Add candidate management (add/remove/edit)
+- [ ] Implement ElectionManager.createElection() integration
+- [ ] Add proper error handling and validation
 
-### 🚀 FUTURE ENHANCEMENTS
+### Phase 3: Selection & Results System
 
-1. **Multiple Elections System**
+#### 3.1 Selection Triggering
+- [ ] Add admin interface for triggering selection calculation
+- [ ] Implement server-side Tideman/Condorcet calculation
+- [ ] Add Election.reportSelection() integration
+- [ ] Create selection status monitoring
 
-   - [ ] Design election factory contract pattern
-   - [ ] Need to use World API to create unique action per election
-   - [ ] Each election = separate smart contract instance
-   - [ ] Elections tab with list of available elections
-   - [ ] Election creation and management interface
-   - [ ] Cross-election analytics and comparison
+#### 3.2 Results Display
+- [ ] Design election results UI component
+- [ ] Add winner announcement and ranking display
+- [ ] Implement results analytics and visualization
+- [ ] Add historical results viewing
 
-2. **Advanced Ranking Features**
-  
-   - [ ] Tie support with proper numbering (1, 2=, 2=, 4)
-   - [ ] Drag-and-drop tie creation
-   - [ ] Condorcet method result calculation
-   - [ ] Ranked pairs algorithm implementation
+## 🧪 COMPREHENSIVE TESTING REQUIREMENTS
 
-3. **Analytics & Visualization**
-   - [ ] Real-time comparison tallies display
-   - [ ] Voting pattern visualization
-   - [ ] Election results dashboard
+### Phase 4: Test Coverage
+
+#### 4.1 Contract Integration Tests (CRITICAL)
+- [ ] Test ElectionManager.createElection() workflow
+- [ ] Test Election.vote() with World ID verification
+- [ ] Test Election.reportSelection() functionality
+- [ ] Test multi-election scenarios and switching
+- [ ] Add gas estimation and optimization tests
+
+#### 4.2 Frontend Integration Tests
+- [ ] Test election creation end-to-end workflow
+- [ ] Test voting workflow with ranking persistence
+- [ ] Test election switching and state management
+- [ ] Test error handling and edge cases
+- [ ] Add mobile/World App specific testing
+
+### 🚀 FUTURE ENHANCEMENTS (LOWER PRIORITY)
+
+1. **Advanced Analytics**
+   - [ ] Real-time voting pattern visualization
+   - [ ] Cross-election comparison tools
    - [ ] Historical voting data analysis
+   - [ ] Voter participation metrics
+
+2. **Enhanced UX Features**
+   - [ ] Drag-and-drop tie creation in rankings
+   - [ ] Real-time vote count updates
+   - [ ] Social sharing of election results
+   - [ ] Notification system for election events
 
 ## 🔧 Technical Details
 
