@@ -44,7 +44,7 @@ const DEPLOYED_ADDRESSES = {
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     WorldIDAddressBook: {
