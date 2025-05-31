@@ -8,10 +8,11 @@
 - **Expected**: App should read user's current ranking from smart contract on load
 - **Implementation**:
   - Read directly from smart contract (not via server)
-  - Call `getUserRanking(address)` on app initialization
+  - Call `getUserRanking(address)` on app initialization in `usePeerRanking` hook
   - Display existing ranking in UI if found
   - Allow user to modify and resubmit if desired
 - **Impact**: Users lose track of their voting state, poor UX
+- **Note**: This is the main blocker preventing users from seeing their vote persisted
 
 ### **2. Contract Reading Reliability**
 - **Issue**: Contract reading functions may not be consistently working
@@ -113,9 +114,15 @@ curl "http://localhost:3000/api/voting-status?action=user-ranking&address=0x3c6c
 ### **Architecture Decisions**
 - Using viem for contract interactions
 - MiniKit for World App integration
-- Session-based wallet connection caching
-- World ID verification per ranking submission
+- Session-based wallet connection caching (working)
+- World ID verification per ranking submission (working)
 - Direct contract reading (not via server APIs)
+
+### **Current Flow Status**
+- ✅ Wallet connection: Works, cached in session
+- ✅ World ID verification: Works, triggers on ranking submission
+- ✅ Transaction submission: Works, contract whitelisted
+- ❌ Ranking persistence: Missing - app doesn't read existing rankings on load
 
 ### **Key Requirements for Production**
 - [ ] Rankings must persist across app reloads
