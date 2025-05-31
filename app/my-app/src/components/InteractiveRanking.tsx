@@ -56,14 +56,19 @@ export function InteractiveRanking({
         console.log("📖 Restored ranking:", rankedCandidateObjects.map(c => c.name));
         setRankedCandidates(rankedCandidateObjects);
         setUnrankedCandidates(unrankedCandidateObjects);
+
+        // Notify parent of the restored ranking
+        const rankedIds = rankedCandidateObjects.map(candidate => candidate.id);
+        onRankingChange(rankedIds);
       } else {
         // Start fresh with all candidates unranked
         console.log("🆕 Starting with fresh ranking");
         setUnrankedCandidates([...candidates]);
         setRankedCandidates([]);
+        onRankingChange([]);
       }
     }
-  }, [candidates, initialRanking]);
+  }, [candidates, initialRanking, onRankingChange]);
 
   // Notify parent of ranking changes
   const notifyRankingChange = useCallback((newRankedCandidates: Candidate[]) => {

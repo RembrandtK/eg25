@@ -57,14 +57,15 @@ export function InteractiveRankingTab({
 
   // Initialize ranking from contract when loaded
   useEffect(() => {
-    if (currentRanking.length > 0) {
+    if (currentRanking.length > 0 && rankedCandidateIds.length === 0) {
       console.log("📖 Initializing ranking from contract:", currentRanking);
       setRankedCandidateIds(currentRanking);
     }
-  }, [currentRanking]);
+  }, [currentRanking, rankedCandidateIds.length]);
 
   // Handle ranking changes from the interactive component
   const handleRankingChange = useCallback((newRankedIds: bigint[]) => {
+    console.log("🔄 Ranking changed in InteractiveRanking:", newRankedIds);
     setRankedCandidateIds(newRankedIds);
     // Don't auto-submit to blockchain - wait for explicit submit
   }, []);
