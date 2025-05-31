@@ -183,4 +183,82 @@ contract PeerRanking {
     function getTotalRankers() external view returns (uint256) {
         return rankers.length;
     }
+
+    // Enhanced view functions for better data access
+    function getFullComparisonMatrix() external view returns (uint256[][] memory) {
+        uint256 candidateCount = electionManager.candidateCount();
+        uint256[][] memory matrix = new uint256[][](candidateCount + 1);
+
+        for (uint256 i = 0; i <= candidateCount; i++) {
+            matrix[i] = new uint256[](candidateCount + 1);
+            for (uint256 j = 0; j <= candidateCount; j++) {
+                matrix[i][j] = pairwiseComparisons[i][j];
+            }
+        }
+        return matrix;
+    }
+
+    function getCondorcetWinner() external view returns (uint256, bool) {
+        uint256 candidateCount = electionManager.candidateCount();
+
+        for (uint256 candidate = 1; candidate <= candidateCount; candidate++) {
+            bool isWinner = true;
+
+            // Check if this candidate beats all others
+            for (uint256 opponent = 1; opponent <= candidateCount; opponent++) {
+                if (candidate != opponent) {
+                    if (pairwiseComparisons[candidate][opponent] <= pairwiseComparisons[opponent][candidate]) {
+                        isWinner = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isWinner) {
+                return (candidate, true);
+            }
+        }
+
+        return (0, false); // No Condorcet winner
+    }
+
+    function getCandidateWinCount(uint256 candidateId) external view returns (uint256) {
+        require(candidateId > 0 && candidateId <= electionManager.candidateCount(), "Invalid candidate ID");
+
+        uint256 wins = 0;
+        uint256 candidateCount = electionManager.candidateCount();
+
+        for (uint256 opponent = 1; opponent <= candidateCount; opponent++) {
+            if (candidateId != opponent) {
+                if (pairwiseComparisons[candidateId][opponent] > pairwiseComparisons[opponent][candidateId]) {
+                    wins++;
+                }
+            }
+        }
+
+        return wins;
+    }
+
+    function getRankingStats() external view returns (
+        uint256 totalRankers,
+        uint256 totalComparisons,
+        uint256 candidateCount
+    ) {
+        uint256 _candidateCount = electionManager.candidateCount();
+        uint256 _totalComparisons = 0;
+
+        for (uint256 i = 1; i <= _candidateCount; i++) {
+            for (uint256 j = 1; j <= _candidateCount; j++) {
+                if (i != j) {
+                    _totalComparisons += pairwiseComparisons[i][j];
+                }
+            }
+        }
+
+        return (rankers.length, _totalComparisons, _candidateCount);
+    }
+
+    function getAllRankers() external view returns (address[] memory) {
+        return rankers;
+    }
 }
