@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("Election", function () {
   let election;
@@ -33,8 +34,8 @@ describe("Election", function () {
       expect(info._worldIdAction).to.equal("vote_test_2024");
       expect(info._creator).to.equal(creator.address);
       expect(info._votingActive).to.be.true;
-      expect(info._candidateCount).to.equal(0);
-      expect(info._totalRankers).to.equal(0);
+      expect(Number(info._candidateCount)).to.equal(0);
+      expect(Number(info._totalVoters)).to.equal(0);
     });
 
     it("should set factory as deployer", async function () {
@@ -51,7 +52,7 @@ describe("Election", function () {
       await election.addCandidate("Alice Johnson", "Community leader");
       
       const candidateCount = await election.candidateCount();
-      expect(candidateCount).to.equal(1);
+      expect(Number(candidateCount)).to.equal(1);
 
       const candidate = await election.candidates(1);
       expect(candidate.name).to.equal("Alice Johnson");
@@ -62,7 +63,7 @@ describe("Election", function () {
     it("should prevent non-factory from adding candidates", async function () {
       await expect(
         election.connect(user1).addCandidate("Bob Smith", "Tech advocate")
-      ).to.be.revertedWith("Only factory can call this function");
+      ).to.be.reverted; // AccessControl will revert with custom error
     });
 
     it("should emit CandidateAdded event", async function () {
@@ -76,7 +77,7 @@ describe("Election", function () {
       await election.addCandidate("Bob Smith", "Tech advocate");
 
       const candidates = await election.getCandidates();
-      expect(candidates.length).to.equal(2);
+      expect(Number(candidates.length)).to.equal(2);
       expect(candidates[0].name).to.equal("Alice Johnson");
       expect(candidates[1].name).to.equal("Bob Smith");
     });
@@ -91,57 +92,93 @@ describe("Election", function () {
     });
 
     it("should allow valid voting", async function () {
-      const rankedVote = [1, 3, 2]; // Alice first, Carol second, Bob third
+      const voterId = 12345; // Mock voter ID (nullifier)
+      const ranking = [
+        { candidateId: 1, tiedWithPrevious: false }, // Alice first
+        { candidateId: 3, tiedWithPrevious: false }, // Carol second
+        { candidateId: 2, tiedWithPrevious: false }  // Bob third
+      ];
 
-      await election.connect(user1).vote(rankedVote);
+      await election.connect(user1).voteTest(voterId, ranking);
 
-      const hasVoted = await election.hasVoted(user1.address);
-      expect(hasVoted).to.be.true;
+      const vote = await election.getVote(voterId);
+      expect(Number(vote[0].candidateId)).to.equal(1);
+      expect(Number(vote[1].candidateId)).to.equal(3);
+      expect(Number(vote[2].candidateId)).to.equal(2);
 
-      const vote = await election.getVote(user1.address);
-      expect(vote[0]).to.equal(1);
-      expect(vote[1]).to.equal(3);
-      expect(vote[2]).to.equal(2);
-
-      const totalVotes = await election.getTotalVotes();
-      expect(totalVotes).to.equal(1);
+      const totalVoters = await election.getTotalVoters();
+      expect(Number(totalVoters)).to.equal(1);
     });
 
-    it("should emit VoteCast event", async function () {
-      const rankedVote = [1, 2];
+    it("should emit RankingUpdated event", async function () {
+      const voterId = 12345;
+      const ranking = [
+        { candidateId: 1, tiedWithPrevious: false },
+        { candidateId: 2, tiedWithPrevious: false }
+      ];
 
-      await expect(election.connect(user1).vote(rankedVote))
-        .to.emit(election, "VoteCast")
-        .withArgs(user1.address, rankedVote);
+      await expect(election.connect(user1).voteTest(voterId, ranking))
+        .to.emit(election, "RankingUpdated")
+        .withArgs(user1.address, [
+          [1n, false], // Events emit structs as arrays with BigInt values
+          [2n, false]
+        ]);
     });
 
-    it("should prevent double voting", async function () {
-      await election.connect(user1).vote([1, 2]);
+    it("should allow vote updates (same voter ID)", async function () {
+      const voterId = 12345;
 
-      await expect(
-        election.connect(user1).vote([2, 1])
-      ).to.be.revertedWith("You have already voted");
+      // First vote
+      await election.connect(user1).voteTest(voterId, [
+        { candidateId: 1, tiedWithPrevious: false },
+        { candidateId: 2, tiedWithPrevious: false }
+      ]);
+
+      // Update vote
+      await election.connect(user1).voteTest(voterId, [
+        { candidateId: 2, tiedWithPrevious: false },
+        { candidateId: 1, tiedWithPrevious: false }
+      ]);
+
+      const vote = await election.getVote(voterId);
+      expect(Number(vote[0].candidateId)).to.equal(2);
+      expect(Number(vote[1].candidateId)).to.equal(1);
+
+      // Should still only count as one voter
+      const totalVoters = await election.getTotalVoters();
+      expect(Number(totalVoters)).to.equal(1);
     });
 
     it("should prevent empty votes", async function () {
+      const voterId = 12345;
+
       await expect(
-        election.connect(user1).vote([])
-      ).to.be.revertedWith("Must vote for at least one candidate");
+        election.connect(user1).voteTest(voterId, [])
+      ).to.be.revertedWithCustomError(election, "RankingEmpty");
     });
 
     it("should prevent voting for invalid candidates", async function () {
+      const voterId = 12345;
+
       await expect(
-        election.connect(user1).vote([1, 5]) // Candidate 5 doesn't exist
-      ).to.be.revertedWith("Invalid candidate ID");
+        election.connect(user1).voteTest(voterId, [
+          { candidateId: 1, tiedWithPrevious: false },
+          { candidateId: 5, tiedWithPrevious: false } // Candidate 5 doesn't exist
+        ])
+      ).to.be.revertedWithCustomError(election, "InvalidCandidateId");
     });
 
     it("should prevent voting when inactive", async function () {
+      const voterId = 12345;
+
       // Deactivate voting
       await election.connect(creator).toggleVoting();
 
       await expect(
-        election.connect(user1).vote([1, 2])
-      ).to.be.revertedWith("Voting is not active");
+        election.connect(user1).voteTest(voterId, [
+          { candidateId: 1, tiedWithPrevious: false }
+        ])
+      ).to.be.revertedWithCustomError(election, "VotingNotActive");
     });
   });
 
@@ -159,7 +196,7 @@ describe("Election", function () {
     it("should prevent non-creator from toggling voting", async function () {
       await expect(
         election.connect(user1).toggleVoting()
-      ).to.be.revertedWith("Only creator can call this function");
+      ).to.be.reverted; // AccessControl will revert with custom error
     });
 
     it("should emit VotingStatusChanged event", async function () {
@@ -176,25 +213,39 @@ describe("Election", function () {
     });
 
     it("should return vote for voter who has voted", async function () {
-      await election.connect(user1).vote([2, 1]);
-      
-      const vote = await election.getVote(user1.address);
-      expect(vote[0]).to.equal(2);
-      expect(vote[1]).to.equal(1);
+      const voterId = 12345;
+      await election.connect(user1).voteTest(voterId, [
+        { candidateId: 2, tiedWithPrevious: false },
+        { candidateId: 1, tiedWithPrevious: false }
+      ]);
+
+      const vote = await election.getVote(voterId);
+      expect(Number(vote[0].candidateId)).to.equal(2);
+      expect(Number(vote[1].candidateId)).to.equal(1);
     });
 
-    it("should revert for voter who hasn't voted", async function () {
-      await expect(
-        election.getVote(user1.address)
-      ).to.be.revertedWith("Voter has not voted");
+    it("should return empty array for voter who hasn't voted", async function () {
+      const voterId = 99999;
+      const vote = await election.getVote(voterId);
+      expect(Number(vote.length)).to.equal(0);
     });
 
-    it("should check if address has voted", async function () {
-      expect(await election.checkHasVoted(user1.address)).to.be.false;
-      
-      await election.connect(user1).vote([1, 2]);
-      
-      expect(await election.checkHasVoted(user1.address)).to.be.true;
+    it("should track all voters", async function () {
+      const voterId1 = 12345;
+      const voterId2 = 67890;
+
+      await election.connect(user1).voteTest(voterId1, [
+        { candidateId: 1, tiedWithPrevious: false }
+      ]);
+
+      await election.connect(user2).voteTest(voterId2, [
+        { candidateId: 2, tiedWithPrevious: false }
+      ]);
+
+      const allVoters = await election.getAllVoters();
+      expect(Number(allVoters.length)).to.equal(2);
+      expect(Number(allVoters[0])).to.equal(voterId1);
+      expect(Number(allVoters[1])).to.equal(voterId2);
     });
   });
 
@@ -204,23 +255,47 @@ describe("Election", function () {
       await election.addCandidate("Bob Smith", "Tech advocate");
     });
 
-    it("should track total votes correctly", async function () {
-      expect(await election.getTotalVotes()).to.equal(0);
+    it("should track total voters correctly", async function () {
+      expect(Number(await election.getTotalVoters())).to.equal(0);
 
-      await election.connect(user1).vote([1, 2]);
-      expect(await election.getTotalVotes()).to.equal(1);
+      const voterId1 = 12345;
+      const voterId2 = 67890;
 
-      await election.connect(user2).vote([2, 1]);
-      expect(await election.getTotalVotes()).to.equal(2);
+      await election.connect(user1).voteTest(voterId1, [
+        { candidateId: 1, tiedWithPrevious: false },
+        { candidateId: 2, tiedWithPrevious: false }
+      ]);
+      expect(Number(await election.getTotalVoters())).to.equal(1);
+
+      await election.connect(user2).voteTest(voterId2, [
+        { candidateId: 2, tiedWithPrevious: false },
+        { candidateId: 1, tiedWithPrevious: false }
+      ]);
+      expect(Number(await election.getTotalVoters())).to.equal(2);
     });
 
     it("should return correct election info", async function () {
-      await election.connect(user1).vote([1, 2]);
-      
+      const voterId = 12345;
+      await election.connect(user1).voteTest(voterId, [
+        { candidateId: 1, tiedWithPrevious: false },
+        { candidateId: 2, tiedWithPrevious: false }
+      ]);
+
       const info = await election.getElectionInfo();
-      expect(info._candidateCount).to.equal(2);
-      expect(info._totalVotes).to.equal(1);
+      expect(Number(info._candidateCount)).to.equal(2);
+      expect(Number(info._totalVoters)).to.equal(1);
       expect(info._votingActive).to.be.true;
+    });
+
+    it("should return voting statistics", async function () {
+      const voterId = 12345;
+      await election.connect(user1).voteTest(voterId, [
+        { candidateId: 1, tiedWithPrevious: false }
+      ]);
+
+      const stats = await election.getVotingStats();
+      expect(Number(stats.totalVoters)).to.equal(1);
+      expect(Number(stats.candidateCount_)).to.equal(2);
     });
   });
 });

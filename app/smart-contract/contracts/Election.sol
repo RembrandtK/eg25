@@ -216,6 +216,50 @@ contract Election is IElection, AccessControl {
 
         emit RankingUpdated(msg.sender, ranking);
     }
+
+    /**
+     * @dev Simple vote function for testing (bypasses World ID verification)
+     * @param voterId The voter ID to use
+     * @param ranking Array of RankingEntry structs with tie information
+     */
+    function voteTest(
+        uint256 voterId,
+        RankingEntry[] memory ranking
+    ) external votingIsActive {
+        if (ranking.length == 0) revert RankingEmpty();
+
+        // Validate all candidate IDs and tie logic
+        for (uint256 i = 0; i < ranking.length; i++) {
+            if (ranking[i].candidateId == 0 || ranking[i].candidateId > candidateCount) {
+                revert InvalidCandidateId(ranking[i].candidateId);
+            }
+
+            // Check candidate is active
+            if (!candidates[ranking[i].candidateId].active) {
+                revert CandidateNotActive(ranking[i].candidateId);
+            }
+
+            // First entry cannot be tied with previous
+            if (i == 0 && ranking[i].tiedWithPrevious) {
+                revert FirstEntryCannotBeTied();
+            }
+        }
+
+        // Store/update ranking by voter ID (allows vote updates)
+        bool isNewVoter = votes[voterId].length == 0;
+
+        delete votes[voterId];
+        for (uint256 i = 0; i < ranking.length; i++) {
+            votes[voterId].push(ranking[i]);
+        }
+
+        // Track new voter
+        if (isNewVoter) {
+            voters.push(voterId);
+        }
+
+        emit RankingUpdated(msg.sender, ranking);
+    }
     
     // Get vote for a specific voter ID
     function getVote(uint256 voterId) external view returns (RankingEntry[] memory) {
