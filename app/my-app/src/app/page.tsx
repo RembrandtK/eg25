@@ -181,7 +181,7 @@ export default function Page() {
               {activeTab === 'vote' && (
                 <InteractiveRankingTab
                   candidates={candidates}
-                  verified={isWalletConnected}
+                  verified={true} // World ID verification happens during submission
                   hasVoted={hasVoted}
                 />
               )}
