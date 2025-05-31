@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
 import { createPublicClient, http } from "viem";
@@ -31,14 +31,14 @@ export function useElectionVoting({
   const [isLoading, setIsLoading] = useState(true);
   const { data: session } = useSession();
 
-  // Create public client for reading contract state
-  const publicClient = createPublicClient({
+  // Create public client for reading contract state (memoized to prevent infinite loops)
+  const publicClient = useMemo(() => createPublicClient({
     chain: worldchainSepolia,
     transport: http(CURRENT_NETWORK.rpcUrl, {
       retryCount: 3,
       retryDelay: 2000,
     }),
-  });
+  }), []);
 
   // Load current vote from contract
   const loadCurrentVote = useCallback(async (retryCount = 0) => {
