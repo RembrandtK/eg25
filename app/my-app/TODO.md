@@ -26,7 +26,7 @@
   - ✅ Added retry logic with exponential backoff for contract reads
   - ✅ Fixed component integration and circular dependencies
 - **Current State**: App loads existing rankings from contract on initialization
-- **Testing**: Ready for testing at https://757b-195-113-187-136.ngrok-free.app
+- **Testing**: Ready for testing at https://pet-jackal-crucial.ngrok-free.app
 
 ### **2. Contract Reading Reliability**
 
