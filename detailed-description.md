@@ -1,0 +1,142 @@
+2025 ETHGLOBAL PRAGUE: MINI VOTE
+=================================
+
+SHORT DESCRIPTION
+_________________
+
+Next generation ranked-choice voting via World Mini App to address democracy challenges
+
+DESCRIPTION
+___________
+
+This project is a comprehensive ranked-choice voting system built as a World Mini App that leverages World ID verification and World Chain smart contracts to create secure, transparent, and accessible elections. It addresses fundamental challenges in democratic processes by combining the security of blockchain with the usability of modern web applications.
+
+Core Functionality
+------------------
+
+The system enables:
+
+1. Election Creation and Management: Authorized users can create new elections with custom candidates, voting periods, and specific World ID verification requirements.
+
+2. Ranked-Choice Voting: Voters can rank candidates in order of preference, including support for equal rankings (ties), providing a more nuanced expression of voter preferences than traditional single-choice voting.
+
+3. World ID Verification: Each vote requires World ID verification, ensuring one-person-one-vote integrity while maintaining voter privacy through zero-knowledge proofs.
+
+4. On-Chain Vote Recording: All votes are recorded on World Chain, providing transparency and immutability while preventing tampering.
+
+5. Tideman/Condorcet Winner Calculation: The system uses advanced voting theory algorithms to determine winners based on pairwise comparisons between candidates, resulting in outcomes that better represent voter preferences.
+
+6. Real-Time Results and Analytics: Election results are calculated and displayed with detailed analytics about voting patterns and candidate performance.
+
+Why It Matters
+--------------
+
+Existing electoral systems are fundamentally flawed, resulting in undemocratic outcomes where people are neither well represented nor feel represented. These systems insidiously encourage and reward bad behavior from politicians, undermining the very foundations of democracy.
+
+The Core Problem:
+Current voting systems force artificial compromises that distort democratic will:
+
+- Strategic Voting: Voters must choose between their preferred candidate and "electability"
+- Polarization: Binary choices amplify division and eliminate nuanced positions
+- Unrepresentative Winners: Candidates can win without broad support due to vote splitting
+- Perverse Incentives: Politicians are rewarded for attacking opponents rather than building consensus
+- Voter Disillusionment: People lose faith when the system consistently fails to reflect their values
+
+Our Revolutionary Approach:
+This project implements cutting-edge voting research that resolves the fundamental compromises plaguing all well-known electoral systems. Rather than debating which flawed system is "least bad," we demonstrate a profoundly superior approach that:
+
+- Eliminates Strategic Voting: Voters can always vote their true preferences without fear of "wasting" their vote
+- Rewards Consensus-Building: Politicians benefit from being broadly acceptable, not just intensely supported by a narrow base
+- Ensures Democratic Legitimacy: Winners have genuine majority support through sophisticated preference aggregation
+- Reduces Polarization: The system naturally favors candidates who can bridge divides
+
+The Mission:
+While this won't immediately fix democracy, it makes a demonstrably better voting system conveniently available to all. The goal is threefold: provide immediate utility for organizations needing better decision-making tools, demonstrate how superior systems work in practice, and spread awareness that far better alternatives exist. By changing the dialogue from "which compromise should we accept?" to "why accept compromises at all?", we can catalyze broader electoral reform.
+
+Research Foundation:
+This project draws from original research on voting systems and collaboration with members of multiple organizations campaigning for electoral reform in the UK. While these groups may not be specifically interested in blockchain technology, there is widespread recognition of the need for and appetite for better voting systems across the democratic reform community.
+
+Real-World Applications
+-----------------------
+
+This system can be used for:
+
+- Community governance decisions
+- DAO proposals and elections
+- Student government elections
+- Professional organization leadership selection
+- Local government initiatives
+- Any context requiring secure, verified voting with ranked preferences
+
+HOW IT'S MADE
+=============
+
+Technology Stack
+----------------
+
+Frontend:
+
+- Next.js 14 with TypeScript for the main application framework
+- Tailwind CSS for responsive, mobile-first styling optimized for World App
+- MiniKit SDK for seamless World App integration and World ID verification
+- React DnD for intuitive drag-and-drop candidate ranking interface
+- Framer Motion for smooth animations and user feedback
+
+Smart Contracts:
+
+- Solidity smart contracts deployed on World Chain Sepolia testnet
+- Hardhat development environment for contract compilation and deployment
+- OpenZeppelin libraries for secure contract patterns
+- World ID Verification integrated directly into voting contract logic
+
+Blockchain Integration:
+
+- ethers.js for blockchain interaction and transaction management
+- World Chain as the primary blockchain for vote storage and verification
+- IPFS (planned) for storing election metadata and candidate information
+
+Architecture & Implementation
+-----------------------------
+
+Smart Contract Design:
+The core voting contract implements a sophisticated ranked-choice voting system with World ID verification. Each vote is stored as an encrypted ranking array, with the World ID nullifier hash ensuring one-vote-per-person while maintaining privacy.
+
+Ranking Algorithm:
+We implemented the Tideman/Condorcet method for determining winners, which involves:
+
+1. Creating pairwise comparison matrices between all candidates
+2. Calculating the strength of victory for each pairing
+3. Sorting and locking in the strongest victories first
+4. Avoiding cycles to determine the final ranking
+
+Mobile-First UX:
+The interface was specifically designed for the World App environment with:
+
+- Touch-optimized drag-and-drop for ranking candidates
+- Progressive disclosure of complex voting options
+- Real-time validation and feedback
+- Offline-capable design for areas with poor connectivity
+
+Security Considerations:
+
+- All votes are cryptographically signed and verified
+- World ID prevents sybil attacks while preserving anonymity
+- Smart contract logic prevents double voting and tampering
+- Frontend validation with backend verification for all user inputs
+
+Notable Technical Achievements
+------------------------------
+
+Innovative Ranking Interface:
+We created a unique mobile-optimized ranking system that allows users to easily reorder candidates with visual feedback, including support for tied rankings - a feature rarely seen in digital voting systems.
+
+Gas-Optimized Vote Storage:
+Votes are stored efficiently on-chain using packed structs and bit manipulation to minimize gas costs while maintaining full transparency.
+
+Real-Time Result Calculation:
+The system calculates Condorcet winners in real-time as votes are cast, providing immediate feedback on election dynamics without compromising vote privacy.
+
+World App Integration:
+Deep integration with MiniKit allows for seamless user experience within the World App ecosystem, including automatic wallet connection and streamlined World ID verification.
+
+By combining cutting-edge voting theory with modern blockchain technology and mobile-first design, this project represents a significant advancement in digital democracy tools.
