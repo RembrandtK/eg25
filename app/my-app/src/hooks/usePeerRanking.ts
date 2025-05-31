@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
 
@@ -191,8 +191,8 @@ export function usePeerRanking({
   const isDevelopment = process.env.NODE_ENV === 'development';
   const isReady = hasUserAddress && (miniKitInstalled || isDevelopment);
 
-  // Log connection status for debugging
-  if (typeof window !== 'undefined') {
+  // Log connection status for debugging (only when values change)
+  useEffect(() => {
     console.log('PeerRanking Hook Status:', {
       hasUserAddress,
       userAddress: session?.user?.address,
@@ -200,7 +200,7 @@ export function usePeerRanking({
       isDevelopment,
       isReady
     });
-  }
+  }, [hasUserAddress, session?.user?.address, miniKitInstalled, isDevelopment, isReady]);
 
   return {
     updateRanking,

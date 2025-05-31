@@ -194,6 +194,10 @@ export function InteractiveRankingTab({
             <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
             <span>Connecting to blockchain...</span>
           </div>
+          {/* Debug info */}
+          <div className="mt-2 text-xs text-gray-500">
+            Debug: hasUserAddress={hasUserAddress?.toString()}, miniKitInstalled={miniKitInstalled?.toString()}, isReady={isReady?.toString()}
+          </div>
         </div>
       )}
     </div>
