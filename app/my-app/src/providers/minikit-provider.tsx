@@ -88,6 +88,40 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           );
         }
 
+        // Configure MiniKit action handler for send-transaction
+        if (typeof window.MiniKit.subscribe === "function") {
+          console.log("Setting up MiniKit action handler...");
+
+          window.MiniKit.subscribe("miniapp-send-transaction", async (payload: any) => {
+            console.log("🔗 MiniKit send-transaction event received:", payload);
+
+            try {
+              // Send the payload to our action handler
+              const response = await fetch("/api/minikit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payload }),
+              });
+
+              const result = await response.json();
+              console.log("✅ Action handler response:", result);
+
+              return result;
+            } catch (error) {
+              console.error("❌ Action handler error:", error);
+              return {
+                status: "error",
+                error_code: "handler_error",
+                error_message: "Failed to process action",
+              };
+            }
+          });
+
+          console.log("MiniKit action handler configured");
+        } else {
+          console.warn("MiniKit.subscribe not available, action handling may not work");
+        }
+
         // Give commands time to initialize
         await new Promise((resolve) => setTimeout(resolve, 500));
 
