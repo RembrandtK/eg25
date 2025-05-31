@@ -23,21 +23,12 @@ MUST:
 - **ElectionManager.sol** deployed to worldchain-sepolia: `0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7`
 - 4 test candidates: Alice Johnson, Bob Smith, Carol Davis, David Wilson
 
-### NEW: Peer Ranking Smart Contract
+### Peer Ranking Smart Contract
 
 - **Separate contract** for storing peer comparison tallies
-- Matrix of pairwise comparisons (A > B, B > C, etc.)
 - Live updates without submission button
 - Compatible with future Condorcet/Ranked Pairs algorithms
 
-### Frontend Components (Major Redesign Required)
-
-#### Current Implementation
-- Bottom Navigation: Two-tab interface (Candidates / My Ranking)
-- CandidatesTab: Displays candidate list from contract
-- RankingTab: Drag-and-drop interface for ranking candidates
-
-#### NEW Requirements
 - **Unranked Candidates Pool**: Bottom section showing available candidates
 - **Ranked Candidates List**: Top section showing current ranking with proper numbering
 - **Interactive Ranking**: Add candidates from pool to ranked list
@@ -45,33 +36,12 @@ MUST:
 - **Real-time Updates**: Immediate peer tally updates on reordering
 
 ## 🚨 **CRITICAL REQUIREMENT: REGULAR COMMITS**
+
 **MUST commit and push changes regularly throughout development!**
+
 - After completing each task or significant change
 - Before switching between major components
 - At least every 30 minutes of active development
-- Always commit before asking for help or reporting issues
-
-## 📋 HACKATHON TASKS
-
-### ✅ COMPLETED TASKS
-
-1. **✅ Smart Contract Development**
-   - ✅ Design peer comparison matrix contract (PeerRanking.sol)
-   - ✅ Implement pairwise comparison storage with efficient vote tracking
-   - ✅ Deploy to worldchain-sepolia testnet: `0x2caDc553c4B98863A3937fF0E710b79F7E855d8a`
-   - ✅ Comprehensive testing (14 test cases, all passing)
-
-2. **✅ Core Interactive Ranking Interface**
-   - ✅ Create two-section layout: ranked list (top) + unranked pool (bottom)
-   - ✅ Add/remove candidates between pools
-   - ✅ Reorder candidates within ranked list
-   - ✅ Real-time blockchain updates (no submission button)
-
-3. **✅ Frontend-Contract Integration**
-   - ✅ Connect ranking interface to peer tally contract
-   - ✅ Handle transaction states with user feedback
-   - ✅ Debounced updates for gas optimization
-   - ✅ Error handling and success notifications
 
 ### � CRITICAL ISSUES TO FIX IMMEDIATELY
 
