@@ -119,7 +119,6 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 
 // Export for convenience
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
-export const TUTE_ADDRESS = getContractAddress('TUTE');
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
 export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');
