@@ -3,9 +3,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { InteractiveRanking } from "./InteractiveRanking";
 import { WalletAuthButton } from "./wallet-auth-button";
-import { usePeerRanking } from "@/hooks/usePeerRanking";
-import { PEER_RANKING_ABI } from "@/peer-ranking-abi";
-import { PEER_RANKING_ADDRESS } from "@/config/contracts";
+import { useElectionVoting } from "@/hooks/useElectionVoting";
+import { ELECTION_ABI } from "@/election-abi";
+import { ELECTION_MANAGER_ADDRESS } from "@/config/contracts";
 import { Candidate } from "@/election-abi";
 import { useSession } from "next-auth/react";
 
@@ -26,28 +26,26 @@ export function InteractiveRankingTab({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
-    updateRanking,
-    loadCurrentRanking,
-    isUpdating,
+    submitVote,
+    loadCurrentVote,
+    isVoting,
     isLoading,
     lastTxId,
-    currentRanking,
-    isReady,
-    hasUserAddress,
-    miniKitInstalled
-  } = usePeerRanking({
-    contractAddress: PEER_RANKING_ADDRESS,
-    contractAbi: PEER_RANKING_ABI,
+    currentVote,
+    hasVoted: hasSubmittedVote
+  } = useElectionVoting({
+    electionAddress: ELECTION_MANAGER_ADDRESS, // TODO: This should be the specific Election contract address
+    electionAbi: ELECTION_ABI,
     onSuccess: (txId) => {
-      console.log("Ranking updated successfully:", txId);
+      console.log("Vote submitted successfully:", txId);
 
       // Just clear any error messages, status icon will handle success feedback
       setErrorMessage(null);
       setSuccessMessage(null);
     },
     onError: (error) => {
-      console.error("Error updating ranking:", error);
-      setErrorMessage(error.message || "Failed to update ranking");
+      console.error("Error submitting vote:", error);
+      setErrorMessage(error.message || "Failed to submit vote");
       setSuccessMessage(null);
 
       // Clear error message after 5 seconds
@@ -57,11 +55,11 @@ export function InteractiveRankingTab({
 
   // Initialize ranking from contract when loaded
   useEffect(() => {
-    if (currentRanking.length > 0 && rankedCandidateIds.length === 0) {
-      console.log("📖 Initializing ranking from contract:", currentRanking);
-      setRankedCandidateIds(currentRanking);
+    if (currentVote.length > 0 && rankedCandidateIds.length === 0) {
+      console.log("📖 Initializing ranking from contract:", currentVote);
+      setRankedCandidateIds(currentVote);
     }
-  }, [currentRanking, rankedCandidateIds.length]);
+  }, [currentVote, rankedCandidateIds.length]);
 
   // Handle ranking changes from the interactive component
   const handleRankingChange = useCallback((newRankedIds: bigint[]) => {
@@ -70,12 +68,12 @@ export function InteractiveRankingTab({
     // Don't auto-submit to blockchain - wait for explicit submit
   }, []);
 
-  // Handle explicit ranking submission
-  const handleSubmitRanking = useCallback(() => {
-    if (isReady && rankedCandidateIds.length > 0) {
-      updateRanking(rankedCandidateIds);
+  // Handle explicit vote submission
+  const handleSubmitVote = useCallback(() => {
+    if (rankedCandidateIds.length > 0) {
+      submitVote(rankedCandidateIds);
     }
-  }, [isReady, rankedCandidateIds, updateRanking]);
+  }, [rankedCandidateIds, submitVote]);
 
   // Clear messages when ranking changes
   useEffect(() => {
@@ -151,38 +149,29 @@ export function InteractiveRankingTab({
   const StatusIcon = () => {
     if (isLoading) {
       return (
-        <div className="flex items-center space-x-1 text-purple-500" title="Loading ranking...">
+        <div className="flex items-center space-x-1 text-purple-500" title="Loading vote...">
           <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
           <span className="text-xs">Loading</span>
         </div>
       );
     }
 
-    if (!isReady) {
+    if (isVoting) {
       return (
-        <div className="flex items-center space-x-1 text-orange-500" title="Connecting...">
-          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs">Connecting</span>
-        </div>
-      );
-    }
-
-    if (isUpdating) {
-      return (
-        <div className="flex items-center space-x-1 text-blue-500" title="Updating ranking...">
+        <div className="flex items-center space-x-1 text-blue-500" title="Submitting vote...">
           <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-xs">Updating</span>
+          <span className="text-xs">Voting</span>
         </div>
       );
     }
 
     if (lastTxId) {
       return (
-        <div className="flex items-center space-x-1 text-green-500" title={`Last update: ${lastTxId}`}>
+        <div className="flex items-center space-x-1 text-green-500" title={`Last vote: ${lastTxId}`}>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span className="text-xs">Saved</span>
+          <span className="text-xs">Voted</span>
         </div>
       );
     }
@@ -206,10 +195,10 @@ export function InteractiveRankingTab({
         </div>
 
         <div className="text-center pr-20">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Interactive Ranking</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Election Voting</h2>
           <p className="text-gray-600 text-sm">
-            Build your ranking by adding candidates from the pool below.
-            Click "Submit Ranking" when ready to save to blockchain.
+            Rank candidates in order of preference.
+            Click "Submit Vote" when ready to cast your vote with World ID verification.
           </p>
         </div>
       </div>
@@ -232,30 +221,30 @@ export function InteractiveRankingTab({
       <InteractiveRanking
         candidates={candidates}
         onRankingChange={handleRankingChange}
-        disabled={!isReady}
-        isUpdating={isUpdating}
-        initialRanking={currentRanking}
+        disabled={isVoting}
+        isUpdating={isVoting}
+        initialRanking={currentVote}
       />
 
       {/* Submit Button */}
       {rankedCandidateIds.length > 0 && (
         <div className="flex justify-center">
           <button
-            onClick={handleSubmitRanking}
-            disabled={!isReady || isUpdating || rankedCandidateIds.length === 0}
+            onClick={handleSubmitVote}
+            disabled={isVoting || rankedCandidateIds.length === 0}
             className="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
-            {isUpdating ? (
+            {isVoting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Submitting...</span>
+                <span>Submitting Vote...</span>
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>Submit Ranking</span>
+                <span>Submit Vote</span>
               </>
             )}
           </button>

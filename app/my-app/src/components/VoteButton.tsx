@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MiniKit } from "@worldcoin/minikit-js";
+import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
 
 interface VoteButtonProps {
@@ -10,6 +10,11 @@ interface VoteButtonProps {
   rankedCandidateIds: bigint[];
   onSuccess: (txId: string) => void;
   disabled?: boolean;
+}
+
+interface RankingEntry {
+  candidateId: number;
+  tiedWithPrevious: boolean;
 }
 
 export function VoteButton({
@@ -41,33 +46,75 @@ export function VoteButton({
     try {
       setIsLoading(true);
 
-      // Convert BigInt array to regular number array for the contract call
-      const candidateIdsAsNumbers = rankedCandidateIds.map(id => Number(id));
+      // Step 1: World ID verification
+      console.log("🔐 Starting World ID verification for vote...");
 
-      console.log("Submitting vote with ranking:", candidateIdsAsNumbers);
+      const voteData = rankedCandidateIds.map(id => Number(id));
+      const signal = JSON.stringify(voteData);
 
-      // Send transaction to update ranking (PeerRanking system)
-      // Note: updateRanking expects a single array argument, so we pass [candidateIdsAsNumbers]
+      const verifyPayload: VerifyCommandInput = {
+        action: "vote", // This should match the Election contract's worldIdAction
+        signal,
+        verification_level: VerificationLevel.Orb,
+      };
+
+      console.log("📡 Sending verification request:", verifyPayload);
+
+      const verifyResponse = await MiniKit.commandsAsync.verify(verifyPayload);
+      console.log("📦 Verification response:", verifyResponse);
+
+      if (verifyResponse.finalPayload.status === "error") {
+        const errorMessage = `World ID verification failed: ${verifyResponse.finalPayload.error_code || 'unknown_error'}`;
+        console.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const { verification_level, merkle_root, nullifier_hash, proof } = verifyResponse.finalPayload as ISuccessResult;
+
+      console.log("✅ World ID verification successful");
+
+      // Step 2: Convert to RankingEntry format for Election contract
+      const rankingEntries: RankingEntry[] = rankedCandidateIds.map(id => ({
+        candidateId: Number(id),
+        tiedWithPrevious: false  // No ties for now
+      }));
+
+      console.log("🚀 Submitting vote to Election contract...");
+      console.log("📋 Vote data:", rankingEntries);
+
+      // Step 3: Submit transaction with World ID proof
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {
             address: contractAddress,
             abi: contractAbi,
-            functionName: "updateRanking",
-            args: [candidateIdsAsNumbers], // This is correct - candidateIdsAsNumbers is already an array
+            functionName: "vote",
+            args: [
+              signal,
+              merkle_root,
+              nullifier_hash,
+              proof,
+              rankingEntries
+            ],
           },
         ],
       });
 
       if (finalPayload.status === "error") {
         console.error("Error casting vote:", finalPayload);
-        return;
+        const errorCode = (finalPayload as any).error_code || 'unknown_error';
+        const errorMessage = errorCode === 'user_rejected'
+          ? 'Transaction was rejected. Please try again.'
+          : `Transaction failed: ${errorCode}`;
+        throw new Error(errorMessage);
       }
 
       console.log("Vote cast successfully:", finalPayload);
       onSuccess(finalPayload.transaction_id);
     } catch (error) {
       console.error("Error casting vote:", error);
+      // Re-throw to let parent handle the error display
+      throw error;
     } finally {
       setIsLoading(false);
     }
