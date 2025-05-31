@@ -1,3 +1,4 @@
 {
-  "ElectionDeployment#ElectionManager": "0xa3ee18dc44C24DDd48DDe3B37a377D7664f69511"
+  "ElectionDeployment#MockWorldID": "0xD1475b98eAE5335eDB90Ab7bB46d029c18cb24ab",
+  "ElectionDeployment#ElectionManager": "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC"
 }

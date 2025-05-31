@@ -8,31 +8,11 @@ module.exports = buildModule("ElectionDeployment", (m) => {
   const verificationDuration = m.getParameter("verificationDuration", 365 * 24 * 60 * 60); // 1 year
   const initialCandidates = m.getParameter("initialCandidates", []);
 
-  let addressBookAddress;
+  // Deploy mock World ID for testing (always deploy for now)
+  const mockWorldID = m.contract("MockWorldID");
 
-  if (useExistingAddressBook && existingAddressBookAddress !== "0x0000000000000000000000000000000000000000") {
-    // Use existing address book (for mainnet)
-    addressBookAddress = existingAddressBookAddress;
-  } else {
-    // Deploy mock address book for testing
-    const mockAddressBook = m.contract("MockWorldIDAddressBook");
-    addressBookAddress = mockAddressBook;
-
-    // Verify test addresses if provided
-    if (testAddresses.length > 0) {
-      const currentTime = Math.floor(Date.now() / 1000);
-      const verifiedUntil = currentTime + verificationDuration;
-
-      testAddresses.forEach((address, index) => {
-        m.call(mockAddressBook, "setAddressVerifiedUntil", [address, verifiedUntil], {
-          id: `verify_address_${index}`,
-        });
-      });
-    }
-  }
-
-  // Deploy ElectionManager contract
-  const electionManager = m.contract("ElectionManager", [addressBookAddress]);
+  // Deploy ElectionManager contract with MockWorldID dependency
+  const electionManager = m.contract("ElectionManager", [mockWorldID]);
 
   // Add initial candidates if provided
   if (initialCandidates.length > 0) {
@@ -44,8 +24,7 @@ module.exports = buildModule("ElectionDeployment", (m) => {
   }
 
   return {
-    mockAddressBook: useExistingAddressBook ? null : addressBookAddress,
+    mockWorldID,
     electionManager,
-    addressBookAddress,
   };
 });

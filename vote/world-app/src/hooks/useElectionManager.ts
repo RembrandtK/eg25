@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
 import { CURRENT_NETWORK, ELECTION_MANAGER_ADDRESS } from "@/config/contracts";
@@ -17,19 +17,24 @@ interface Election {
   creator: string;
 }
 
-export function useElectionManager() {
+interface UseElectionManagerOptions {
+  enabled?: boolean;
+}
+
+export function useElectionManager(options: UseElectionManagerOptions = {}) {
+  const { enabled = true } = options;
   const [elections, setElections] = useState<Election[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
 
-  // Create public client for reading contract state
-  const publicClient = createPublicClient({
+  // Create public client for reading contract state (memoized to prevent infinite loops)
+  const publicClient = useMemo(() => createPublicClient({
     chain: worldchainSepolia,
     transport: http(CURRENT_NETWORK.rpcUrl, {
       retryCount: 3,
       retryDelay: 2000,
     }),
-  });
+  }), []);
 
   // Load all elections from ElectionManager
   const loadElections = useCallback(async () => {
@@ -105,10 +110,16 @@ export function useElectionManager() {
     return elections.filter(election => election.isActive);
   }, [elections]);
 
-  // Load elections on mount
+  // Load elections when enabled
   useEffect(() => {
-    loadElections();
-  }, [loadElections]);
+    if (enabled) {
+      loadElections();
+    } else {
+      setElections([]);
+      setIsLoading(false);
+      setError(null);
+    }
+  }, [enabled]); // Remove loadElections from dependencies to prevent infinite loop
 
   return {
     // State

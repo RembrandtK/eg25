@@ -35,14 +35,25 @@ export function ElectionDashboard() {
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Load elections from ElectionManager
+  // Check if user is authenticated
+  const isAuthenticated = !!session?.user?.address;
+
+  // Debug: Log component state
+  console.log("ElectionDashboard render:", {
+    isAuthenticated,
+    sessionExists: !!session,
+    electionsCount: elections.length,
+    electionsLoading
+  });
+
+  // Load elections from ElectionManager (always initialize, but only load when authenticated)
   const {
     elections,
     isLoading: electionsLoading,
     error: electionsError,
     loadElections,
     getActiveElections
-  } = useElectionManager();
+  } = useElectionManager({ enabled: isAuthenticated });
 
   // Voting hook for selected election
   const {
@@ -70,12 +81,12 @@ export function ElectionDashboard() {
   // Auto-select first active election if none selected
   useEffect(() => {
     if (!selectedElection && elections.length > 0) {
-      const activeElections = getActiveElections();
+      const activeElections = elections.filter(election => election.isActive);
       if (activeElections.length > 0) {
         setSelectedElection(activeElections[0]);
       }
     }
-  }, [elections, selectedElection, getActiveElections]);
+  }, [elections, selectedElection]);
 
   // Initialize ranking from current vote
   useEffect(() => {
@@ -101,7 +112,7 @@ export function ElectionDashboard() {
   };
 
   // Show wallet connection if not authenticated
-  if (!session?.user?.address) {
+  if (!isAuthenticated) {
     return (
       <div className="space-y-6">
         <div className="text-center">

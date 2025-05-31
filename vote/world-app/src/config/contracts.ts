@@ -25,16 +25,16 @@ export interface NetworkConfig {
   contracts: {
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
-    PeerRanking: ContractConfig;
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T16:46:09.711Z
+// Last updated: 2025-05-31T17:35:47.141Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
-    "ElectionDeployment#ElectionManager": "0xa3ee18dc44C24DDd48DDe3B37a377D7664f69511"
+    "ElectionDeployment#MockWorldID": "0xD1475b98eAE5335eDB90Ab7bB46d029c18cb24ab",
+    "ElectionDeployment#ElectionManager": "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC"
   }
 };
 
@@ -42,19 +42,15 @@ const DEPLOYED_ADDRESSES = {
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.gateway.tenderly.co",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     WorldIDAddressBook: {
-      address: DEPLOYED_ADDRESSES[4801]["MockWorldIDDeployment#MockWorldIDAddressBook"] || "",
+      address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#MockWorldID"] || "",
       verified: false,
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[4801]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -73,10 +69,6 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
     },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
-      verified: false,
-    },
-    PeerRanking: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },
@@ -116,6 +108,7 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
 
 // Export for convenience
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
+
+// Direct exports for deployed contracts
 export const WORLD_ID_ADDRESS_BOOK = getContractAddress('WorldIDAddressBook');
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
-export const PEER_RANKING_ADDRESS = getContractAddress('PeerRanking');
