@@ -2,9 +2,11 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { InteractiveRanking } from "./InteractiveRanking";
+import { WalletAuthButton } from "./wallet-auth-button";
 import { usePeerRanking } from "@/hooks/usePeerRanking";
 import { PEER_RANKING_CONTRACT_ADDRESS, PEER_RANKING_ABI } from "@/peer-ranking-abi";
 import { Candidate } from "@/election-abi";
+import { useSession } from "next-auth/react";
 
 interface InteractiveRankingTabProps {
   candidates: Candidate[];
@@ -17,6 +19,7 @@ export function InteractiveRankingTab({
   verified,
   hasVoted
 }: InteractiveRankingTabProps) {
+  const { data: session } = useSession();
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -77,6 +80,27 @@ export function InteractiveRankingTab({
         <p className="text-gray-600 text-center text-sm">
           Please verify your World ID to access the interactive ranking system.
         </p>
+      </div>
+    );
+  }
+
+  // Check if user needs to connect wallet after verification
+  if (verified && !session?.user?.address) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="text-blue-500 mb-4">
+          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Connect Your Wallet</h2>
+        <p className="text-gray-600 text-center text-sm mb-6">
+          Connect your wallet to access the interactive ranking system and submit votes to the blockchain.
+        </p>
+        <WalletAuthButton onSuccess={() => {
+          console.log("Wallet connected successfully!");
+          // The session will update automatically
+        }} />
       </div>
     );
   }
