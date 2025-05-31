@@ -6,7 +6,41 @@
  */
 
 const { createPublicClient, http } = require('viem');
-const { ELECTION_MANAGER_ADDRESS, CURRENT_NETWORK } = require('../src/config/contracts.ts');
+const fs = require('fs');
+const path = require('path');
+
+// Read contract addresses from the same source as frontend
+function getContractAddresses() {
+  const contractsPath = path.join(__dirname, '../src/config/contracts.ts');
+
+  if (!fs.existsSync(contractsPath)) {
+    throw new Error('contracts.ts not found. Run "npm run sync-contracts" first.');
+  }
+
+  const contractsContent = fs.readFileSync(contractsPath, 'utf8');
+
+  // Extract DEPLOYED_ADDRESSES from the file
+  const deployedAddressesMatch = contractsContent.match(/const DEPLOYED_ADDRESSES = ({[\s\S]*?});/);
+  if (!deployedAddressesMatch) {
+    throw new Error('Could not parse DEPLOYED_ADDRESSES from contracts.ts');
+  }
+
+  const deployedAddresses = JSON.parse(deployedAddressesMatch[1]);
+  const chainId = 4801; // World Chain Sepolia
+
+  if (!deployedAddresses[chainId]) {
+    throw new Error(`No deployments found for chain ID ${chainId}`);
+  }
+
+  return {
+    peerRanking: deployedAddresses[chainId]["PeerRankingDeployment#PeerRanking"],
+    electionManager: deployedAddresses[chainId]["ElectionDeployment#ElectionManager"],
+    worldIdAddressBook: deployedAddresses[chainId]["MockWorldIDDeployment#MockWorldIDAddressBook"]
+  };
+}
+
+// Get addresses from contracts config
+const addresses = getContractAddresses();
 
 // Define worldchain configuration inline
 const worldchain = {
@@ -110,16 +144,16 @@ async function testVotingFlow() {
     // Initialize client
     const client = createPublicClient({
       chain: worldchain,
-      transport: http(CURRENT_NETWORK.rpcUrl),
+      transport: http("https://worldchain-sepolia.g.alchemy.com/public"),
     });
 
     console.log("✅ Connected to World Chain Sepolia");
-    console.log(`📍 Contract: ${ELECTION_MANAGER_ADDRESS}`);
+    console.log(`📍 Contract: ${addresses.electionManager}`);
 
     // Test 1: Check if voting is active
     console.log("\n1️⃣ Testing voting status...");
     const votingActive = await client.readContract({
-      address: ELECTION_MANAGER_ADDRESS,
+      address: addresses.electionManager,
       abi: ELECTION_ABI,
       functionName: "votingActive",
     });
@@ -128,7 +162,7 @@ async function testVotingFlow() {
     // Test 2: Load candidates
     console.log("\n2️⃣ Testing candidate loading...");
     const candidates = await client.readContract({
-      address: ELECTION_MANAGER_ADDRESS,
+      address: addresses.electionManager,
       abi: ELECTION_ABI,
       functionName: "getCandidates",
     });
@@ -142,7 +176,7 @@ async function testVotingFlow() {
     console.log("\n3️⃣ Testing voting status check...");
     const testAddress = "0x1234567890123456789012345678901234567890";
     const hasVoted = await client.readContract({
-      address: ELECTION_MANAGER_ADDRESS,
+      address: addresses.electionManager,
       abi: ELECTION_ABI,
       functionName: "checkHasVoted",
       args: [testAddress],

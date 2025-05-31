@@ -1,0 +1,34 @@
+{
+  "network": "worldchain-sepolia",
+  "chainId": 4801,
+  "timestamp": "2025-05-31T11:24:18.449Z",
+  "contracts": {
+    "MockWorldIDAddressBook": "0xb8C3747DF2dbB87d533b453B426d03136a052fF4",
+    "ElectionManager": "0xAA75C772ca977F89125B3592355346b9eFD37AC9",
+    "PeerRanking": "0xcb20431Bbe49DBc3B90a4d29CE333D8DA67a9825"
+  },
+  "candidates": [
+    {
+      "name": "Alice Johnson",
+      "description": "Experienced leader focused on community development and transparency"
+    },
+    {
+      "name": "Bob Smith",
+      "description": "Innovation advocate with a background in technology and education"
+    },
+    {
+      "name": "Carol Davis",
+      "description": "Environmental champion committed to sustainable policies"
+    },
+    {
+      "name": "David Wilson",
+      "description": "Economic policy expert with focus on fair growth and opportunity"
+    }
+  ],
+  "testUsers": [
+    "0x3c6c2348d430996285672346258afb8528086d5a",
+    "0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b7",
+    "0x8ba1f109551bD432803012645Hac136c9c0043d7"
+  ],
+  "deployer": "0x046B7CDb0DACE9d4c0B5396f34d47945e974E369"
+}

@@ -1,8 +1,45 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
+
+async function getDeployedAddress() {
+  // Read the latest deployment from Ignition
+  const deploymentsDir = path.join(__dirname, "../ignition/deployments");
+
+  if (!fs.existsSync(deploymentsDir)) {
+    throw new Error("No deployments found. Run deployment first.");
+  }
+
+  // Find the latest deployment directory
+  const deploymentDirs = fs.readdirSync(deploymentsDir)
+    .filter(dir => dir.startsWith("chain-"))
+    .sort()
+    .reverse();
+
+  if (deploymentDirs.length === 0) {
+    throw new Error("No chain deployments found.");
+  }
+
+  const latestDeployment = deploymentDirs[0];
+  const deploymentPath = path.join(deploymentsDir, latestDeployment, "deployed_addresses.json");
+
+  if (!fs.existsSync(deploymentPath)) {
+    throw new Error(`No deployed_addresses.json found in ${latestDeployment}`);
+  }
+
+  const deployedAddresses = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
+  const electionManagerAddress = deployedAddresses["ElectionDeployment#ElectionManager"];
+
+  if (!electionManagerAddress) {
+    throw new Error("ElectionManager address not found in deployment");
+  }
+
+  return electionManagerAddress;
+}
 
 async function main() {
-  // Get the deployed contract address
-  const contractAddress = "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7";
+  // Get the deployed contract address dynamically
+  const contractAddress = await getDeployedAddress();
   
   // Get the contract factory and attach to deployed contract
   const ElectionManager = await ethers.getContractFactory("ElectionManager");

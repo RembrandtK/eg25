@@ -127,6 +127,7 @@ contract ElectionManager {
     
     // Get vote for a specific voter
     function getVote(address _voter) external view returns (uint256[] memory) {
+        // TODO: I think this can/should be removed, and tests updated (first). Default value for uint256[] is empty array which should work.
         require(hasVoted[_voter], "Voter has not voted");
         return votes[_voter].rankedCandidateIds;
     }

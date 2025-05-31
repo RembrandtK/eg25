@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-interface IWorldIdAddressBook {
-    function addressVerifiedUntil(address) external view returns (uint256);
+interface IWorldID {
+    function verifyProof(
+        uint256 root,
+        uint256 groupId,
+        uint256 signalHash,
+        uint256 nullifierHash,
+        uint256 externalNullifierHash,
+        uint256[8] calldata proof
+    ) external view;
 }
 
 interface IElectionManager {
@@ -10,8 +17,34 @@ interface IElectionManager {
     function candidates(uint256) external view returns (uint256 id, string memory name, string memory description, bool active);
 }
 
+library ByteHasher {
+    /// @dev Creates a keccak256 hash of a bytestring.
+    /// @param value The bytestring to hash
+    /// @return The hash of the specified value
+    /// @dev `>> 8` makes sure that the result is included in our field
+    function hashToField(bytes memory value) internal pure returns (uint256) {
+        return uint256(keccak256(abi.encodePacked(value))) >> 8;
+    }
+}
+
 contract PeerRanking {
-    IWorldIdAddressBook public immutable worldAddressBook;
+    using ByteHasher for bytes;
+
+    /// @notice Thrown when attempting to reuse a nullifier
+    error InvalidNullifier();
+
+    /// @dev The address of the World ID Router contract that will be used for verifying proofs
+    IWorldID internal immutable worldId;
+
+    /// @dev The keccak256 hash of the externalNullifier (unique identifier of the action performed), combination of appId and action
+    uint256 internal immutable externalNullifierHash;
+
+    /// @dev The World ID group ID (1 for Orb-verified)
+    uint256 internal immutable groupId = 1;
+
+    /// @dev Whether a nullifier hash has been used already. Used to guarantee an action is only performed once by a single person
+    mapping(uint256 => bool) internal nullifierHashes;
+
     IElectionManager public immutable electionManager;
 
     // Maximum rank value (first place)
@@ -42,14 +75,21 @@ contract PeerRanking {
     event RankingUpdated(address indexed user, RankingEntry[] newRanking);
     event ComparisonUpdated(uint256 indexed candidateA, uint256 indexed candidateB, uint256 newCount);
 
-    modifier onlyVerifiedUser() {
-        require(worldAddressBook.addressVerifiedUntil(msg.sender) > 0, "Address not verified");
-        _;
-    }
-
-    constructor(IWorldIdAddressBook _worldAddressBook, IElectionManager _electionManager) {
-        worldAddressBook = _worldAddressBook;
+    /// @param _worldId The address of the WorldIDRouter that will verify the proofs
+    /// @param _appId The World ID App ID (from Developer Portal)
+    /// @param _action The World ID Action (from Developer Portal)
+    /// @param _electionManager The election manager contract
+    constructor(
+        IWorldID _worldId,
+        string memory _appId,
+        string memory _action,
+        IElectionManager _electionManager
+    ) {
+        worldId = _worldId;
         electionManager = _electionManager;
+        externalNullifierHash = abi
+            .encodePacked(abi.encodePacked(_appId).hashToField(), _action)
+            .hashToField();
     }
 
     /**
