@@ -86,10 +86,8 @@ contract PeerRanking {
         uint256[8] calldata proof,
         RankingEntry[] memory newRanking
     ) external {
-        // First, we make sure this person hasn't done this before
-        if (nullifierHashes[nullifierHash]) revert InvalidNullifier();
-
-        // We now verify the provided proof is valid and the user is verified by World ID
+        // We verify the provided proof is valid and the user is verified by World ID
+        // Note: We allow vote updates, so we don't check if nullifier was used before
         worldId.verifyProof(
             root,
             groupId, // set to "1" in the constructor
@@ -99,7 +97,7 @@ contract PeerRanking {
             proof
         );
 
-        // We now record the user has done this, so they can't do it again (sybil-resistance)
+        // Record that this nullifier has been used (for tracking, but allow updates)
         nullifierHashes[nullifierHash] = true;
         require(newRanking.length > 0, "Ranking cannot be empty");
 

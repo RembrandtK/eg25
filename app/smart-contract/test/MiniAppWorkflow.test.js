@@ -1,5 +1,9 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
+
+// This should be automatically loaded by hardhat-toolbox, but let's be explicit
+require("@nomicfoundation/hardhat-chai-matchers");
 
 describe("Mini App Voting Workflow", function () {
   let peerRanking;
@@ -70,12 +74,12 @@ describe("Mini App Voting Workflow", function () {
       // Verify vote was stored correctly
       const storedRanking = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
       expect(storedRanking).to.have.length(3);
-      expect(storedRanking[0].candidateId).to.equal(1);
-      expect(storedRanking[1].candidateId).to.equal(2);
-      expect(storedRanking[2].candidateId).to.equal(3);
+      expect(Number(storedRanking[0].candidateId)).to.equal(1);
+      expect(Number(storedRanking[1].candidateId)).to.equal(2);
+      expect(Number(storedRanking[2].candidateId)).to.equal(3);
 
       // Check total rankers increased
-      expect(await peerRanking.getTotalRankers()).to.equal(1);
+      expect(Number(await peerRanking.getTotalRankers())).to.equal(1);
     });
 
     it("should allow user to update their ranking", async function () {
@@ -111,11 +115,11 @@ describe("Mini App Voting Workflow", function () {
       // Verify ranking was updated
       const storedRanking = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
       expect(storedRanking).to.have.length(3);
-      expect(storedRanking[0].candidateId).to.equal(3); // Carol first now
-      expect(storedRanking[1].candidateId).to.equal(1); // Alice second
+      expect(Number(storedRanking[0].candidateId)).to.equal(3); // Carol first now
+      expect(Number(storedRanking[1].candidateId)).to.equal(1); // Alice second
 
       // Total rankers should still be 1 (same user)
-      expect(await peerRanking.getTotalRankers()).to.equal(1);
+      expect(Number(await peerRanking.getTotalRankers())).to.equal(1);
     });
 
     it("should handle multiple users voting", async function () {
@@ -151,11 +155,11 @@ describe("Mini App Voting Workflow", function () {
       const stored1 = await peerRanking.getNullifierRanking(mockProof.nullifierHash);
       const stored2 = await peerRanking.getNullifierRanking(mockProof2.nullifierHash);
 
-      expect(stored1[0].candidateId).to.equal(1);
-      expect(stored2[0].candidateId).to.equal(3);
+      expect(Number(stored1[0].candidateId)).to.equal(1);
+      expect(Number(stored2[0].candidateId)).to.equal(3);
 
       // Total rankers should be 2
-      expect(await peerRanking.getTotalRankers()).to.equal(2);
+      expect(Number(await peerRanking.getTotalRankers())).to.equal(2);
     });
 
     it("should handle rankings with ties", async function () {
@@ -232,9 +236,9 @@ describe("Mini App Voting Workflow", function () {
     it("should return correct ranking stats", async function () {
       // Initially no rankers
       const [totalRankers, totalComparisons, candidateCount] = await peerRanking.getRankingStats();
-      expect(totalRankers).to.equal(0);
-      expect(totalComparisons).to.equal(0);
-      expect(candidateCount).to.equal(3);
+      expect(Number(totalRankers)).to.equal(0);
+      expect(Number(totalComparisons)).to.equal(0);
+      expect(Number(candidateCount)).to.equal(3);
 
       // After one vote
       const ranking = [{ candidateId: 1, tiedWithPrevious: false }];
@@ -247,7 +251,7 @@ describe("Mini App Voting Workflow", function () {
       );
 
       const [newTotalRankers] = await peerRanking.getRankingStats();
-      expect(newTotalRankers).to.equal(1);
+      expect(Number(newTotalRankers)).to.equal(1);
     });
 
     it("should return all ranker nullifiers", async function () {
@@ -270,8 +274,8 @@ describe("Mini App Voting Workflow", function () {
 
       const rankers = await peerRanking.getAllRankers();
       expect(rankers).to.have.length(2);
-      expect(rankers[0]).to.equal(mockProof.nullifierHash);
-      expect(rankers[1]).to.equal(mockProof2.nullifierHash);
+      expect(rankers[0]).to.equal(BigInt(mockProof.nullifierHash));
+      expect(rankers[1]).to.equal(BigInt(mockProof2.nullifierHash));
     });
   });
 });
