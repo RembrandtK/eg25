@@ -1,5 +1,8 @@
 // Contract address is now managed centrally in @/config/contracts
 // Use PEER_RANKING_ADDRESS from there instead
+// 
+// This ABI was auto-generated from the compiled contract
+// Last updated: 2025-05-31T08:37:22.278Z
 
 export const PEER_RANKING_ABI = [
   {
@@ -53,10 +56,22 @@ export const PEER_RANKING_ABI = [
         "type": "address"
       },
       {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "candidateId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tiedWithPrevious",
+            "type": "bool"
+          }
+        ],
         "indexed": false,
-        "internalType": "uint256[]",
+        "internalType": "struct PeerRanking.RankingEntry[]",
         "name": "newRanking",
-        "type": "uint256[]"
+        "type": "tuple[]"
       }
     ],
     "name": "RankingUpdated",
@@ -89,6 +104,38 @@ export const PEER_RANKING_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getAllRankers",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "candidateId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getCandidateWinCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -106,6 +153,60 @@ export const PEER_RANKING_ABI = [
       {
         "internalType": "uint256",
         "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getCondorcetWinner",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getFullComparisonMatrix",
+    "outputs": [
+      {
+        "internalType": "uint256[][]",
+        "name": "",
+        "type": "uint256[][]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRankingStats",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalRankers",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalComparisons",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "candidateCount",
         "type": "uint256"
       }
     ],
@@ -189,9 +290,21 @@ export const PEER_RANKING_ABI = [
     "name": "getUserRanking",
     "outputs": [
       {
-        "internalType": "uint256[]",
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "candidateId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tiedWithPrevious",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PeerRanking.RankingEntry[]",
         "name": "",
-        "type": "uint256[]"
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
@@ -219,14 +332,135 @@ export const PEER_RANKING_ABI = [
   {
     "inputs": [
       {
-        "internalType": "uint256[]",
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "pairwiseComparisons",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "rankers",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "candidateId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tiedWithPrevious",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PeerRanking.RankingEntry[]",
         "name": "newRanking",
-        "type": "uint256[]"
+        "type": "tuple[]"
       }
     ],
     "name": "updateRanking",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "userCandidateRanks",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "userRankings",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "candidateId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "tiedWithPrevious",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "worldAddressBook",
+    "outputs": [
+      {
+        "internalType": "contract IWorldIdAddressBook",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ] as const;

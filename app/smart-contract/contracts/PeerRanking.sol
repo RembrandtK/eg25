@@ -39,8 +39,7 @@ contract PeerRanking {
     address[] public rankers;
 
     // Events
-    event RankingUpdated(address indexed user, uint256[] newRanking);
-    event RankingUpdatedWithTies(address indexed user, RankingEntry[] newRanking);
+    event RankingUpdated(address indexed user, RankingEntry[] newRanking);
     event ComparisonUpdated(uint256 indexed candidateA, uint256 indexed candidateB, uint256 newCount);
 
     modifier onlyVerifiedUser() {
@@ -57,7 +56,7 @@ contract PeerRanking {
      * @dev Update user's ranking with structured data supporting ties
      * @param newRanking Array of RankingEntry structs with tie information
      */
-    function updateRankingWithTies(RankingEntry[] memory newRanking) external onlyVerifiedUser {
+    function updateRanking(RankingEntry[] memory newRanking) external onlyVerifiedUser {
         require(newRanking.length > 0, "Ranking cannot be empty");
 
         // Validate all candidate IDs and tie logic
@@ -99,62 +98,10 @@ contract PeerRanking {
             rankers.push(msg.sender);
         }
 
-        emit RankingUpdatedWithTies(msg.sender, newRanking);
-    }
-
-    /**
-     * @dev Legacy function for backward compatibility - converts simple array to RankingEntry array
-     * @param newRanking Array of candidate IDs in preference order (no ties)
-     */
-    function updateRanking(uint256[] memory newRanking) external onlyVerifiedUser {
-        require(newRanking.length > 0, "Ranking cannot be empty");
-
-        // Validate all candidate IDs
-        uint256 candidateCount = electionManager.candidateCount();
-        for (uint256 i = 0; i < newRanking.length; i++) {
-            require(newRanking[i] > 0 && newRanking[i] <= candidateCount, "Invalid candidate ID");
-
-            // Check candidate is active
-            (, , , bool active) = electionManager.candidates(newRanking[i]);
-            require(active, "Candidate is not active");
-        }
-
-        // Convert to RankingEntry array (no ties)
-        RankingEntry[] memory rankingEntries = new RankingEntry[](newRanking.length);
-        for (uint256 i = 0; i < newRanking.length; i++) {
-            rankingEntries[i] = RankingEntry({
-                candidateId: newRanking[i],
-                tiedWithPrevious: false  // No ties in legacy format
-            });
-        }
-
-        // Remove old comparisons if user had previous ranking
-        if (hasRanking[msg.sender]) {
-            removeOldComparisons(msg.sender);
-            clearOldRanks(msg.sender);
-        }
-
-        // Set new ranking values and store ranking array
-        setNewRanksWithTies(msg.sender, rankingEntries);
-
-        // Clear old ranking array and set new one
-        delete userRankings[msg.sender];
-        for (uint256 i = 0; i < rankingEntries.length; i++) {
-            userRankings[msg.sender].push(rankingEntries[i]);
-        }
-
-        // Add new comparisons based on rank values
-        addNewComparisons(msg.sender);
-
-        // Track new ranker
-        if (!hasRanking[msg.sender]) {
-            hasRanking[msg.sender] = true;
-            rankers.push(msg.sender);
-        }
-
-        // Emit legacy event for backward compatibility
         emit RankingUpdated(msg.sender, newRanking);
     }
+
+
 
     /**
      * @dev Remove user's previous comparisons from tallies
@@ -262,16 +209,7 @@ contract PeerRanking {
         return userRankings[user];
     }
 
-    function getUserRankingLegacy(address user) external view returns (uint256[] memory) {
-        RankingEntry[] memory ranking = userRankings[user];
-        uint256[] memory legacyRanking = new uint256[](ranking.length);
 
-        for (uint256 i = 0; i < ranking.length; i++) {
-            legacyRanking[i] = ranking[i].candidateId;
-        }
-
-        return legacyRanking;
-    }
 
     function getUserCandidateRank(address user, uint256 candidateId) external view returns (uint256) {
         return userCandidateRanks[user][candidateId];

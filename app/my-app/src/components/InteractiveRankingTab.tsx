@@ -5,7 +5,7 @@ import { InteractiveRanking } from "./InteractiveRanking";
 import { WalletAuthButton } from "./wallet-auth-button";
 import { usePeerRanking } from "@/hooks/usePeerRanking";
 import { PEER_RANKING_ABI } from "@/peer-ranking-abi";
-import { PEER_RANKING_ADDRESS } from "@/config/contract-addresses";
+import { PEER_RANKING_ADDRESS } from "@/config/contracts";
 import { Candidate } from "@/election-abi";
 import { useSession } from "next-auth/react";
 

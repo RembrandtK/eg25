@@ -57,7 +57,7 @@ describe("PeerRanking Tie Support Tests", function () {
         { candidateId: 4, tiedWithPrevious: false }  // David (4th place)
       ];
 
-      await peerRanking.connect(voter1).updateRankingWithTies(ranking);
+      await peerRanking.connect(voter1).updateRanking(ranking);
 
       // Verify ranking was stored
       const storedRanking = await peerRanking.getUserRanking(voter1.address);
@@ -75,7 +75,7 @@ describe("PeerRanking Tie Support Tests", function () {
       ];
 
       await expect(
-        peerRanking.connect(voter1).updateRankingWithTies(ranking)
+        peerRanking.connect(voter1).updateRanking(ranking)
       ).to.be.revertedWith("First entry cannot be tied with previous");
     });
 
@@ -89,7 +89,7 @@ describe("PeerRanking Tie Support Tests", function () {
         { candidateId: 4, tiedWithPrevious: true }   // David (tied for 3rd)
       ];
 
-      await peerRanking.connect(voter1).updateRankingWithTies(ranking);
+      await peerRanking.connect(voter1).updateRanking(ranking);
 
       // Verify rank values
       const MAX_RANK = await peerRanking.MAX_RANK();
@@ -110,7 +110,7 @@ describe("PeerRanking Tie Support Tests", function () {
         { candidateId: 4, tiedWithPrevious: false }  // David (4th)
       ];
 
-      await peerRanking.connect(voter1).updateRankingWithTies(ranking);
+      await peerRanking.connect(voter1).updateRanking(ranking);
 
       // Alice should beat Bob and Carol (both tied for 2nd)
       expect(bn(await peerRanking.getComparisonCount(1, 2))).to.equal(1); // Alice > Bob
@@ -142,8 +142,8 @@ describe("PeerRanking Tie Support Tests", function () {
         { candidateId: 3, tiedWithPrevious: false }
       ];
 
-      await peerRanking.connect(voter1).updateRankingWithTies(ranking1);
-      await peerRanking.connect(voter2).updateRankingWithTies(ranking2);
+      await peerRanking.connect(voter1).updateRanking(ranking1);
+      await peerRanking.connect(voter2).updateRanking(ranking2);
 
       // Alice vs Bob: 1-1 (voter1: Alice>Bob, voter2: Bob>Alice)
       expect(bn(await peerRanking.getComparisonCount(1, 2))).to.equal(1);
@@ -155,37 +155,7 @@ describe("PeerRanking Tie Support Tests", function () {
     });
   });
 
-  describe("Legacy Compatibility", function () {
-    it("Should maintain backward compatibility with simple arrays", async function () {
-      // Use legacy function
-      await peerRanking.connect(voter1).updateRanking([1, 2, 3, 4]);
 
-      // Should work the same as before
-      const legacyRanking = await peerRanking.getUserRankingLegacy(voter1.address);
-      expect(legacyRanking.map(id => bn(id))).to.deep.equal([1, 2, 3, 4]);
-
-      // Should generate normal comparisons (no ties)
-      expect(bn(await peerRanking.getComparisonCount(1, 2))).to.equal(1); // Alice > Bob
-      expect(bn(await peerRanking.getComparisonCount(2, 3))).to.equal(1); // Bob > Carol
-      expect(bn(await peerRanking.getComparisonCount(3, 4))).to.equal(1); // Carol > David
-    });
-
-    it("Should convert legacy rankings to new structure", async function () {
-      await peerRanking.connect(voter1).updateRanking([1, 2, 3]);
-
-      const newStructureRanking = await peerRanking.getUserRanking(voter1.address);
-      
-      // Should have no ties (all tiedWithPrevious = false)
-      expect(newStructureRanking[0].tiedWithPrevious).to.be.false;
-      expect(newStructureRanking[1].tiedWithPrevious).to.be.false;
-      expect(newStructureRanking[2].tiedWithPrevious).to.be.false;
-
-      // Should have correct candidate IDs
-      expect(bn(newStructureRanking[0].candidateId)).to.equal(1);
-      expect(bn(newStructureRanking[1].candidateId)).to.equal(2);
-      expect(bn(newStructureRanking[2].candidateId)).to.equal(3);
-    });
-  });
 
   describe("User Preference Function with Ties", function () {
     it("Should return 0 for tied candidates", async function () {
@@ -197,7 +167,7 @@ describe("PeerRanking Tie Support Tests", function () {
         { candidateId: 4, tiedWithPrevious: false }
       ];
 
-      await peerRanking.connect(voter1).updateRankingWithTies(ranking);
+      await peerRanking.connect(voter1).updateRanking(ranking);
 
       // Alice vs Bob: Alice preferred
       expect(await peerRanking.getUserPreference(voter1.address, 1, 2)).to.equal(1);
@@ -239,9 +209,9 @@ describe("PeerRanking Tie Support Tests", function () {
         { candidateId: 2, tiedWithPrevious: false }  // Bob
       ];
 
-      await peerRanking.connect(voter1).updateRankingWithTies(voter1Ranking);
-      await peerRanking.connect(voter2).updateRankingWithTies(voter2Ranking);
-      await peerRanking.connect(voter3).updateRankingWithTies(voter3Ranking);
+      await peerRanking.connect(voter1).updateRanking(voter1Ranking);
+      await peerRanking.connect(voter2).updateRanking(voter2Ranking);
+      await peerRanking.connect(voter3).updateRanking(voter3Ranking);
 
       console.log("✓ All voters submitted rankings with ties");
 

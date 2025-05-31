@@ -23,7 +23,6 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
-    TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
     PeerRanking: ContractConfig;
@@ -31,14 +30,11 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T02:01:26.940Z
+// Last updated: 2025-05-31T08:37:14.526Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
-    "TestnetDeployment#MockWorldIDAddressBook": "0xA26948dA2413b7a009ae38334Cc787f292A290fe",
-    "TestnetDeployment#TUTE": "0x1BFD23D12834Dd82c2e8Fc3aF22ffd141D1E51F3",
-    "ElectionDeployment#ElectionManager": "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7",
-    "PeerRankingDeployment#PeerRanking": "0x2caDc553c4B98863A3937fF0E710b79F7E855d8a"
+    "PeerRankingDeployment#PeerRanking": "0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1"
   }
 };
 
@@ -49,10 +45,6 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
-    TUTE: {
-      address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#TUTE"] || "",
-      verified: false,
-    },
     WorldIDAddressBook: {
       address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#MockWorldIDAddressBook"] || "",
       verified: false,
@@ -75,20 +67,16 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   rpcUrl: "https://worldchain-mainnet.g.alchemy.com/public",
   blockExplorer: "https://worldscan.org",
   contracts: {
-    TUTE: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#TUTE"] || "",
-      verified: false,
-    },
     WorldIDAddressBook: {
       address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
       verified: true,
     },
     ElectionManager: {
-      address: DEPLOYED_ADDRESSES[480]["ElectionDeployment#ElectionManager"] || "",
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
       verified: false,
     },
     PeerRanking: {
-      address: DEPLOYED_ADDRESSES[480]["PeerRankingDeployment#PeerRanking"] || "",
+      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
       verified: false,
     },
   },

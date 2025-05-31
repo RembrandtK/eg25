@@ -5,7 +5,7 @@ import { MiniKit } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-import { NETWORK_CONFIG } from "@/config/contract-addresses";
+import { CURRENT_NETWORK } from "@/config/contracts";
 
 interface UsePeerRankingProps {
   contractAddress: string;
@@ -29,7 +29,7 @@ export function usePeerRanking({
   // Create public client for reading contract state with retry logic
   const publicClient = createPublicClient({
     chain: worldchainSepolia,
-    transport: http(NETWORK_CONFIG.rpcUrl, {
+    transport: http(CURRENT_NETWORK.rpcUrl, {
       retryCount: 3,
       retryDelay: 2000, // 2 second delay between retries
     }),
@@ -45,12 +45,15 @@ export function usePeerRanking({
     try {
       console.log("📖 Loading current ranking from contract for:", session.user.address);
 
-      const ranking = await publicClient.readContract({
+      const rankingEntries = await publicClient.readContract({
         address: contractAddress as `0x${string}`,
         abi: contractAbi,
         functionName: 'getUserRanking',
         args: [session.user.address],
-      }) as bigint[];
+      }) as Array<{ candidateId: bigint; tiedWithPrevious: boolean }>;
+
+      // Convert RankingEntry[] to simple candidateId array for frontend compatibility
+      const ranking = rankingEntries.map(entry => entry.candidateId);
 
       console.log("📖 Loaded ranking:", ranking);
       setCurrentRanking(ranking || []);
@@ -101,10 +104,13 @@ export function usePeerRanking({
       try {
         setIsUpdating(true);
 
-        // Convert BigInt array to regular number array for the contract call
-        const candidateIdsAsNumbers = rankingToUpdate.map(id => Number(id));
+        // Convert BigInt array to RankingEntry array for the new contract structure
+        const rankingEntries = rankingToUpdate.map(id => ({
+          candidateId: Number(id),
+          tiedWithPrevious: false  // For now, no ties in frontend
+        }));
 
-        console.log("Updating peer ranking with:", candidateIdsAsNumbers);
+        console.log("Updating peer ranking with:", rankingEntries);
 
         // Send debug info to server
         await fetch("/api/debug", {
@@ -115,7 +121,7 @@ export function usePeerRanking({
             data: JSON.stringify({
               contractAddress,
               functionName: "updateRanking",
-              args: [candidateIdsAsNumbers], // Match the actual transaction args structure
+              args: [rankingEntries], // Match the actual transaction args structure
               miniKitInstalled: MiniKit.isInstalled()
             }, null, 2)
           }),
@@ -134,14 +140,14 @@ export function usePeerRanking({
 
         // Real transaction with MiniKit
         console.log("🚀 Sending real transaction with MiniKit...");
-        console.log("📋 Calling updateRanking with:", candidateIdsAsNumbers);
+        console.log("📋 Calling updateRanking with:", rankingEntries);
         const transactionConfig = {
           transaction: [
             {
               address: contractAddress,
               abi: contractAbi,
               functionName: "updateRanking",
-              args: [candidateIdsAsNumbers],
+              args: [rankingEntries],
             },
           ],
         };
@@ -215,10 +221,13 @@ export function usePeerRanking({
     try {
       setIsUpdating(true);
 
-      // Convert BigInt array to regular number array for the contract call
-      const candidateIdsAsNumbers = rankedCandidateIds.map(id => Number(id));
+      // Convert BigInt array to RankingEntry array for the new contract structure
+      const rankingEntries = rankedCandidateIds.map(id => ({
+        candidateId: Number(id),
+        tiedWithPrevious: false  // For now, no ties in frontend
+      }));
 
-      console.log("Immediately updating peer ranking with:", candidateIdsAsNumbers);
+      console.log("Immediately updating peer ranking with:", rankingEntries);
 
       // Send debug info to server
       await fetch("/api/debug", {
@@ -229,7 +238,7 @@ export function usePeerRanking({
           data: JSON.stringify({
             contractAddress,
             functionName: "updateRanking",
-            args: [candidateIdsAsNumbers], // Match the actual transaction args structure
+            args: [rankingEntries], // Match the actual transaction args structure
             miniKitInstalled: MiniKit.isInstalled()
           }, null, 2)
         }),
@@ -248,7 +257,7 @@ export function usePeerRanking({
 
       // Real immediate transaction with MiniKit
       console.log("🚀 Sending immediate real transaction with MiniKit...");
-      console.log("📋 Calling updateRanking immediately with:", candidateIdsAsNumbers);
+      console.log("📋 Calling updateRanking immediately with:", rankingEntries);
 
       const transactionConfig = {
         transaction: [
@@ -256,7 +265,7 @@ export function usePeerRanking({
             address: contractAddress,
             abi: contractAbi,
             functionName: "updateRanking",
-            args: [candidateIdsAsNumbers],
+            args: [rankingEntries],
           },
         ],
       };
