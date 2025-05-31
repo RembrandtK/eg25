@@ -29,24 +29,7 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
     }
   };
 
-  // Helper function to send debug logs to server
-  const debugLog = async (step: string, data?: any) => {
-    const message = `WalletAuth ${step}`;
-    console.log(message, data);
-    try {
-      await fetch("/api/debug", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          data: data ? JSON.stringify(data, null, 2) : undefined,
-          timestamp: new Date().toISOString()
-        }),
-      });
-    } catch (e) {
-      // Ignore debug logging errors
-    }
-  };
+
 
   const handleWalletAuth = async () => {
     if (!MiniKit.isInstalled()) {
