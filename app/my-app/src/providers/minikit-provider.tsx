@@ -91,64 +91,76 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        // Configure MiniKit action handler using the correct method
+        // Configure MiniKit action handler using multiple approaches
         console.log("Setting up MiniKit action handlers...");
 
-        // Set up action handler for send-transaction events
-        if (typeof window.addEventListener === "function") {
-          const handleMiniAppSendTransaction = async (event: any) => {
-            console.log("🔗 MiniKit send-transaction event received:", event.detail);
+        // Method 1: Set global handler function (most reliable)
+        (window as any).handleMiniAppSendTransaction = async (payload: any) => {
+          console.log("🔗 Global MiniKit send-transaction handler called:", payload);
 
-            try {
-              const response = await fetch("/api/minikit", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ payload: event.detail }),
-              });
+          try {
+            const response = await fetch("/api/minikit", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payload }),
+            });
 
-              const result = await response.json();
-              console.log("✅ Send-transaction handler response:", result);
-
-              // Send response back to MiniKit
-              if (window.MiniKit && typeof window.MiniKit.commandsAsync?.sendTransactionResponse === "function") {
-                window.MiniKit.commandsAsync.sendTransactionResponse(result);
-              }
-
-              return result;
-            } catch (error) {
-              console.error("❌ Send-transaction handler error:", error);
-              const errorResponse = {
-                status: "error",
-                error_code: "handler_error",
-                error_message: "Failed to process transaction",
-              };
-
-              if (window.MiniKit && typeof window.MiniKit.commandsAsync?.sendTransactionResponse === "function") {
-                window.MiniKit.commandsAsync.sendTransactionResponse(errorResponse);
-              }
-
-              return errorResponse;
-            }
-          };
-
-          // Listen for the miniapp-send-transaction event
-          window.addEventListener("miniapp-send-transaction", handleMiniAppSendTransaction);
-          console.log("✅ MiniKit send-transaction event listener registered");
-
-          // Also try the MiniKit subscribe method if available
-          if (typeof window.MiniKit.subscribe === "function") {
-            window.MiniKit.subscribe("miniapp-send-transaction", handleMiniAppSendTransaction);
-            console.log("✅ MiniKit subscribe method also registered");
+            const result = await response.json();
+            console.log("✅ Global handler response:", result);
+            return result;
+          } catch (error) {
+            console.error("❌ Global handler error:", error);
+            return {
+              status: "error",
+              error_code: "handler_error",
+              error_message: "Failed to process transaction",
+            };
           }
+        };
 
-          // Store handler reference for cleanup
-          (window as any).__miniKitHandlers = {
-            sendTransaction: handleMiniAppSendTransaction
-          };
-
-        } else {
-          console.warn("addEventListener not available, action handling may not work");
+        // Method 2: Set on MiniKit object directly
+        if (window.MiniKit) {
+          (window.MiniKit as any).handleSendTransaction = (window as any).handleMiniAppSendTransaction;
+          console.log("✅ MiniKit.handleSendTransaction set");
         }
+
+        // Method 3: Event listener approach
+        const handleMiniAppSendTransaction = async (event: any) => {
+          console.log("🔗 Event listener send-transaction received:", event.detail || event);
+          return (window as any).handleMiniAppSendTransaction(event.detail || event);
+        };
+
+        if (typeof window.addEventListener === "function") {
+          window.addEventListener("miniapp-send-transaction", handleMiniAppSendTransaction);
+          console.log("✅ Event listener registered for miniapp-send-transaction");
+        }
+
+        // Method 4: Try MiniKit subscribe if available
+        if (window.MiniKit && typeof window.MiniKit.subscribe === "function") {
+          try {
+            window.MiniKit.subscribe("miniapp-send-transaction", handleMiniAppSendTransaction);
+            console.log("✅ MiniKit.subscribe registered");
+          } catch (e) {
+            console.warn("MiniKit.subscribe failed:", e);
+          }
+        }
+
+        // Method 5: Set handler on window.MiniKit.handlers
+        if (window.MiniKit) {
+          if (!(window.MiniKit as any).handlers) {
+            (window.MiniKit as any).handlers = {};
+          }
+          (window.MiniKit as any).handlers["miniapp-send-transaction"] = (window as any).handleMiniAppSendTransaction;
+          console.log("✅ MiniKit.handlers set");
+        }
+
+        // Store handler reference for cleanup
+        (window as any).__miniKitHandlers = {
+          sendTransaction: handleMiniAppSendTransaction,
+          global: (window as any).handleMiniAppSendTransaction
+        };
+
+        console.log("🎯 All MiniKit action handler methods configured");
 
         // Give commands time to initialize
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -277,6 +289,19 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           window.removeEventListener("miniapp-send-transaction", handlers.sendTransaction);
         }
         delete (window as any).__miniKitHandlers;
+      }
+
+      // Clean up global handlers
+      if ((window as any).handleMiniAppSendTransaction) {
+        delete (window as any).handleMiniAppSendTransaction;
+      }
+
+      // Clean up MiniKit handlers
+      if (window.MiniKit) {
+        delete (window.MiniKit as any).handleSendTransaction;
+        if ((window.MiniKit as any).handlers) {
+          delete (window.MiniKit as any).handlers["miniapp-send-transaction"];
+        }
       }
 
       console.log("Cleaning up MiniKit provider");
