@@ -91,64 +91,63 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        // Configure MiniKit action handler for the 'vote' action
-        if (typeof window.MiniKit.subscribe === "function") {
-          console.log("Setting up MiniKit vote action handler...");
+        // Configure MiniKit action handler using the correct method
+        console.log("Setting up MiniKit action handlers...");
 
-          // Subscribe to the vote action events
-          window.MiniKit.subscribe("vote", async (payload: any) => {
-            console.log("🗳️ MiniKit vote action event received:", payload);
-
-            try {
-              // Send the payload to our action handler
-              const response = await fetch("/api/minikit", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ payload }),
-              });
-
-              const result = await response.json();
-              console.log("✅ Vote action handler response:", result);
-
-              return result;
-            } catch (error) {
-              console.error("❌ Vote action handler error:", error);
-              return {
-                status: "error",
-                error_code: "handler_error",
-                error_message: "Failed to process vote action",
-              };
-            }
-          });
-
-          // Also subscribe to send-transaction events as fallback
-          window.MiniKit.subscribe("miniapp-send-transaction", async (payload: any) => {
-            console.log("🔗 MiniKit send-transaction event received:", payload);
+        // Set up action handler for send-transaction events
+        if (typeof window.addEventListener === "function") {
+          const handleMiniAppSendTransaction = async (event: any) => {
+            console.log("🔗 MiniKit send-transaction event received:", event.detail);
 
             try {
               const response = await fetch("/api/minikit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ payload }),
+                body: JSON.stringify({ payload: event.detail }),
               });
 
               const result = await response.json();
               console.log("✅ Send-transaction handler response:", result);
 
+              // Send response back to MiniKit
+              if (window.MiniKit && typeof window.MiniKit.commandsAsync?.sendTransactionResponse === "function") {
+                window.MiniKit.commandsAsync.sendTransactionResponse(result);
+              }
+
               return result;
             } catch (error) {
               console.error("❌ Send-transaction handler error:", error);
-              return {
+              const errorResponse = {
                 status: "error",
                 error_code: "handler_error",
                 error_message: "Failed to process transaction",
               };
-            }
-          });
 
-          console.log("MiniKit vote and send-transaction action handlers configured");
+              if (window.MiniKit && typeof window.MiniKit.commandsAsync?.sendTransactionResponse === "function") {
+                window.MiniKit.commandsAsync.sendTransactionResponse(errorResponse);
+              }
+
+              return errorResponse;
+            }
+          };
+
+          // Listen for the miniapp-send-transaction event
+          window.addEventListener("miniapp-send-transaction", handleMiniAppSendTransaction);
+          console.log("✅ MiniKit send-transaction event listener registered");
+
+          // Also try the MiniKit subscribe method if available
+          if (typeof window.MiniKit.subscribe === "function") {
+            window.MiniKit.subscribe("miniapp-send-transaction", handleMiniAppSendTransaction);
+            console.log("✅ MiniKit subscribe method also registered");
+          }
+
+          // Store handler reference for cleanup
+          (window as any).__miniKitHandlers = {
+            sendTransaction: handleMiniAppSendTransaction
+          };
+
         } else {
-          console.warn("MiniKit.subscribe not available, action handling may not work");
+          console.warn("addEventListener not available, action handling may not work");
         }
 
         // Give commands time to initialize
@@ -269,6 +268,15 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
         if (handleWalletAuthError) {
           window.MiniKit.off("wallet-auth-error", handleWalletAuthError);
         }
+      }
+
+      // Clean up MiniKit action handlers
+      if (typeof window.removeEventListener === "function" && (window as any).__miniKitHandlers) {
+        const handlers = (window as any).__miniKitHandlers;
+        if (handlers.sendTransaction) {
+          window.removeEventListener("miniapp-send-transaction", handlers.sendTransaction);
+        }
+        delete (window as any).__miniKitHandlers;
       }
 
       console.log("Cleaning up MiniKit provider");
