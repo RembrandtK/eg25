@@ -4,7 +4,11 @@ A complete World Mini App template that integrates with on-chain smart contracts
 
 ## 🏗️ Project Structure
 
-```
+// TODO: app -> vote
+// app/my-app -> vote/world-app
+// app/smart-contracts -> vote/contracts
+
+```text
 app/
 ├── my-app/                 # Next.js Mini App
 │   ├── src/
@@ -26,7 +30,6 @@ app/
 
 - **Wallet Authentication**: Connect using World App wallet with SIWE
 - **World ID Verification**: Verify human identity with World ID
-- **Token Claiming**: Claim TUTE ERC20 tokens every 5 minutes
 - **Transaction Tracking**: Real-time blockchain transaction status
 - **Responsive Design**: Optimized for mobile World App
 
