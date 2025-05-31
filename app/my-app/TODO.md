@@ -1,37 +1,33 @@
-# TODO: Election Voting App - Current Status & Next Steps
+# TODO: Election Voting App - Critical Issues & Next Steps
 
-## ✅ **MAJOR ISSUES RESOLVED** (as of latest commits)
+## 🚨 **CRITICAL ISSUES - BLOCKING PRODUCTION**
 
-### **1. ✅ Real Blockchain Transactions Working**
-- **Status**: ✅ **FIXED** - Real transactions now working successfully
-- **Evidence**: Multiple successful transaction IDs confirmed:
-  - `0xea9f1b930ff1e17de628b7db162b492daad103a7432c17d674206226f8c217e9`
-  - `0x18227d978439ff6e8a0e7bd2d1c474b06cfb4935a595908fc775b0e2d761afd7`
-  - `0xcfd4e2fe07599eb3f6614ff6dd2232858e0a6055001bacce1a22889d0d032bfc`
-- **Fix Applied**: Contract whitelisted in World App developer portal
-- **Impact**: Rankings now persist to blockchain successfully
+### **1. PRIORITY 1: Ranking Persistence on App Reload**
+- **Issue**: When user reloads app, their submitted ranking is not displayed
+- **Current State**: App always starts with empty ranking, even if user has voted
+- **Expected**: App should read user's current ranking from smart contract on load
+- **Implementation**:
+  - Read directly from smart contract (not via server)
+  - Call `getUserRanking(address)` on app initialization
+  - Display existing ranking in UI if found
+  - Allow user to modify and resubmit if desired
+- **Impact**: Users lose track of their voting state, poor UX
 
-### **2. ✅ Contract Integration Working**
-- **Status**: ✅ **FIXED** - Contract reading and writing both functional
-- **Contract Address**: `0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1` (PeerRanking)
-- **Network**: World Chain Sepolia (4801)
-- **Fix Applied**: Updated contract addresses, removed TUTE references
-- **Impact**: App loads candidate data and persists rankings correctly
+### **2. Contract Reading Reliability**
+- **Issue**: Contract reading functions may not be consistently working
+- **Symptoms**: Rankings may not load properly from blockchain
+- **Need**: Robust error handling and retry logic for contract reads
+- **Implementation**: Add proper loading states and error recovery
 
-### **3. ✅ World ID Integration Working**
-- **Status**: ✅ **FIXED** - World ID verification integrated with transactions
-- **App ID**: `app_10719845a0977ef63ebe8eb9edb890ad`
-- **Action**: `vote` (configured for on-chain verification)
-- **Fix Applied**: Restructured flow for wallet connection + World ID verification
-- **Impact**: Users can verify identity and submit rankings successfully
+### **3. Transaction State Management**
+- **Issue**: No clear indication of transaction status after submission
+- **Need**: Better feedback on transaction confirmation
+- **Implementation**: Track transaction status and show confirmation
 
-### **4. ✅ Optimized User Flow**
-- **Status**: ✅ **IMPROVED** - Reduced from 3 steps per candidate to 1 per submission
-- **New Flow**:
-  1. Connect wallet (once, cached in session)
-  2. Build ranking by adding/reordering candidates
-  3. Click "Submit Ranking" (triggers World ID verification + transaction)
-- **Impact**: Much better UX, fewer verification steps
+### **4. Error Handling & User Feedback**
+- **Issue**: Limited error handling for edge cases
+- **Need**: Comprehensive error messages and recovery flows
+- **Examples**: Network failures, contract errors, World ID issues
 
 ## 🚧 **Minor Improvements & Polish**
 
@@ -59,31 +55,32 @@
   - Export ranking data
   - Social sharing features
 
-## 📋 **Development Status**
+## 📋 **Implementation Plan**
 
-### **✅ Phase 1: Contract Integration - COMPLETED**
-- [x] ✅ Contract deployment verified and working
-- [x] ✅ RPC connectivity established
-- [x] ✅ Contract reading functions working
-- [x] ✅ Rankings load correctly from blockchain
+### **Phase 1: Fix Critical Ranking Persistence (URGENT)**
+- [ ] Implement `getUserRanking` call on app initialization
+- [ ] Display existing ranking in UI when found
+- [ ] Handle case where user has no previous ranking
+- [ ] Add loading state while fetching ranking data
+- [ ] Test ranking persistence across app reloads
 
-### **✅ Phase 2: Real Transactions - COMPLETED**
-- [x] ✅ MiniKit action handlers working properly
-- [x] ✅ Real blockchain transactions successful
-- [x] ✅ Transaction persistence verified
-- [x] ✅ Multiple successful transaction confirmations
+### **Phase 2: Improve Contract Reading Reliability**
+- [ ] Add retry logic for failed contract reads
+- [ ] Implement proper error handling for network issues
+- [ ] Add fallback mechanisms for RPC failures
+- [ ] Optimize contract reading performance
 
-### **✅ Phase 3: World ID Integration - COMPLETED**
-- [x] ✅ World ID verification flow integrated
-- [x] ✅ Verification + transaction sequence working
-- [x] ✅ End-to-end on-chain verification functional
-- [x] ✅ Contract whitelisted in World App developer portal
+### **Phase 3: Enhanced Transaction Feedback**
+- [ ] Track transaction status after submission
+- [ ] Show transaction confirmation to user
+- [ ] Handle transaction failures gracefully
+- [ ] Add transaction history/receipt display
 
-### **🚀 Phase 4: Production Ready - ACHIEVED**
-- [x] ✅ Core functionality working end-to-end
-- [x] ✅ Optimized user flow (wallet caching + submit button)
-- [x] ✅ Error handling and user feedback implemented
-- [x] ✅ Ready for production use
+### **Phase 4: Production Readiness**
+- [ ] Comprehensive error handling for all edge cases
+- [ ] Performance optimization and caching
+- [ ] Mobile responsiveness testing
+- [ ] Security audit and testing
 
 ## 🧪 **Testing Strategy**
 
@@ -111,57 +108,19 @@ curl "http://localhost:3000/api/voting-status?action=user-ranking&address=0x3c6c
 - Test with real World App on mobile
 - Verify action handler registration in browser console
 
-## 📝 **Notes**
-
-### **✅ Current Working Features - ALL FUNCTIONAL**
-- ✅ Interactive ranking UI with smooth UX
-- ✅ Real blockchain transactions (no more mocks!)
-- ✅ Wallet connection with session caching
-- ✅ World ID verification integrated with voting
-- ✅ On-chain verification working end-to-end
-- ✅ Voting dashboard for data visualization
-- ✅ API endpoints for contract reading
-- ✅ Optimized user flow with submit button
+## 📝 **Technical Notes**
 
 ### **Architecture Decisions**
 - Using viem for contract interactions
-- Real MiniKit transactions (mocks removed)
+- MiniKit for World App integration
 - Session-based wallet connection caching
 - World ID verification per ranking submission
-- Status icon feedback system
-- Standalone voting dashboard for broader access
+- Direct contract reading (not via server APIs)
 
-### **✅ Current Contract Addresses (WORKING)**
-- **PeerRanking**: `0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1`
-- **ElectionManager**: `0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7`
-- **Network**: World Chain Sepolia (4801)
-- **Status**: ✅ Deployed and whitelisted
-
-### **✅ World ID Configuration (WORKING)**
-- **App ID**: `app_10719845a0977ef63ebe8eb9edb890ad`
-- **Action**: `vote` (configured for on-chain verification)
-- **Verification Level**: Orb required
-- **Status**: ✅ Contract whitelisted and functional
-
-## 🎯 **Success Criteria - ACHIEVED!**
-
-### **✅ Minimum Viable Product - COMPLETED**
-- [x] ✅ Rankings persist between app sessions
-- [x] ✅ Real blockchain transactions work
-- [x] ✅ Contract reading functions properly
-- [x] ✅ Voting dashboard shows live data
-
-### **✅ Full Feature Set - COMPLETED**
-- [x] ✅ World ID verification integrated with transactions
-- [x] ✅ On-chain verification working end-to-end
-- [x] ✅ Production deployment ready
-- [x] ✅ Comprehensive error handling and user feedback
-
-## 🎉 **PROJECT STATUS: PRODUCTION READY**
-
-The Election Voting App is now **fully functional** with all major features working:
-- Real blockchain transactions confirmed
-- World ID verification integrated
-- Optimized user experience
-- Contract whitelisted and deployed
-- Ready for production use!
+### **Key Requirements for Production**
+- [ ] Rankings must persist across app reloads
+- [ ] Reliable contract reading with error handling
+- [ ] Clear transaction status feedback
+- [ ] Comprehensive error handling for edge cases
+- [ ] Mobile responsiveness and performance optimization
+- [ ] Security audit and testing
