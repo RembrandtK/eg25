@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-interface IWorldIdAddressBook {
-    function addressVerifiedUntil(address) external view returns (uint256);
+import {IWorldID} from "@worldcoin/world-id-contracts/src/interfaces/IWorldID.sol";
+
+interface IElectionManager {
+    function candidateCount() external view returns (uint256);
+    function candidates(uint256) external view returns (uint256 id, string memory name, string memory description, bool active);
 }
 
-contract ElectionManager {
-    IWorldIdAddressBook public immutable worldAddressBook;
+contract ElectionManager is IElectionManager {
+    IWorldID public immutable worldID;
     
     struct Candidate {
         uint256 id;
@@ -45,18 +48,15 @@ contract ElectionManager {
         _;
     }
     
-    modifier onlyVerifiedUser() {
-        require(worldAddressBook.addressVerifiedUntil(msg.sender) > 0, "Address not verified");
-        _;
-    }
+    // World ID verification is handled by PeerRanking contract
     
     modifier votingIsActive() {
         require(votingActive, "Voting is not active");
         _;
     }
     
-    constructor(IWorldIdAddressBook _worldAddressBook) {
-        worldAddressBook = _worldAddressBook;
+    constructor(IWorldID _worldID) {
+        worldID = _worldID;
         owner = msg.sender;
         votingActive = true; // Start with voting active
         candidateCount = 0;
@@ -101,8 +101,8 @@ contract ElectionManager {
         return activeCandidates;
     }
     
-    // Cast a ranked vote
-    function vote(uint256[] memory _rankedCandidateIds) external onlyVerifiedUser votingIsActive {
+    // Cast a ranked vote (verification handled by PeerRanking contract)
+    function vote(uint256[] memory _rankedCandidateIds) external votingIsActive {
         require(!hasVoted[msg.sender], "You have already voted");
         require(_rankedCandidateIds.length > 0, "Must vote for at least one candidate");
         

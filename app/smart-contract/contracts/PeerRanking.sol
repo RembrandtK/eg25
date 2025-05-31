@@ -1,21 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-interface IWorldID {
-    function verifyProof(
-        uint256 root,
-        uint256 groupId,
-        uint256 signalHash,
-        uint256 nullifierHash,
-        uint256 externalNullifierHash,
-        uint256[8] calldata proof
-    ) external view;
-}
-
-interface IElectionManager {
-    function candidateCount() external view returns (uint256);
-    function candidates(uint256) external view returns (uint256 id, string memory name, string memory description, bool active);
-}
+import {IWorldID} from "@worldcoin/world-id-contracts/src/interfaces/IWorldID.sol";
+import {IElectionManager} from "./ElectionManager.sol";
 
 library ByteHasher {
     /// @dev Creates a keccak256 hash of a bytestring.
