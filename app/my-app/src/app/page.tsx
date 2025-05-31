@@ -13,7 +13,7 @@ import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { InteractiveRankingTab } from "@/components/InteractiveRankingTab";
 import { ELECTION_ABI, Candidate } from "@/election-abi";
-import { ELECTION_MANAGER_ADDRESS, NETWORK_CONFIG } from "@/config/contract-addresses";
+import { ELECTION_MANAGER_ADDRESS, CURRENT_NETWORK } from "@/config/contracts";
 
 export default function Page() {
   const { data: session } = useSession();
@@ -33,7 +33,7 @@ export default function Page() {
   // Initialize Viem client - memoized to prevent infinite loops
   const client = useMemo(() => createPublicClient({
     chain: worldchain,
-    transport: http(NETWORK_CONFIG.rpcUrl),
+    transport: http(CURRENT_NETWORK.rpcUrl),
   }), []);
 
   // Track transaction status

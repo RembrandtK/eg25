@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS, NETWORK_CONFIG } from "@/config/contract-addresses";
+import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS, CURRENT_NETWORK } from "@/config/contracts";
 
 // Simplified ABI for the functions we need
 const PEER_RANKING_ABI = [
@@ -60,7 +60,7 @@ const ELECTION_MANAGER_ABI = [
 // Create public client for reading contract state with retry logic
 const publicClient = createPublicClient({
   chain: worldchainSepolia,
-  transport: http(NETWORK_CONFIG.rpcUrl, {
+  transport: http(CURRENT_NETWORK.rpcUrl, {
     retryCount: 3,
     retryDelay: 1000,
   }),

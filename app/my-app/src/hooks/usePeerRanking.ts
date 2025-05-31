@@ -5,7 +5,7 @@ import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from "
 import { useSession } from "next-auth/react";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-import { NETWORK_CONFIG } from "@/config/contract-addresses";
+import { CURRENT_NETWORK } from "@/config/contracts";
 
 interface UsePeerRankingProps {
   contractAddress: string;
@@ -29,7 +29,7 @@ export function usePeerRanking({
   // Create public client for reading contract state with retry logic
   const publicClient = createPublicClient({
     chain: worldchainSepolia,
-    transport: http(NETWORK_CONFIG.rpcUrl, {
+    transport: http(CURRENT_NETWORK.rpcUrl, {
       retryCount: 3,
       retryDelay: 2000, // 2 second delay between retries
     }),

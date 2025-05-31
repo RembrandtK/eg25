@@ -105,14 +105,14 @@ async function testContractConnection() {
   console.log("=" .repeat(60));
   console.log(`Contract: ${CONFIG.contractAddress}`);
   console.log(`Network: Worldchain Sepolia (${CONFIG.chainId})`);
-  console.log(`RPC: ${CONFIG.rpcUrl}`);
+  console.log(`RPC: ${CONFIG.rpcUrls[0]}`);
   console.log("");
 
   try {
     // Create client exactly like the frontend does
     const client = createPublicClient({
       chain: worldchainSepolia,
-      transport: http(CONFIG.rpcUrl)
+      transport: http(CONFIG.rpcUrls[0])
     });
 
     console.log("🔗 Creating Viem client...");

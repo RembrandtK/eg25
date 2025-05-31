@@ -6,6 +6,7 @@
  */
 
 const { createPublicClient, http } = require('viem');
+const { ELECTION_MANAGER_ADDRESS, CURRENT_NETWORK } = require('../src/config/contracts.ts');
 
 // Define worldchain configuration inline
 const worldchain = {
@@ -30,8 +31,7 @@ const worldchain = {
   testnet: true,
 };
 
-// Contract configuration
-const ELECTION_CONTRACT_ADDRESS = "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7";
+// Contract configuration - using dynamic addresses from config
 const ELECTION_ABI = [
   {
     "inputs": [],
@@ -110,16 +110,16 @@ async function testVotingFlow() {
     // Initialize client
     const client = createPublicClient({
       chain: worldchain,
-      transport: http("https://worldchain-sepolia.g.alchemy.com/v2/demo"),
+      transport: http(CURRENT_NETWORK.rpcUrl),
     });
 
     console.log("✅ Connected to World Chain Sepolia");
-    console.log(`📍 Contract: ${ELECTION_CONTRACT_ADDRESS}`);
+    console.log(`📍 Contract: ${ELECTION_MANAGER_ADDRESS}`);
 
     // Test 1: Check if voting is active
     console.log("\n1️⃣ Testing voting status...");
     const votingActive = await client.readContract({
-      address: ELECTION_CONTRACT_ADDRESS,
+      address: ELECTION_MANAGER_ADDRESS,
       abi: ELECTION_ABI,
       functionName: "votingActive",
     });
@@ -128,7 +128,7 @@ async function testVotingFlow() {
     // Test 2: Load candidates
     console.log("\n2️⃣ Testing candidate loading...");
     const candidates = await client.readContract({
-      address: ELECTION_CONTRACT_ADDRESS,
+      address: ELECTION_MANAGER_ADDRESS,
       abi: ELECTION_ABI,
       functionName: "getCandidates",
     });
@@ -142,7 +142,7 @@ async function testVotingFlow() {
     console.log("\n3️⃣ Testing voting status check...");
     const testAddress = "0x1234567890123456789012345678901234567890";
     const hasVoted = await client.readContract({
-      address: ELECTION_CONTRACT_ADDRESS,
+      address: ELECTION_MANAGER_ADDRESS,
       abi: ELECTION_ABI,
       functionName: "checkHasVoted",
       args: [testAddress],

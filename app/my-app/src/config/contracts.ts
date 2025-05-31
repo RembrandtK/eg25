@@ -30,7 +30,7 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T09:47:45.305Z
+// Last updated: 2025-05-31T11:12:02.050Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
@@ -44,7 +44,7 @@ const DEPLOYED_ADDRESSES = {
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     WorldIDAddressBook: {
