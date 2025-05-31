@@ -35,15 +35,18 @@ export function usePeerRanking({
     }),
   });
 
-  // Load current ranking from contract
-  const loadCurrentRanking = useCallback(async () => {
+  // Load current ranking from contract with improved error handling
+  const loadCurrentRanking = useCallback(async (retryCount = 0) => {
     if (!session?.user?.address) {
       setIsLoading(false);
       return;
     }
 
+    const maxRetries = 3;
+    const retryDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+
     try {
-      console.log("📖 Loading current ranking from contract for:", session.user.address);
+      console.log(`📖 Loading current ranking from contract for: ${session.user.address} (attempt ${retryCount + 1}/${maxRetries + 1})`);
 
       const rankingEntries = await publicClient.readContract({
         address: contractAddress as `0x${string}`,
@@ -55,14 +58,37 @@ export function usePeerRanking({
       // Convert RankingEntry[] to simple candidateId array for frontend compatibility
       const ranking = rankingEntries.map(entry => entry.candidateId);
 
-      console.log("📖 Loaded ranking:", ranking);
+      console.log("📖 Successfully loaded ranking:", ranking);
       setCurrentRanking(ranking || []);
     } catch (error) {
-      console.error("Error loading current ranking:", error);
-      // Don't treat this as a fatal error - user might not have ranked yet
+      console.error(`Error loading current ranking (attempt ${retryCount + 1}):`, error);
+
+      // Retry logic for network/RPC errors
+      if (retryCount < maxRetries && (
+        error instanceof Error && (
+          error.message.includes('network') ||
+          error.message.includes('timeout') ||
+          error.message.includes('fetch') ||
+          error.message.includes('RPC')
+        )
+      )) {
+        console.log(`⏳ Retrying in ${retryDelay}ms...`);
+        setTimeout(() => {
+          loadCurrentRanking(retryCount + 1);
+        }, retryDelay);
+        return; // Don't set loading to false yet
+      }
+
+      // For other errors or max retries reached, treat as no ranking
+      console.log("📝 No existing ranking found or max retries reached, starting fresh");
       setCurrentRanking([]);
     } finally {
-      setIsLoading(false);
+      // Only set loading to false if we're not retrying
+      if (retryCount >= maxRetries) {
+        setIsLoading(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   }, [contractAddress, contractAbi, session?.user?.address, publicClient]);
 

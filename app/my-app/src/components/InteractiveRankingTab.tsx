@@ -233,6 +233,7 @@ export function InteractiveRankingTab({
         onRankingChange={handleRankingChange}
         disabled={!isReady}
         isUpdating={isUpdating}
+        initialRanking={currentRanking}
       />
 
       {/* Submit Button */}

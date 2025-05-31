@@ -1,6 +1,21 @@
 # TODO: Election Voting App - Critical Issues & Next Steps
 
-## 🚨 **CRITICAL ISSUES - BLOCKING PRODUCTION**
+## � **ESSENTIAL WORKFLOW - DO THIS REGULARLY**
+
+### **Git Workflow (CRITICAL - Do Every Session)**
+- [ ] **COMMIT FREQUENTLY**: After each working feature/fix
+- [ ] **PUSH REGULARLY**: At least every 30 minutes of work
+- [ ] **UPDATE TODO**: Remove completed items, add new discoveries
+- [ ] **CLEAN AS YOU GO**: Remove unused code, files, imports immediately
+
+### **Cleanup Priority (URGENT - Remove Noise)**
+- [ ] **Remove backwards compatibility code** - don't try to maintain old versions
+- [ ] **Delete unused components** - CandidateRanking.tsx, RankingTab.tsx if not used
+- [ ] **Remove duplicate APIs** - consolidate voting-status and election-results
+- [ ] **Simplify file structure** - remove fragmented pieces
+- [ ] **Clean up imports** - remove unused dependencies
+
+## �🚨 **CRITICAL ISSUES - BLOCKING PRODUCTION**
 
 ### **1. PRIORITY 1: Ranking Persistence on App Reload**
 
@@ -88,7 +103,16 @@
 - [ ] Handle transaction failures gracefully
 - [ ] Add transaction history/receipt display
 
-### **Phase 4: Production Readiness**
+### **Phase 4: Election Results Calculation (SERVER-SIDE)**
+
+- [ ] **QUESTION FOR USER**: Which election algorithm should be implemented?
+  - Options: Condorcet, Borda Count, Plurality, Instant Runoff (IRV), Other?
+  - **MUST ASK USER - DO NOT GUESS OR IMPLEMENT MULTIPLE**
+- [ ] Implement single chosen algorithm in election-results API
+- [ ] Remove multiple algorithm support from current API
+- [ ] Add proper result caching and performance optimization
+
+### **Phase 5: Production Readiness**
 
 - [ ] Comprehensive error handling for all edge cases
 - [ ] Performance optimization and caching

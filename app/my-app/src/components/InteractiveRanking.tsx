@@ -15,24 +15,55 @@ interface InteractiveRankingProps {
   onRankingChange: (rankedIds: bigint[]) => void;
   disabled?: boolean;
   isUpdating?: boolean;
+  initialRanking?: bigint[]; // Add initial ranking support
 }
 
 export function InteractiveRanking({
   candidates,
   onRankingChange,
   disabled = false,
-  isUpdating = false
+  isUpdating = false,
+  initialRanking = []
 }: InteractiveRankingProps) {
   const [rankedCandidates, setRankedCandidates] = useState<Candidate[]>([]);
   const [unrankedCandidates, setUnrankedCandidates] = useState<Candidate[]>([]);
 
-  // Initialize unranked pool with all candidates
+  // Initialize ranking from contract data or start fresh
   useEffect(() => {
     if (candidates.length > 0) {
-      setUnrankedCandidates([...candidates]);
-      setRankedCandidates([]);
+      console.log("🔄 Initializing InteractiveRanking with candidates:", candidates.length, "initialRanking:", initialRanking);
+
+      if (initialRanking.length > 0) {
+        // Initialize with existing ranking from contract
+        const rankedCandidateObjects: Candidate[] = [];
+        const unrankedCandidateObjects: Candidate[] = [];
+
+        // First, add candidates in the order they appear in initialRanking
+        initialRanking.forEach(candidateId => {
+          const candidate = candidates.find(c => c.id === candidateId);
+          if (candidate) {
+            rankedCandidateObjects.push(candidate);
+          }
+        });
+
+        // Then, add any candidates not in the ranking to unranked pool
+        candidates.forEach(candidate => {
+          if (!initialRanking.includes(candidate.id)) {
+            unrankedCandidateObjects.push(candidate);
+          }
+        });
+
+        console.log("📖 Restored ranking:", rankedCandidateObjects.map(c => c.name));
+        setRankedCandidates(rankedCandidateObjects);
+        setUnrankedCandidates(unrankedCandidateObjects);
+      } else {
+        // Start fresh with all candidates unranked
+        console.log("🆕 Starting with fresh ranking");
+        setUnrankedCandidates([...candidates]);
+        setRankedCandidates([]);
+      }
     }
-  }, [candidates]);
+  }, [candidates, initialRanking]);
 
   // Notify parent of ranking changes
   const notifyRankingChange = useCallback((newRankedCandidates: Candidate[]) => {
