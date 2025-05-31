@@ -2,149 +2,236 @@
 pragma solidity ^0.8.13;
 
 import {IWorldID} from "@worldcoin/world-id-contracts/src/interfaces/IWorldID.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./Election.sol";
 
-interface IElectionManager {
-    function candidateCount() external view returns (uint256);
-    function candidates(uint256) external view returns (uint256 id, string memory name, string memory description, bool active);
-}
-
-contract ElectionManager is IElectionManager {
+contract ElectionManager is AccessControl {
     IWorldID public immutable worldID;
-    
+
+    // Custom errors
+    error NoCandidatesProvided();
+    error WorldIdActionAlreadyUsed(string action);
+    error ElectionNotFound(uint256 electionId);
+    error UnauthorizedDeactivation();
+    error ActionNotFound(string action);
+
+    // Role definitions
+    bytes32 public constant ELECTION_CREATOR_ROLE = keccak256("ELECTION_CREATOR_ROLE");
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
     struct Candidate {
-        uint256 id;
         string name;
         string description;
+    }
+
+    struct ElectionInfo {
+        uint256 id;
+        string title;
+        string description;
+        string worldIdAction;
+        address creator;
+        address electionAddress;
+        uint256 createdAt;
         bool active;
     }
     
-    struct Vote {
-        address voter;
-        uint256[] rankedCandidateIds; // Array of candidate IDs in order of preference
-        uint256 timestamp;
-    }
-    
     // State variables
-    address public owner;
-    bool public votingActive;
-    uint256 public candidateCount;
-    
+    uint256 public electionCount;
+
     // Mappings
-    mapping(uint256 => Candidate) public candidates;
-    mapping(address => bool) public hasVoted;
-    mapping(address => Vote) public votes;
-    
-    // Arrays for easy iteration
-    uint256[] public candidateIds;
-    address[] public voters;
-    
+    mapping(uint256 => ElectionInfo) public elections;
+    mapping(string => bool) public usedWorldIdActions;
+    mapping(address => uint256[]) public creatorElections; // Track elections by creator
+
+    // Arrays for iteration
+    uint256[] public electionIds;
+
     // Events
-    event CandidateAdded(uint256 indexed candidateId, string name);
-    event VoteCast(address indexed voter, uint256[] rankedCandidateIds);
-    event VotingStatusChanged(bool active);
-    
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
-        _;
-    }
-    
-    // World ID verification is handled by PeerRanking contract
-    
-    modifier votingIsActive() {
-        require(votingActive, "Voting is not active");
+    event ElectionCreated(
+        uint256 indexed electionId,
+        string title,
+        address indexed creator,
+        address electionAddress,
+        string worldIdAction
+    );
+    event ElectionDeactivated(uint256 indexed electionId);
+    event CreatorRoleGranted(address indexed creator, address indexed admin);
+
+    modifier electionExists(uint256 _electionId) {
+        if (_electionId == 0 || _electionId > electionCount) revert ElectionNotFound(_electionId);
         _;
     }
     
     constructor(IWorldID _worldID) {
         worldID = _worldID;
-        owner = msg.sender;
-        votingActive = true; // Start with voting active
-        candidateCount = 0;
+        electionCount = 0;
+
+        // Set up initial roles
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(ELECTION_CREATOR_ROLE, msg.sender); // Deployer can create elections initially
     }
-    
-    // Add a candidate (only owner)
-    function addCandidate(string memory _name, string memory _description) external onlyOwner {
-        candidateCount++;
-        candidates[candidateCount] = Candidate({
-            id: candidateCount,
-            name: _name,
+
+    /**
+     * @dev Create a new election with separate contract instance
+     * @param _title Election title
+     * @param _description Election description
+     * @param _worldIdAction Unique World ID action for this election
+     * @param _candidates Array of initial candidates
+     */
+    function createElection(
+        string memory _title,
+        string memory _description,
+        string memory _worldIdAction,
+        Candidate[] memory _candidates
+    ) external onlyRole(ELECTION_CREATOR_ROLE) returns (uint256) {
+        if (_candidates.length == 0) revert NoCandidatesProvided();
+        if (usedWorldIdActions[_worldIdAction]) revert WorldIdActionAlreadyUsed(_worldIdAction);
+        
+        electionCount++;
+        uint256 newElectionId = electionCount;
+
+        // Deploy new Election contract
+        Election election = new Election(worldID, _title, _description, _worldIdAction, msg.sender);
+
+        // Add candidates to the election
+        for (uint256 i = 0; i < _candidates.length; i++) {
+            election.addCandidate(_candidates[i].name, _candidates[i].description);
+        }
+
+        // Store election data
+        elections[newElectionId] = ElectionInfo({
+            id: newElectionId,
+            title: _title,
             description: _description,
+            worldIdAction: _worldIdAction,
+            creator: msg.sender,
+            electionAddress: address(election),
+            createdAt: block.timestamp,
             active: true
         });
-        candidateIds.push(candidateCount);
         
-        emit CandidateAdded(candidateCount, _name);
+        // Mark World ID action as used
+        usedWorldIdActions[_worldIdAction] = true;
+
+        // Add to election IDs array and creator tracking
+        electionIds.push(newElectionId);
+        creatorElections[msg.sender].push(newElectionId);
+        
+        emit ElectionCreated(
+            newElectionId,
+            _title,
+            msg.sender,
+            address(election),
+            _worldIdAction
+        );
+        
+        return newElectionId;
     }
     
-    // Get all active candidates
-    function getCandidates() external view returns (Candidate[] memory) {
+    function getElection(uint256 _electionId) external view electionExists(_electionId) returns (ElectionInfo memory) {
+        return elections[_electionId];
+    }
+
+    function getAllElections() external view returns (ElectionInfo[] memory) {
+        ElectionInfo[] memory allElections = new ElectionInfo[](electionCount);
+        for (uint256 i = 0; i < electionCount; i++) {
+            allElections[i] = elections[electionIds[i]];
+        }
+        return allElections;
+    }
+
+    function getActiveElections() external view returns (ElectionInfo[] memory) {
+        // Count active elections first
         uint256 activeCount = 0;
-        
-        // Count active candidates
-        for (uint256 i = 0; i < candidateIds.length; i++) {
-            if (candidates[candidateIds[i]].active) {
+        for (uint256 i = 0; i < electionCount; i++) {
+            if (elections[electionIds[i]].active) {
                 activeCount++;
             }
         }
-        
-        // Create array of active candidates
-        Candidate[] memory activeCandidates = new Candidate[](activeCount);
-        uint256 index = 0;
-        
-        for (uint256 i = 0; i < candidateIds.length; i++) {
-            if (candidates[candidateIds[i]].active) {
-                activeCandidates[index] = candidates[candidateIds[i]];
-                index++;
+
+        // Create array of active elections
+        ElectionInfo[] memory activeElections = new ElectionInfo[](activeCount);
+        uint256 currentIndex = 0;
+        for (uint256 i = 0; i < electionCount; i++) {
+            if (elections[electionIds[i]].active) {
+                activeElections[currentIndex] = elections[electionIds[i]];
+                currentIndex++;
             }
         }
-        
-        return activeCandidates;
+
+        return activeElections;
     }
     
-    // Cast a ranked vote (verification handled by PeerRanking contract)
-    function vote(uint256[] memory _rankedCandidateIds) external votingIsActive {
-        require(!hasVoted[msg.sender], "You have already voted");
-        require(_rankedCandidateIds.length > 0, "Must vote for at least one candidate");
-        
-        // Validate all candidate IDs exist and are active
-        for (uint256 i = 0; i < _rankedCandidateIds.length; i++) {
-            require(_rankedCandidateIds[i] > 0 && _rankedCandidateIds[i] <= candidateCount, "Invalid candidate ID");
-            require(candidates[_rankedCandidateIds[i]].active, "Candidate is not active");
+    function getElectionCount() external view returns (uint256) {
+        return electionCount;
+    }
+    
+    /**
+     * @dev Get elections created by a specific address
+     */
+    function getElectionsByCreator(address _creator) external view returns (ElectionInfo[] memory) {
+        uint256[] memory creatorElectionIds = creatorElections[_creator];
+        ElectionInfo[] memory creatorElectionInfos = new ElectionInfo[](creatorElectionIds.length);
+
+        for (uint256 i = 0; i < creatorElectionIds.length; i++) {
+            creatorElectionInfos[i] = elections[creatorElectionIds[i]];
         }
-        
-        // Store the vote
-        votes[msg.sender] = Vote({
-            voter: msg.sender,
-            rankedCandidateIds: _rankedCandidateIds,
-            timestamp: block.timestamp
-        });
-        
-        hasVoted[msg.sender] = true;
-        voters.push(msg.sender);
-        
-        emit VoteCast(msg.sender, _rankedCandidateIds);
+
+        return creatorElectionInfos;
     }
-    
-    // Get vote for a specific voter
-    function getVote(address _voter) external view returns (uint256[] memory) {
-        // TODO: I think this can/should be removed, and tests updated (first). Default value for uint256[] is empty array which should work.
-        require(hasVoted[_voter], "Voter has not voted");
-        return votes[_voter].rankedCandidateIds;
+
+    /**
+     * @dev Deactivate an election (only admin or creator)
+     */
+    function deactivateElection(uint256 _electionId) external electionExists(_electionId) {
+        ElectionInfo storage election = elections[_electionId];
+        if (!hasRole(ADMIN_ROLE, msg.sender) && election.creator != msg.sender) {
+            revert UnauthorizedDeactivation();
+        }
+
+        election.active = false;
+        emit ElectionDeactivated(_electionId);
     }
-    
-    // Toggle voting status (only owner)
-    function toggleVoting() external onlyOwner {
-        votingActive = !votingActive;
-        emit VotingStatusChanged(votingActive);
+
+    /**
+     * @dev Check if a World ID action is already used
+     */
+    function isWorldIdActionUsed(string memory _action) external view returns (bool) {
+        return usedWorldIdActions[_action];
     }
-    
-    // Get total number of votes cast
-    function getTotalVotes() external view returns (uint256) {
-        return voters.length;
+
+    /**
+     * @dev Get election by World ID action
+     */
+    function getElectionByAction(string memory _worldIdAction) external view returns (ElectionInfo memory) {
+        for (uint256 i = 1; i <= electionCount; i++) {
+            if (keccak256(abi.encodePacked(elections[i].worldIdAction)) == keccak256(abi.encodePacked(_worldIdAction))) {
+                return elections[i];
+            }
+        }
+        revert ActionNotFound(_worldIdAction);
     }
-    
-    // Check if an address has voted
-    function checkHasVoted(address _voter) external view returns (bool) {
-        return hasVoted[_voter];
+
+    /**
+     * @dev Grant election creator role to an address (only admin)
+     */
+    function grantCreatorRole(address _creator) external onlyRole(ADMIN_ROLE) {
+        _grantRole(ELECTION_CREATOR_ROLE, _creator);
+        emit CreatorRoleGranted(_creator, msg.sender);
+    }
+
+    /**
+     * @dev Revoke election creator role from an address (only admin)
+     */
+    function revokeCreatorRole(address _creator) external onlyRole(ADMIN_ROLE) {
+        _revokeRole(ELECTION_CREATOR_ROLE, _creator);
+    }
+
+    /**
+     * @dev Check if an address can create elections
+     */
+    function canCreateElections(address _address) external view returns (bool) {
+        return hasRole(ELECTION_CREATOR_ROLE, _address);
     }
 }
