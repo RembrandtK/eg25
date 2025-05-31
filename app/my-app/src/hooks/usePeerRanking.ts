@@ -59,6 +59,21 @@ export function usePeerRanking({
 
         console.log("Updating peer ranking with:", candidateIdsAsNumbers);
 
+        // Send debug info to server
+        await fetch("/api/debug", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: "PeerRanking: Attempting transaction",
+            data: JSON.stringify({
+              contractAddress,
+              functionName: "updateRanking",
+              args: candidateIdsAsNumbers,
+              miniKitInstalled: MiniKit.isInstalled()
+            }, null, 2)
+          }),
+        }).catch(() => {});
+
         // Check if MiniKit is available for actual transaction
         if (!MiniKit.isInstalled()) {
           // Development mode: simulate transaction
@@ -81,6 +96,20 @@ export function usePeerRanking({
             },
           ],
         });
+
+        // Log transaction result
+        await fetch("/api/debug", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: "PeerRanking: Transaction result",
+            data: JSON.stringify({
+              status: finalPayload.status,
+              transaction_id: finalPayload.transaction_id,
+              error_message: finalPayload.error_message
+            }, null, 2)
+          }),
+        }).catch(() => {});
 
         if (finalPayload.status === "error") {
           console.error("Error updating ranking:", finalPayload);
@@ -128,6 +157,21 @@ export function usePeerRanking({
       const candidateIdsAsNumbers = rankedCandidateIds.map(id => Number(id));
 
       console.log("Immediately updating peer ranking with:", candidateIdsAsNumbers);
+
+      // Send debug info to server
+      await fetch("/api/debug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "PeerRanking: Immediate transaction attempt",
+          data: JSON.stringify({
+            contractAddress,
+            functionName: "updateRanking",
+            args: candidateIdsAsNumbers,
+            miniKitInstalled: MiniKit.isInstalled()
+          }, null, 2)
+        }),
+      }).catch(() => {});
 
       // Check if MiniKit is available for actual transaction
       if (!MiniKit.isInstalled()) {
