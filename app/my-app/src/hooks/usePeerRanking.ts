@@ -59,6 +59,17 @@ export function usePeerRanking({
 
         console.log("Updating peer ranking with:", candidateIdsAsNumbers);
 
+        // Check if MiniKit is available for actual transaction
+        if (!MiniKit.isInstalled()) {
+          // Development mode: simulate transaction
+          console.log("Development mode: Simulating transaction (MiniKit not available)");
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
+          const mockTxId = `dev_tx_${Date.now()}`;
+          setLastTxId(mockTxId);
+          onSuccess?.(mockTxId);
+          return;
+        }
+
         // Send transaction to update ranking
         const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
           transaction: [
@@ -118,6 +129,17 @@ export function usePeerRanking({
 
       console.log("Immediately updating peer ranking with:", candidateIdsAsNumbers);
 
+      // Check if MiniKit is available for actual transaction
+      if (!MiniKit.isInstalled()) {
+        // Development mode: simulate transaction
+        console.log("Development mode: Simulating immediate transaction (MiniKit not available)");
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
+        const mockTxId = `dev_tx_immediate_${Date.now()}`;
+        setLastTxId(mockTxId);
+        onSuccess?.(mockTxId);
+        return;
+      }
+
       // Send transaction to update ranking
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
@@ -164,7 +186,10 @@ export function usePeerRanking({
   // Debug logging
   const miniKitInstalled = MiniKit.isInstalled();
   const hasUserAddress = !!session?.user?.address;
-  const isReady = hasUserAddress && miniKitInstalled;
+
+  // For development: allow testing without MiniKit if we have a user session
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isReady = hasUserAddress && (miniKitInstalled || isDevelopment);
 
   // Log connection status for debugging
   if (typeof window !== 'undefined') {
@@ -172,6 +197,7 @@ export function usePeerRanking({
       hasUserAddress,
       userAddress: session?.user?.address,
       miniKitInstalled,
+      isDevelopment,
       isReady
     });
   }
