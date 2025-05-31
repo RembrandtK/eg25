@@ -15,7 +15,7 @@ export const PEER_RANKING_ADDRESS = "0x2caDc553c4B98863A3937fF0E710b79F7E855d8a"
 export const NETWORK_CONFIG = {
   chainId: 4801,
   name: "Worldchain Sepolia",
-  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: process.env.WORLD_CHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.g.alchemy.com/public",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
 } as const;
 
