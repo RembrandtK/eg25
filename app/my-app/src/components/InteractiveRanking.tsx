@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, X, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 
 interface Candidate {
@@ -27,10 +27,17 @@ export function InteractiveRanking({
 }: InteractiveRankingProps) {
   const [rankedCandidates, setRankedCandidates] = useState<Candidate[]>([]);
   const [unrankedCandidates, setUnrankedCandidates] = useState<Candidate[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const onRankingChangeRef = useRef(onRankingChange);
 
-  // Initialize ranking from contract data or start fresh
+  // Keep the callback ref updated
   useEffect(() => {
-    if (candidates.length > 0) {
+    onRankingChangeRef.current = onRankingChange;
+  }, [onRankingChange]);
+
+  // Initialize ranking from contract data or start fresh - ONLY ONCE
+  useEffect(() => {
+    if (candidates.length > 0 && !isInitialized) {
       console.log("🔄 Initializing InteractiveRanking with candidates:", candidates.length, "initialRanking:", initialRanking);
 
       if (initialRanking.length > 0) {
@@ -59,22 +66,24 @@ export function InteractiveRanking({
 
         // Notify parent of the restored ranking
         const rankedIds = rankedCandidateObjects.map(candidate => candidate.id);
-        onRankingChange(rankedIds);
+        onRankingChangeRef.current(rankedIds);
       } else {
         // Start fresh with all candidates unranked
         console.log("🆕 Starting with fresh ranking");
         setUnrankedCandidates([...candidates]);
         setRankedCandidates([]);
-        onRankingChange([]);
+        onRankingChangeRef.current([]);
       }
+
+      setIsInitialized(true);
     }
-  }, [candidates, initialRanking, onRankingChange]);
+  }, [candidates, initialRanking, isInitialized]);
 
   // Notify parent of ranking changes
   const notifyRankingChange = useCallback((newRankedCandidates: Candidate[]) => {
     const rankedIds = newRankedCandidates.map(candidate => candidate.id);
-    onRankingChange(rankedIds);
-  }, [onRankingChange]);
+    onRankingChangeRef.current(rankedIds);
+  }, []);
 
   // Add candidate to ranked list
   const addToRanking = (candidate: Candidate, position?: number) => {
