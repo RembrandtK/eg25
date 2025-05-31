@@ -36,11 +36,10 @@ export function InteractiveRankingTab({
     contractAbi: PEER_RANKING_ABI,
     onSuccess: (txId) => {
       console.log("Ranking updated successfully:", txId);
-      setSuccessMessage(`Ranking updated! Transaction: ${txId.slice(0, 10)}...`);
-      setErrorMessage(null);
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccessMessage(null), 3000);
+      // Just clear any error messages, status icon will handle success feedback
+      setErrorMessage(null);
+      setSuccessMessage(null);
     },
     onError: (error) => {
       console.error("Error updating ranking:", error);
@@ -132,30 +131,65 @@ export function InteractiveRankingTab({
     );
   }
 
+  // Status icon component
+  const StatusIcon = () => {
+    if (!isReady) {
+      return (
+        <div className="flex items-center space-x-1 text-orange-500" title="Connecting...">
+          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs">Connecting</span>
+        </div>
+      );
+    }
+
+    if (isUpdating) {
+      return (
+        <div className="flex items-center space-x-1 text-blue-500" title="Updating ranking...">
+          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs">Updating</span>
+        </div>
+      );
+    }
+
+    if (lastTxId) {
+      return (
+        <div className="flex items-center space-x-1 text-green-500" title={`Last update: ${lastTxId}`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-xs">Saved</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center space-x-1 text-gray-400" title="Ready">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="text-xs">Ready</span>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Interactive Ranking</h2>
-        <p className="text-gray-600 text-sm">
-          Build your ranking by adding candidates from the pool below.
-          Changes are saved to the blockchain in real-time.
-        </p>
+      <div className="relative">
+        {/* Status Icon - Top Right */}
+        <div className="absolute top-0 right-0">
+          <StatusIcon />
+        </div>
+
+        <div className="text-center pr-20">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Interactive Ranking</h2>
+          <p className="text-gray-600 text-sm">
+            Build your ranking by adding candidates from the pool below.
+            Changes are saved to the blockchain in real-time.
+          </p>
+        </div>
       </div>
 
-      {/* Status Messages */}
-      {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <div className="flex items-center">
-            <div className="text-green-500 mr-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p className="text-sm text-green-700">{successMessage}</p>
-          </div>
-        </div>
-      )}
-
+      {/* Error Messages Only (success shown in status icon) */}
       {errorMessage && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3">
           <div className="flex items-center">
@@ -211,19 +245,7 @@ export function InteractiveRankingTab({
         </div>
       )}
 
-      {/* Ready Status */}
-      {!isReady && (
-        <div className="text-center">
-          <div className="inline-flex items-center space-x-2 text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded-lg px-4 py-2">
-            <div className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-            <span>Connecting to blockchain...</span>
-          </div>
-          {/* Debug info */}
-          <div className="mt-2 text-xs text-gray-500">
-            Debug: hasUserAddress={hasUserAddress?.toString()}, miniKitInstalled={miniKitInstalled?.toString()}, isReady={isReady?.toString()}
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }

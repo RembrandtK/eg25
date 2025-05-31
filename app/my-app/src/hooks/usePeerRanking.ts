@@ -89,8 +89,8 @@ export function usePeerRanking({
         console.log("🚀 Simulating transaction for testing...");
         console.log("📋 Would call updateRanking with:", candidateIdsAsNumbers);
 
-        // Simulate a successful transaction
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Simulate a quick successful transaction (reduced delay for better UX)
+        await new Promise(resolve => setTimeout(resolve, 300));
         const mockTxId = `mock_tx_${Date.now()}`;
         setLastTxId(mockTxId);
         onSuccess?.(mockTxId);
@@ -149,7 +149,7 @@ export function usePeerRanking({
         setIsUpdating(false);
         pendingRankingRef.current = null;
       }
-    }, 1000); // 1 second debounce
+    }, 800); // 0.8 second debounce for better responsiveness
   }, [contractAddress, contractAbi, session?.user?.address, onSuccess, onError]);
 
   // Immediate update (no debounce) for critical actions
@@ -210,8 +210,8 @@ export function usePeerRanking({
       console.log("🚀 Simulating immediate transaction for testing...");
       console.log("📋 Would call updateRanking immediately with:", candidateIdsAsNumbers);
 
-      // Simulate a successful transaction
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate a quick successful transaction
+      await new Promise(resolve => setTimeout(resolve, 300));
       const mockTxId = `mock_immediate_tx_${Date.now()}`;
       setLastTxId(mockTxId);
       onSuccess?.(mockTxId);
