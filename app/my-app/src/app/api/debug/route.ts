@@ -36,22 +36,35 @@ const MAX_LOGS = 1000; // Keep last 1000 entries
 
 export async function POST(request: NextRequest) {
   try {
-    const debugData: DebugData = await request.json();
-    
+    const body = await request.json();
+
+    // Handle simple log messages (for wallet auth debugging)
+    if (body.message && !body.appState) {
+      console.log('🔍 WALLET AUTH DEBUG:', {
+        timestamp: new Date().toISOString(),
+        message: body.message,
+        data: body.data,
+        userAgent: request.headers.get('user-agent')?.slice(0, 50) + '...',
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    const debugData: DebugData = body;
+
     // Add metadata
     const logEntry = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       ...debugData,
       timestamp: new Date().toISOString(),
       userAgent: request.headers.get('user-agent') || 'Unknown',
-      ip: request.headers.get('x-forwarded-for') || 
-          request.headers.get('x-real-ip') || 
+      ip: request.headers.get('x-forwarded-for') ||
+          request.headers.get('x-real-ip') ||
           'Unknown',
     };
 
     // Add to logs
     debugLogs.push(logEntry);
-    
+
     // Keep only the most recent logs
     if (debugLogs.length > MAX_LOGS) {
       debugLogs.splice(0, debugLogs.length - MAX_LOGS);
@@ -88,10 +101,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       logId: logEntry.id,
-      totalLogs: debugLogs.length 
+      totalLogs: debugLogs.length
     });
 
   } catch (error) {
@@ -108,14 +121,14 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const sessionId = url.searchParams.get('sessionId');
-    
+
     let filteredLogs = debugLogs;
-    
+
     // Filter by session ID if provided
     if (sessionId) {
       filteredLogs = debugLogs.filter(log => log.sessionId === sessionId);
     }
-    
+
     // Get most recent logs
     const recentLogs = filteredLogs
       .slice(-limit)

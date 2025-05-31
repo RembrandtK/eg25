@@ -10,36 +10,75 @@ interface WalletAuthButtonProps {
 export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
+  // Helper function to send debug logs to server
+  const debugLog = async (step: string, data?: any) => {
+    const message = `WalletAuth ${step}`;
+    console.log(message, data);
+    try {
+      await fetch("/api/debug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          data: data ? JSON.stringify(data, null, 2) : undefined,
+          timestamp: new Date().toISOString()
+        }),
+      });
+    } catch (e) {
+      // Ignore debug logging errors
+    }
+  };
+
+  // Helper function to send debug logs to server
+  const debugLog = async (step: string, data?: any) => {
+    const message = `WalletAuth ${step}`;
+    console.log(message, data);
+    try {
+      await fetch("/api/debug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          data: data ? JSON.stringify(data, null, 2) : undefined,
+          timestamp: new Date().toISOString()
+        }),
+      });
+    } catch (e) {
+      // Ignore debug logging errors
+    }
+  };
+
   const handleWalletAuth = async () => {
     if (!MiniKit.isInstalled()) {
-      console.error("MiniKit is not installed");
+      await debugLog("ERROR: MiniKit not installed");
       return;
     }
 
     setIsLoading(true);
     try {
-      console.log("Step 1: Fetching nonce...");
+      await debugLog("Step 1: Fetching nonce...");
       const res = await fetch("/api/nonce");
       if (!res.ok) {
         throw new Error(`Failed to fetch nonce: ${res.status}`);
       }
       const { nonce } = await res.json();
-      console.log("Step 2: Got nonce:", nonce);
+      await debugLog("Step 2: Got nonce", { nonce });
 
-      console.log("Step 3: Calling MiniKit walletAuth...");
+      await debugLog("Step 3: Calling MiniKit walletAuth...");
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce,
         expirationTime: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
         statement: "Sign in with your World ID wallet",
       });
 
-      console.log("Step 4: Got wallet auth response:", finalPayload);
+      await debugLog("Step 4: Got wallet auth response", { status: finalPayload.status });
 
       if (finalPayload.status === "error") {
+        await debugLog("ERROR: Wallet auth failed", { error_code: finalPayload.error_code });
         throw new Error(`Wallet auth failed: ${finalPayload.error_code}`);
       }
 
-      console.log("Step 5: Verifying SIWE message...");
+      await debugLog("Step 5: Verifying SIWE message...");
       const verifyRes = await fetch("/api/complete-siwe", {
         method: "POST",
         headers: {
@@ -52,14 +91,15 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
       });
 
       if (!verifyRes.ok) {
+        await debugLog("ERROR: SIWE verification request failed", { status: verifyRes.status });
         throw new Error(`SIWE verification failed: ${verifyRes.status}`);
       }
 
       const verification = await verifyRes.json();
-      console.log("Step 6: SIWE verification result:", verification);
+      await debugLog("Step 6: SIWE verification result", verification);
 
       if (verification.isValid) {
-        console.log("Step 7: Signing in with NextAuth...");
+        await debugLog("Step 7: Signing in with NextAuth...");
         const signInResult = await signIn("worldcoin-wallet", {
           message: finalPayload.message,
           signature: finalPayload.signature,
@@ -68,18 +108,21 @@ export function WalletAuthButton({ onSuccess }: WalletAuthButtonProps) {
           redirect: false,
         });
 
-        console.log("Step 8: NextAuth sign in result:", signInResult);
+        await debugLog("Step 8: NextAuth sign in result", signInResult);
 
         // Call onSuccess if provided
         if (onSuccess) {
-          console.log("Step 9: Calling onSuccess callback");
+          await debugLog("Step 9: Calling onSuccess callback");
           onSuccess();
         }
       } else {
+        await debugLog("ERROR: SIWE message verification failed", verification);
         throw new Error("SIWE message verification failed");
       }
     } catch (error) {
-      console.error("Wallet auth error:", error);
+      await debugLog("ERROR: Wallet auth exception", {
+        error: error instanceof Error ? error.message : String(error)
+      });
     } finally {
       setIsLoading(false);
     }
