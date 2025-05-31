@@ -118,7 +118,7 @@ export default function Page() {
       if (session?.user?.address) {
         try {
           const hasUserVoted = await client.readContract({
-            address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
+            address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
             abi: memoizedElectionAbi,
             functionName: "checkHasVoted",
             args: [session.user.address as `0x${string}`],

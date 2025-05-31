@@ -5,6 +5,7 @@ import { MiniKit } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
+import { NETWORK_CONFIG } from "@/config/contract-addresses";
 
 interface UsePeerRankingProps {
   contractAddress: string;
@@ -28,7 +29,7 @@ export function usePeerRanking({
   // Create public client for reading contract state
   const publicClient = createPublicClient({
     chain: worldchainSepolia,
-    transport: http(),
+    transport: http(NETWORK_CONFIG.rpcUrl),
   });
 
   // Load current ranking from contract
@@ -171,6 +172,12 @@ export function usePeerRanking({
 
         console.log("Ranking updated successfully:", finalPayload);
         setLastTxId(finalPayload.transaction_id);
+
+        // Reload the ranking from the blockchain to confirm it was saved
+        setTimeout(() => {
+          loadCurrentRanking();
+        }, 2000); // Wait 2 seconds for blockchain confirmation
+
         onSuccess?.(finalPayload.transaction_id);
       } catch (error) {
         console.error("Error updating ranking:", error);
@@ -265,8 +272,14 @@ export function usePeerRanking({
       }
 
       console.log("Ranking updated successfully:", finalPayload);
-      setLastTxId(finalPayload.transaction_id);
-      onSuccess?.(finalPayload.transaction_id);
+      setLastTxId((finalPayload as any).transaction_id);
+
+      // Reload the ranking from the blockchain to confirm it was saved
+      setTimeout(() => {
+        loadCurrentRanking();
+      }, 2000); // Wait 2 seconds for blockchain confirmation
+
+      onSuccess?.((finalPayload as any).transaction_id);
     } catch (error) {
       console.error("Error updating ranking:", error);
       onError?.(error instanceof Error ? error : new Error('Unknown error occurred'));
