@@ -23,6 +23,7 @@ export interface NetworkConfig {
   rpcUrl: string;
   blockExplorer: string;
   contracts: {
+    TUTE: ContractConfig;
     WorldIDAddressBook: ContractConfig;
     ElectionManager: ContractConfig;
     PeerRanking: ContractConfig;
@@ -30,11 +31,13 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T08:37:14.526Z
+// Last updated: 2025-05-31T08:42:41.242Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
-    "PeerRankingDeployment#PeerRanking": "0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1"
+    "PeerRankingDeployment#PeerRanking": "0xE5546c2131cfE89b285bFFfEa21Ec8B10D95F2E1",
+    "ElectionDeployment#ElectionManager": "0xC0f83dF1d76c19C2b3c3ac8484ef4417b85EC873",
+    "MockWorldIDDeployment#MockWorldIDAddressBook": "0x97E098C600F5EF24e93Cbf455F2625e147D5FD40"
   }
 };
 
@@ -46,7 +49,7 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     WorldIDAddressBook: {
-      address: DEPLOYED_ADDRESSES[4801]["TestnetDeployment#MockWorldIDAddressBook"] || "",
+      address: DEPLOYED_ADDRESSES[4801]["MockWorldIDDeployment#MockWorldIDAddressBook"] || "",
       verified: false,
     },
     ElectionManager: {
