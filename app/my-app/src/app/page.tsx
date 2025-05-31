@@ -11,18 +11,18 @@ import { TransactionStatus } from "@/components/TransactionStatus";
 
 import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
-import { RankingTab } from "@/components/RankingTab";
+import { InteractiveRankingTab } from "@/components/InteractiveRankingTab";
 import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI, Candidate } from "@/election-abi";
 
 export default function Page() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [verified, setVerified] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [transactionId, setTransactionId] = useState<string>("");
   const [isVoting, setIsVoting] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('candidates');
+  const [activeTab, setActiveTab] = useState<TabType>('elections');
   const [candidatesLoading, setCandidatesLoading] = useState(true);
 
   // Memoize the ABI to prevent infinite loops in child components
@@ -159,6 +159,27 @@ export default function Page() {
           ) : (
             <>
               {/* Tab Content */}
+              {activeTab === 'elections' && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Elections</h2>
+                    <p className="text-gray-600 text-sm">
+                      Available elections and voting systems
+                    </p>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-blue-900 mb-2">🚧 Coming Soon: Multiple Elections</h3>
+                    <p className="text-sm text-blue-700 mb-2">
+                      Future versions will support multiple elections, each with their own smart contract instance.
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      Currently showing: <strong>Demo Election</strong> with interactive peer ranking system.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'candidates' && (
                 <CandidatesTab
                   candidates={candidates}
@@ -167,17 +188,11 @@ export default function Page() {
                 />
               )}
 
-              {activeTab === 'ranking' && (
-                <RankingTab
+              {activeTab === 'vote' && (
+                <InteractiveRankingTab
                   candidates={candidates}
-                  rankedCandidateIds={rankedCandidateIds}
-                  onRankingChange={handleRankingChange}
                   verified={verified}
                   hasVoted={hasVoted}
-                  isVoting={isVoting || isConfirming}
-                  onVoteSuccess={handleVoteSuccess}
-                  contractAddress={ELECTION_CONTRACT_ADDRESS}
-                  contractAbi={memoizedElectionAbi}
                 />
               )}
             </>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export type TabType = 'candidates' | 'ranking';
+export type TabType = 'elections' | 'candidates' | 'vote';
 
 interface BottomNavigationProps {
   activeTab: TabType;
@@ -11,15 +11,42 @@ interface BottomNavigationProps {
   rankedCount?: number;
 }
 
-export function BottomNavigation({ 
-  activeTab, 
-  onTabChange, 
+export function BottomNavigation({
+  activeTab,
+  onTabChange,
   candidateCount = 0,
-  rankedCount = 0 
+  rankedCount = 0
 }: BottomNavigationProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="flex h-16">
+        {/* Elections Tab */}
+        <button
+          onClick={() => onTabChange('elections')}
+          className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-colors ${
+            activeTab === 'elections'
+              ? 'text-purple-600 bg-purple-50'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          <div className="relative">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
+            </svg>
+          </div>
+          <span className="text-xs font-medium">Elections</span>
+        </button>
+
         {/* Candidates Tab */}
         <button
           onClick={() => onTabChange('candidates')}
@@ -52,11 +79,11 @@ export function BottomNavigation({
           <span className="text-xs font-medium">Candidates</span>
         </button>
 
-        {/* Ranking Tab */}
+        {/* Vote Tab */}
         <button
-          onClick={() => onTabChange('ranking')}
+          onClick={() => onTabChange('vote')}
           className={`flex-1 flex flex-col items-center justify-center space-y-1 transition-colors ${
-            activeTab === 'ranking'
+            activeTab === 'vote'
               ? 'text-purple-600 bg-purple-50'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
@@ -72,7 +99,7 @@ export function BottomNavigation({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
             {rankedCount > 0 && (
@@ -80,9 +107,14 @@ export function BottomNavigation({
                 {rankedCount}
               </span>
             )}
+            <span className="absolute -bottom-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-3 h-3 flex items-center justify-center">
+              <span className="text-xs">⚡</span>
+            </span>
           </div>
-          <span className="text-xs font-medium">My Ranking</span>
+          <span className="text-xs font-medium">Vote</span>
         </button>
+
+
       </div>
     </div>
   );
