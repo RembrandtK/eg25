@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect } from "react";
 import { InteractiveRanking } from "./InteractiveRanking";
 import { WalletAuthButton } from "./wallet-auth-button";
 import { usePeerRanking } from "@/hooks/usePeerRanking";
-import { PEER_RANKING_CONTRACT_ADDRESS, PEER_RANKING_ABI } from "@/peer-ranking-abi";
+import { PEER_RANKING_ABI } from "@/peer-ranking-abi";
+import { PEER_RANKING_ADDRESS } from "@/config/dynamic-contracts";
 import { Candidate } from "@/election-abi";
 import { useSession } from "next-auth/react";
 
@@ -35,7 +36,7 @@ export function InteractiveRankingTab({
     hasUserAddress,
     miniKitInstalled
   } = usePeerRanking({
-    contractAddress: PEER_RANKING_CONTRACT_ADDRESS,
+    contractAddress: PEER_RANKING_ADDRESS,
     contractAbi: PEER_RANKING_ABI,
     onSuccess: (txId) => {
       console.log("Ranking updated successfully:", txId);

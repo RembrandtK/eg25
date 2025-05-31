@@ -84,11 +84,11 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
       verified: true,
     },
     ElectionManager: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
+      address: DEPLOYED_ADDRESSES[480]["ElectionDeployment#ElectionManager"] || "",
       verified: false,
     },
     PeerRanking: {
-      address: DEPLOYED_ADDRESSES[480]["FullDeployment#PeerRanking"] || "",
+      address: DEPLOYED_ADDRESSES[480]["PeerRankingDeployment#PeerRanking"] || "",
       verified: false,
     },
   },

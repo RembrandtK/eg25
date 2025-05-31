@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ELECTION_CONTRACT_ADDRESS } from "@/election-abi";
+import { ELECTION_MANAGER_ADDRESS } from "@/config/dynamic-contracts";
 
 interface DebugPanelProps {
   candidates?: any[];
@@ -33,7 +33,7 @@ export function DebugPanel({
       hasVoted,
     },
     contract: {
-      address: ELECTION_CONTRACT_ADDRESS,
+      address: ELECTION_MANAGER_ADDRESS,
       network: 'worldchain-sepolia (4801)',
     },
     candidates: {

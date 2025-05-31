@@ -1,4 +1,5 @@
-export const ELECTION_CONTRACT_ADDRESS = "0x53c9a3D5B28593734d6945Fb8F54C9f3dDb48fC7";
+// Contract address is now managed centrally in @/config/contracts
+// Use ELECTION_MANAGER_ADDRESS from there instead
 
 export interface Candidate {
   id: bigint;

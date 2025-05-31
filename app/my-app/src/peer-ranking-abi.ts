@@ -1,4 +1,5 @@
-export const PEER_RANKING_CONTRACT_ADDRESS = "0x2caDc553c4B98863A3937fF0E710b79F7E855d8a";
+// Contract address is now managed centrally in @/config/contracts
+// Use PEER_RANKING_ADDRESS from there instead
 
 export const PEER_RANKING_ABI = [
   {

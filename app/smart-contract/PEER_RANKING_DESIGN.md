@@ -64,6 +64,7 @@ Pairwise Comparisons Generated:
 - Modular design
 
 **Implementation:**
+
 - PeerRanking contract stores comparisons
 - ElectionManager interface for candidate validation
 - Shared World ID verification
@@ -131,11 +132,13 @@ userCandidateRanks[user][Eve] = 0;               // Unranked (default)
 - Minimize storage writes
 
 ### 2. Batch Operations
+
 - Calculate all changes before writing to storage
 - Use memory arrays for intermediate calculations
 - Single transaction for complete ranking update
 
 ### 3. Incremental Updates
+
 - Only update changed comparisons
 - Track user's previous ranking to identify differences
 - Avoid redundant operations

@@ -5,11 +5,12 @@
 
 import { createPublicClient, http } from "viem";
 import { worldchain } from "../lib/chains";
-import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI } from "../election-abi";
+import { ELECTION_ABI } from "../election-abi";
+import { ELECTION_MANAGER_ADDRESS } from "../config/dynamic-contracts";
 
 // Test configuration
 const TEST_CONFIG = {
-  contractAddress: ELECTION_CONTRACT_ADDRESS,
+  contractAddress: ELECTION_MANAGER_ADDRESS,
   expectedCandidates: [
     { name: "Alice Johnson", description: "Experienced leader focused on community development and transparency" },
     { name: "Bob Smith", description: "Innovation advocate with a background in technology education" },
@@ -21,7 +22,7 @@ const TEST_CONFIG = {
 async function testCandidateLoading() {
   console.log("🧪 Testing Frontend Candidate Loading...");
   console.log(`Contract Address: ${TEST_CONFIG.contractAddress}`);
-  
+
   try {
     // Initialize Viem client (same as CandidateList component)
     const client = createPublicClient({
@@ -50,12 +51,12 @@ async function testCandidateLoading() {
       console.log(`  Name: ${candidate.name}`);
       console.log(`  Description: ${candidate.description}`);
       console.log(`  Active: ${candidate.active}`);
-      
+
       // Verify required fields exist
       if (!candidate.id || !candidate.name || !candidate.description) {
         throw new Error(`Candidate ${index + 1} missing required fields`);
       }
-      
+
       if (!candidate.active) {
         throw new Error(`Candidate ${index + 1} is not active`);
       }
@@ -65,7 +66,7 @@ async function testCandidateLoading() {
     console.log("🔍 Verifying expected candidates are present...");
     const expectedNames = TEST_CONFIG.expectedCandidates.map(c => c.name);
     const actualNames = candidates.map(c => c.name);
-    
+
     expectedNames.forEach(expectedName => {
       if (!actualNames.includes(expectedName)) {
         throw new Error(`Expected candidate "${expectedName}" not found`);
@@ -82,7 +83,7 @@ async function testCandidateLoading() {
     });
 
     console.log(`📊 Total candidate count: ${candidateCount.toString()}`);
-    
+
     if (Number(candidateCount) !== candidates.length) {
       throw new Error(`Candidate count mismatch: expected ${candidateCount}, got ${candidates.length}`);
     }
@@ -128,7 +129,7 @@ async function testCandidateLoading() {
     console.error("❌ Frontend integration test failed:");
     console.error(error.message);
     console.error(error.stack);
-    
+
     return {
       success: false,
       error: error.message

@@ -12,7 +12,8 @@ import { TransactionStatus } from "@/components/TransactionStatus";
 import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { InteractiveRankingTab } from "@/components/InteractiveRankingTab";
-import { ELECTION_CONTRACT_ADDRESS, ELECTION_ABI, Candidate } from "@/election-abi";
+import { ELECTION_ABI, Candidate } from "@/election-abi";
+import { ELECTION_MANAGER_ADDRESS } from "@/config/dynamic-contracts";
 
 export default function Page() {
   const { data: session } = useSession();
@@ -87,7 +88,7 @@ export default function Page() {
         setCandidatesLoading(true);
 
         const result = await client.readContract({
-          address: ELECTION_CONTRACT_ADDRESS as `0x${string}`,
+          address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
           abi: memoizedElectionAbi,
           functionName: "getCandidates",
           args: [],

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
-import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS } from "@/config/contracts";
+import { ELECTION_MANAGER_ADDRESS, PEER_RANKING_ADDRESS } from "@/config/dynamic-contracts";
 
 // Simplified ABI for the functions we need
 const PEER_RANKING_ABI = [
@@ -115,7 +115,7 @@ async function getComparisonMatrix() {
   try {
     // Get candidate count first
     const candidateCount = await publicClient.readContract({
-      address: ELECTION_MANAGER_CONTRACT_ADDRESS as `0x${string}`,
+      address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
       abi: ELECTION_MANAGER_ABI,
       functionName: 'candidateCount',
     });
@@ -129,7 +129,7 @@ async function getComparisonMatrix() {
       for (let j = 1; j <= count; j++) {
         if (i !== j) {
           const comparisonCount = await publicClient.readContract({
-            address: PEER_RANKING_CONTRACT_ADDRESS as `0x${string}`,
+            address: PEER_RANKING_ADDRESS as `0x${string}`,
             abi: PEER_RANKING_ABI,
             functionName: 'getComparisonCount',
             args: [BigInt(i), BigInt(j)],
@@ -159,14 +159,14 @@ async function getVotingOverview(userAddress?: string | null) {
   try {
     // Get total rankers
     const totalRankers = await publicClient.readContract({
-      address: PEER_RANKING_CONTRACT_ADDRESS as `0x${string}`,
+      address: PEER_RANKING_ADDRESS as `0x${string}`,
       abi: PEER_RANKING_ABI,
       functionName: 'getTotalRankers',
     });
 
     // Get candidate count
     const candidateCount = await publicClient.readContract({
-      address: ELECTION_MANAGER_CONTRACT_ADDRESS as `0x${string}`,
+      address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
       abi: ELECTION_MANAGER_ABI,
       functionName: 'candidateCount',
     });
@@ -181,7 +181,7 @@ async function getVotingOverview(userAddress?: string | null) {
     if (userAddress) {
       try {
         const userRanking = await publicClient.readContract({
-          address: PEER_RANKING_CONTRACT_ADDRESS as `0x${string}`,
+          address: PEER_RANKING_ADDRESS as `0x${string}`,
           abi: PEER_RANKING_ABI,
           functionName: 'getUserRanking',
           args: [userAddress as `0x${string}`],
