@@ -26,8 +26,11 @@ export function InteractiveRankingTab({
 
   const {
     updateRanking,
+    loadCurrentRanking,
     isUpdating,
+    isLoading,
     lastTxId,
+    currentRanking,
     isReady,
     hasUserAddress,
     miniKitInstalled
@@ -50,6 +53,14 @@ export function InteractiveRankingTab({
       setTimeout(() => setErrorMessage(null), 5000);
     }
   });
+
+  // Initialize ranking from contract when loaded
+  useEffect(() => {
+    if (currentRanking.length > 0) {
+      console.log("📖 Initializing ranking from contract:", currentRanking);
+      setRankedCandidateIds(currentRanking);
+    }
+  }, [currentRanking]);
 
   // Handle ranking changes from the interactive component
   const handleRankingChange = useCallback((newRankedIds: bigint[]) => {
@@ -133,6 +144,15 @@ export function InteractiveRankingTab({
 
   // Status icon component
   const StatusIcon = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center space-x-1 text-purple-500" title="Loading ranking...">
+          <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-xs">Loading</span>
+        </div>
+      );
+    }
+
     if (!isReady) {
       return (
         <div className="flex items-center space-x-1 text-orange-500" title="Connecting...">

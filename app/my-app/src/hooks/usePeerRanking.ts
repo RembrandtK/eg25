@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
+import { createPublicClient, http } from "viem";
+import { worldchainSepolia } from "viem/chains";
 
 interface UsePeerRankingProps {
   contractAddress: string;
@@ -19,7 +21,48 @@ export function usePeerRanking({
 }: UsePeerRankingProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastTxId, setLastTxId] = useState<string | null>(null);
+  const [currentRanking, setCurrentRanking] = useState<bigint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { data: session } = useSession();
+
+  // Create public client for reading contract state
+  const publicClient = createPublicClient({
+    chain: worldchainSepolia,
+    transport: http(),
+  });
+
+  // Load current ranking from contract
+  const loadCurrentRanking = useCallback(async () => {
+    if (!session?.user?.address) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log("📖 Loading current ranking from contract for:", session.user.address);
+
+      const ranking = await publicClient.readContract({
+        address: contractAddress as `0x${string}`,
+        abi: contractAbi,
+        functionName: 'getUserRanking',
+        args: [session.user.address],
+      }) as bigint[];
+
+      console.log("📖 Loaded ranking:", ranking);
+      setCurrentRanking(ranking || []);
+    } catch (error) {
+      console.error("Error loading current ranking:", error);
+      // Don't treat this as a fatal error - user might not have ranked yet
+      setCurrentRanking([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [contractAddress, contractAbi, session?.user?.address, publicClient]);
+
+  // Load ranking when user address changes
+  useEffect(() => {
+    loadCurrentRanking();
+  }, [loadCurrentRanking]);
 
   // Debounce rapid ranking changes
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -274,8 +317,11 @@ export function usePeerRanking({
     updateRankingImmediate,
     cancelPendingUpdate,
     cleanup,
+    loadCurrentRanking,
     isUpdating,
+    isLoading,
     lastTxId,
+    currentRanking,
     isReady,
     // Debug info
     hasUserAddress,
