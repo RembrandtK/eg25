@@ -38,22 +38,26 @@ describe('candidateLoader - ACTUAL app functions', () => {
     expect(candidates[0]).toEqual({
       id: BigInt(1),
       name: "Alice Johnson",
-      description: "Community leader with 10 years of experience"
+      description: "Community leader with 10 years of experience",
+      active: true
     });
     expect(candidates[1]).toEqual({
-      id: BigInt(2), 
+      id: BigInt(2),
       name: "Bob Smith",
-      description: "Tech entrepreneur focused on digital innovation"
+      description: "Tech entrepreneur focused on digital innovation",
+      active: true
     });
     expect(candidates[2]).toEqual({
-      id: BigInt(3), 
+      id: BigInt(3),
       name: "Carol Davis",
-      description: "Environmental advocate and sustainability expert"
+      description: "Environmental advocate and sustainability expert",
+      active: true
     });
     expect(candidates[3]).toEqual({
-      id: BigInt(4), 
+      id: BigInt(4),
       name: "David Wilson",
-      description: "Education reformer and former school principal"
+      description: "Education reformer and former school principal",
+      active: true
     });
 
     // Verify NO candidates have empty names (this catches the array vs object bug)
@@ -98,12 +102,14 @@ describe('candidateLoader - ACTUAL app functions', () => {
     expect(candidates[0]).toEqual({
       id: BigInt(1),
       name: "Alice",
-      description: "Description 1"
+      description: "Description 1",
+      active: true
     });
     expect(candidates[1]).toEqual({
       id: BigInt(2),
       name: "", // Should fallback to empty string
-      description: "" // Should fallback to empty string
+      description: "", // Should fallback to empty string
+      active: false // Should fallback to false for undefined
     });
   });
 

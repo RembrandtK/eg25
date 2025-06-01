@@ -1,13 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ElectionDashboard } from "@/components/ElectionDashboard";
 import { BottomNavigation, TabType } from "@/components/BottomNavigation";
 import { CandidatesTab } from "@/components/CandidatesTab";
 import { InteractiveRankingTab } from "@/components/InteractiveRankingTab";
+import { useElectionManager } from "@/hooks/useElectionManager";
+import type { Election, Candidate } from "@/types/election";
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabType>('elections');
+
+  // Shared state across all tabs
+  const [selectedElection, setSelectedElection] = useState<Election | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
+
+  // Load elections at the parent level
+  const { elections, electionsLoading, electionsError } = useElectionManager(true);
+
+  // Auto-select first election when elections load
+  useEffect(() => {
+    if (elections.length > 0 && !selectedElection) {
+      setSelectedElection(elections[0]);
+    }
+  }, [elections, selectedElection]);
 
 
 
@@ -23,22 +40,34 @@ export default function Page() {
         <div className="px-6 py-4">
           {/* Tab Content */}
           {activeTab === 'elections' && (
-            <ElectionDashboard />
+            <ElectionDashboard
+              elections={elections}
+              electionsLoading={electionsLoading}
+              electionsError={electionsError}
+              selectedElection={selectedElection}
+              setSelectedElection={setSelectedElection}
+              candidates={candidates}
+              setCandidates={setCandidates}
+              rankedCandidateIds={rankedCandidateIds}
+              setRankedCandidateIds={setRankedCandidateIds}
+            />
           )}
 
           {activeTab === 'candidates' && (
             <CandidatesTab
-              candidates={[]}
+              candidates={candidates}
               loading={false}
-              error="Please select an election from the Elections tab to view candidates."
+              error={!selectedElection ? "Please select an election from the Elections tab to view candidates." : undefined}
             />
           )}
 
           {activeTab === 'vote' && (
             <InteractiveRankingTab
-              candidates={[]}
+              candidates={candidates}
+              selectedElection={selectedElection}
               verified={true}
               hasVoted={false}
+              onRankingChange={setRankedCandidateIds}
             />
           )}
         </div>
@@ -48,8 +77,8 @@ export default function Page() {
       <BottomNavigation
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        candidateCount={0}
-        rankedCount={0}
+        candidateCount={candidates.length}
+        rankedCount={rankedCandidateIds.length}
       />
     </div>
   );

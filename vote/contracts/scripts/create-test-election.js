@@ -1,10 +1,26 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
   console.log("🗳️ Creating test election...");
 
-  // Get the deployed ElectionManager address
-  const ELECTION_MANAGER_ADDRESS = "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC";
+  // Get the deployed contract address from Ignition deployment files
+  const network = hre.network.name;
+  const chainId = hre.network.config.chainId;
+
+  const deploymentPath = path.join(__dirname, "..", "ignition", "deployments", `chain-${chainId}`, "deployed_addresses.json");
+
+  if (!fs.existsSync(deploymentPath)) {
+    throw new Error(`No deployment found for network ${network} (chain ${chainId}). Please deploy contracts first.`);
+  }
+
+  const deployedAddresses = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
+  const ELECTION_MANAGER_ADDRESS = deployedAddresses["ElectionDeployment#ElectionManager"];
+
+  if (!ELECTION_MANAGER_ADDRESS) {
+    throw new Error(`ElectionManager not found in deployment for network ${network}`);
+  }
   
   // Get signer
   const [deployer] = await ethers.getSigners();
@@ -40,23 +56,50 @@ async function main() {
     }
   }
 
-  // Define test candidates
+  // Check for existing elections to avoid duplicates
+  console.log("🔍 Checking for existing elections...");
+  const allElections = await electionManager.getAllElections();
+  console.log(`Found ${allElections.length} existing elections`);
+
+  const electionTitle = "City Council Election 2025";
+  const electionDescription = "Municipal election for city council representatives";
+
+  // Check if an election with this title already exists
+  const existingElection = allElections.find(election =>
+    election.title === electionTitle && election.active
+  );
+
+  if (existingElection) {
+    console.log("❌ An active election with this title already exists:");
+    console.log(`   ID: ${existingElection.id}`);
+    console.log(`   Title: ${existingElection.title}`);
+    console.log(`   World ID Action: ${existingElection.worldIdAction}`);
+    console.log(`   Election Address: ${existingElection.electionAddress}`);
+    console.log("\n💡 Use a different title or deactivate the existing election first.");
+    return;
+  }
+
+  // Define test candidates - DIFFERENT from the first election
   const candidates = [
     {
-      name: "Alice Johnson",
-      description: "Community leader with 10 years of experience in local governance"
+      name: "Emma Rodriguez",
+      description: "Healthcare advocate with focus on accessible medical services"
     },
     {
-      name: "Bob Smith", 
-      description: "Tech entrepreneur focused on digital innovation"
+      name: "Michael Chen",
+      description: "Urban planning expert specializing in smart city development"
     },
     {
-      name: "Carol Davis",
-      description: "Environmental advocate and sustainability expert"
+      name: "Sarah Thompson",
+      description: "Social justice lawyer and community organizer"
     },
     {
-      name: "David Wilson",
-      description: "Education reformer and former school principal"
+      name: "James Park",
+      description: "Renewable energy engineer and climate policy advisor"
+    },
+    {
+      name: "Lisa Martinez",
+      description: "Small business owner and economic development specialist"
     }
   ];
 
@@ -64,13 +107,14 @@ async function main() {
   const timestamp = Math.floor(Date.now() / 1000);
   const uniqueAction = `test-election-${timestamp}`;
 
+  console.log("✅ No duplicate found. Creating new election...");
   console.log("Creating election with candidates:", candidates.map(c => c.name));
   console.log("World ID Action:", uniqueAction);
 
   try {
     const createTx = await electionManager.createElection(
-      "Test Election 2025",
-      "A test election for the World Mini App voting system",
+      electionTitle,
+      electionDescription,
       uniqueAction, // Unique World ID action
       candidates
     );

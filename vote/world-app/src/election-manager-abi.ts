@@ -2,7 +2,7 @@
 // Use ELECTION_MANAGER_ADDRESS from there instead
 //
 // This ABI was auto-generated from the compiled contract
-// Last updated: 2025-05-31T20:26:23.574Z
+// Last updated: 2025-06-01T01:57:04.338Z
 
 export const ELECTION_MANAGER_ABI = [
   {
@@ -264,6 +264,19 @@ export const ELECTION_MANAGER_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "UNIVERSAL_WORLD_ID_ACTION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -292,11 +305,6 @@ export const ELECTION_MANAGER_ABI = [
       {
         "internalType": "string",
         "name": "_description",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "_worldIdAction",
         "type": "string"
       },
       {
@@ -700,6 +708,25 @@ export const ELECTION_MANAGER_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "_electionAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getElectionIdByAddress",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "_creator",
         "type": "address"
       }
@@ -935,6 +962,125 @@ export const ELECTION_MANAGER_ABI = [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_electionId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "signal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "root",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "voterId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[8]",
+        "name": "proof",
+        "type": "uint256[8]"
+      }
+    ],
+    "name": "verifyWorldIdProof",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_electionAddress",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "candidateId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tiedWithPrevious",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Election.RankingEntry[]",
+        "name": "ranking",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "testVote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_electionAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "signal",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "root",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "nullifierHash",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[8]",
+        "name": "proof",
+        "type": "uint256[8]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "candidateId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "tiedWithPrevious",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct Election.RankingEntry[]",
+        "name": "ranking",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "vote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

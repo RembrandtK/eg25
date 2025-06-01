@@ -2,7 +2,7 @@
 // Use ELECTION_MANAGER_ADDRESS from there instead
 //
 // This ABI was auto-generated from the compiled contract
-// Last updated: 2025-05-31T20:26:23.571Z
+// Last updated: 2025-06-01T01:57:04.331Z
 
 export const ELECTION_ABI = [
   {
@@ -476,6 +476,19 @@ export const ELECTION_ABI = [
         "internalType": "string",
         "name": "",
         "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "electionManager",
+    "outputs": [
+      {
+        "internalType": "contract IElectionManager",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

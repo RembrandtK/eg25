@@ -2,13 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Plus, X, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
-
-interface Candidate {
-  id: bigint;
-  name: string;
-  description: string;
-  active: boolean;
-}
+import { Candidate } from "@/lib/candidateLoader";
 
 interface InteractiveRankingProps {
   candidates: Candidate[];
@@ -25,10 +19,49 @@ export function InteractiveRanking({
   isUpdating = false,
   initialRanking = []
 }: InteractiveRankingProps) {
+  // Debug: Log component render and all state changes
+  useEffect(() => {
+    fetch('/api/debug', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `🎯 InteractiveRanking: Component rendered`,
+        data: {
+          candidateCount: candidates.length,
+          candidateNames: candidates.map(c => c.name),
+          disabled,
+          isUpdating,
+          initialRankingLength: initialRanking.length
+        }
+      })
+    });
+  });
+
   const [rankedCandidates, setRankedCandidates] = useState<Candidate[]>([]);
   const [unrankedCandidates, setUnrankedCandidates] = useState<Candidate[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const onRankingChangeRef = useRef(onRankingChange);
+
+  // Debug: Log state changes
+  useEffect(() => {
+    fetch('/api/debug', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `🎯 InteractiveRanking: State changed`,
+        data: {
+          rankedCount: rankedCandidates.length,
+          unrankedCount: unrankedCandidates.length,
+          isInitialized,
+          rankedNames: rankedCandidates.map(c => c.name),
+          unrankedNames: unrankedCandidates.map(c => c.name)
+        }
+      })
+    });
+  }, [rankedCandidates, unrankedCandidates, isInitialized]);
+
+  // Debug: Log what candidates are received
+  console.log("🎯 InteractiveRanking received candidates:", candidates.length, candidates.map(c => ({ id: c.id.toString(), name: c.name, active: c.active })));
 
   // Keep the callback ref updated
   useEffect(() => {
@@ -37,8 +70,31 @@ export function InteractiveRanking({
 
   // Initialize ranking from contract data or start fresh - ONLY ONCE
   useEffect(() => {
+    fetch('/api/debug', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `🎯 InteractiveRanking: Initialization useEffect triggered`,
+        data: {
+          candidateCount: candidates.length,
+          isInitialized,
+          initialRankingLength: initialRanking.length,
+          willInitialize: candidates.length > 0 && !isInitialized
+        }
+      })
+    });
+
     if (candidates.length > 0 && !isInitialized) {
       console.log("🔄 Initializing InteractiveRanking with candidates:", candidates.length, "initialRanking:", initialRanking);
+
+      fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `🎯 InteractiveRanking: Starting initialization`,
+          data: { candidateCount: candidates.length, initialRankingLength: initialRanking.length }
+        })
+      });
 
       if (initialRanking.length > 0) {
         // Initialize with existing ranking from contract
@@ -61,6 +117,18 @@ export function InteractiveRanking({
         });
 
         console.log("📖 Restored ranking:", rankedCandidateObjects.map(c => c.name));
+        fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🎯 InteractiveRanking: Restored ranking from initial`,
+            data: {
+              rankedCount: rankedCandidateObjects.length,
+              unrankedCount: unrankedCandidateObjects.length,
+              rankedNames: rankedCandidateObjects.map(c => c.name)
+            }
+          })
+        });
         setRankedCandidates(rankedCandidateObjects);
         setUnrankedCandidates(unrankedCandidateObjects);
 
@@ -70,11 +138,27 @@ export function InteractiveRanking({
       } else {
         // Start fresh with all candidates unranked
         console.log("🆕 Starting with fresh ranking");
+        fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🎯 InteractiveRanking: Starting fresh, all unranked`,
+            data: { candidateCount: candidates.length, candidateNames: candidates.map(c => c.name) }
+          })
+        });
         setUnrankedCandidates([...candidates]);
         setRankedCandidates([]);
         onRankingChangeRef.current([]);
       }
 
+      fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `🎯 InteractiveRanking: Setting isInitialized to true`,
+          data: {}
+        })
+      });
       setIsInitialized(true);
     }
   }, [candidates, initialRanking, isInitialized]);
@@ -156,15 +240,36 @@ export function InteractiveRanking({
     }
   };
 
+  // Debug: Log render conditions in useEffect
+  useEffect(() => {
+    fetch('/api/debug', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `🎯 InteractiveRanking: Render check`,
+        data: {
+          candidatesLength: candidates.length,
+          rankedLength: rankedCandidates.length,
+          unrankedLength: unrankedCandidates.length,
+          isInitialized,
+          willShowEmpty: candidates.length === 0
+        }
+      })
+    });
+  });
+
   if (candidates.length === 0) {
+    console.log("🎯 InteractiveRanking: No candidates, showing empty state");
     return (
       <div className="w-full max-w-md mx-auto">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-          <p className="text-gray-500 text-sm">No candidates available</p>
+          <p className="text-gray-500 text-sm">Loading candidates...</p>
         </div>
       </div>
     );
   }
+
+  console.log("🎯 InteractiveRanking: Rendering with", candidates.length, "candidates, ranked:", rankedCandidates.length, "unranked:", unrankedCandidates.length);
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">

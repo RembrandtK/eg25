@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
 import { ELECTION_MANAGER_ADDRESS, CURRENT_NETWORK } from "@/config/contracts";
+import { Candidate } from "@/lib/candidateLoader";
 
 // Election contract ABI for reading votes
 const ELECTION_ABI = [
@@ -53,12 +54,7 @@ const publicClient = createPublicClient({
   }),
 });
 
-interface Candidate {
-  id: number;
-  name: string;
-  description: string;
-  active: boolean;
-}
+// Using Candidate interface from candidateLoader
 
 interface RankingEntry {
   candidateId: number;

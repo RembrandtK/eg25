@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from "@worldcoin/minikit-js";
 import { useSession } from "next-auth/react";
+import { keccak256, encodePacked } from "viem";
 
 interface VoteButtonProps {
   contractAddress: string;
@@ -49,11 +50,30 @@ export function VoteButton({
       // Step 1: World ID verification
       console.log("🔐 Starting World ID verification for vote...");
 
-      const voteData = rankedCandidateIds.map(id => Number(id));
-      const signal = JSON.stringify(voteData);
+      // Create signal from vote data using the same method as contract tests
+      // Convert to ranking entries first
+      const rankingEntries: RankingEntry[] = rankedCandidateIds.map(id => ({
+        candidateId: Number(id),
+        tiedWithPrevious: false  // No ties for now
+      }));
+
+      const candidateIds = rankingEntries.map(entry => entry.candidateId);
+      const tiedFlags = rankingEntries.map(entry => entry.tiedWithPrevious);
+
+      // Create hash using the same method as the contract test
+      const signal = keccak256(
+        encodePacked(
+          ['uint256[]', 'bool[]'],
+          [candidateIds, tiedFlags]
+        )
+      );
+
+      console.log("📊 Vote data:", { candidateIds, tiedFlags });
+      console.log("🔐 Generated signal hash:", signal);
+      console.log("🎯 Using universal World ID action: vote");
 
       const verifyPayload: VerifyCommandInput = {
-        action: "vote", // This should match the Election contract's worldIdAction
+        action: "vote", // Use universal "vote" action to match contract
         signal,
         verification_level: VerificationLevel.Orb,
       };
@@ -73,16 +93,11 @@ export function VoteButton({
 
       console.log("✅ World ID verification successful");
 
-      // Step 2: Convert to RankingEntry format for Election contract
-      const rankingEntries: RankingEntry[] = rankedCandidateIds.map(id => ({
-        candidateId: Number(id),
-        tiedWithPrevious: false  // No ties for now
-      }));
-
       console.log("🚀 Submitting vote to Election contract...");
       console.log("📋 Vote data:", rankingEntries);
 
       // Step 3: Submit transaction with World ID proof
+      // Pass everything through directly - MiniKit should provide correct format
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
         transaction: [
           {

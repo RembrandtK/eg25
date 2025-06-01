@@ -29,12 +29,11 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-05-31T20:40:15.721Z
+// Last updated: 2025-06-01T04:05:40.899Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
-    "ElectionDeployment#MockWorldID": "0xD1475b98eAE5335eDB90Ab7bB46d029c18cb24ab",
-    "ElectionDeployment#ElectionManager": "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC"
+    "ElectionDeployment#ElectionManager": "0xE633498333Cc9079340EAE0864D001336211d111"
   }
 };
 
@@ -42,7 +41,7 @@ const DEPLOYED_ADDRESSES = {
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     MockWorldID: {
@@ -60,7 +59,7 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
 export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   chainId: 480,
   name: "World Chain",
-  rpcUrl: "https://worldchain-mainnet.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_MAINNET_RPC || "",
   blockExplorer: "https://worldscan.org",
   contracts: {
     WorldIDAddressBook: {

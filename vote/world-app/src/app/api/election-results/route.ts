@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
 import { ELECTION_MANAGER_ADDRESS, CURRENT_NETWORK } from "@/config/contracts";
+import { Candidate } from "@/lib/candidateLoader";
 
 // Election contract ABI for the functions we need
 const ELECTION_ABI = [
@@ -66,12 +67,7 @@ const publicClient = createPublicClient({
   }),
 });
 
-interface Candidate {
-  id: number;
-  name: string;
-  description: string;
-  active: boolean;
-}
+// Using Candidate interface from candidateLoader
 
 interface RankingEntry {
   candidateId: number;
@@ -160,7 +156,7 @@ async function getCandidates(electionAddress: string): Promise<Candidate[]> {
   }) as any[];
 
   return candidates.map(candidate => ({
-    id: Number(candidate.id),
+    id: BigInt(candidate.id), // Keep as bigint to match interface
     name: candidate.name,
     description: candidate.description,
     active: candidate.active
@@ -176,7 +172,7 @@ async function getTotalVoters(electionAddress: string): Promise<number> {
   return Number(totalVoters);
 }
 
-async function getComparisonMatrix(candidateIds: number[], electionAddress: string): Promise<{ [key: string]: { [key: string]: number } }> {
+async function getComparisonMatrix(candidateIds: bigint[], electionAddress: string): Promise<{ [key: string]: { [key: string]: number } }> {
   const matrix: { [key: string]: { [key: string]: number } } = {};
 
   // Initialize matrix

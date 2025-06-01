@@ -18,7 +18,7 @@ async function testRealContractCalls() {
   try {
     console.log("\n📋 Testing getAllElections()...");
     
-    const electionManagerAddress = "0x046B7CDb0DACE9d4c0B5396f34d47945e974E369"; // From deployment
+    const electionManagerAddress = "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC"; // Correct address from contracts.ts
     
     // Import the ABI (simplified for testing)
     const ELECTION_MANAGER_ABI = [

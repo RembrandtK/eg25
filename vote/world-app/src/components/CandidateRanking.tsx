@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ChevronUp, ChevronDown, GripVertical } from "lucide-react";
-
-interface Candidate {
-  id: bigint;
-  name: string;
-  description: string;
-  active: boolean;
-}
+import { Candidate } from "@/lib/candidateLoader";
 
 interface CandidateRankingProps {
   candidates: Candidate[];

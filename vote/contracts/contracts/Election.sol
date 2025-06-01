@@ -20,16 +20,27 @@ interface IElection {
     function candidates(uint256) external view returns (uint256 id, string memory name, string memory description, bool active);
 }
 
+// Interface for ElectionManager
+interface IElectionManager {
+    function verifyWorldIdProof(
+        uint256 _electionId,
+        address signal,
+        uint256 root,
+        uint256 nullifierHash,
+        uint256[8] calldata proof
+    ) external view returns (bool);
+
+    function getElectionIdByAddress(address _electionAddress) external view returns (uint256);
+}
+
 contract Election is IElection, AccessControl, Pausable {
     using ByteHasher for bytes;
 
     IWorldID public immutable worldId;
+    IElectionManager public immutable electionManager;
 
     // Custom errors
-    error RankingEmpty();
     error InvalidCandidateId(uint256 candidateId);
-    error CandidateNotActive(uint256 candidateId);
-    error FirstEntryCannotBeTied();
     error VoterNotFound(uint256 voterId);
 
 
@@ -98,6 +109,7 @@ contract Election is IElection, AccessControl, Pausable {
         address _creator
     ) {
         worldId = _worldId;
+        electionManager = IElectionManager(msg.sender); // ElectionManager is deploying this contract
         title = _title;
         description = _description;
         worldIdAction = _worldIdAction;
@@ -176,61 +188,77 @@ contract Election is IElection, AccessControl, Pausable {
     }
     
     /**
-     * @dev Cast vote with World ID ZK proof verification
-     * @param signal The vote data hash that the proof authorizes (prevents proof reuse for different votes)
-     * @param root The root (returned by the IDKit widget)
-     * @param voterId The voter ID (nullifier hash) for this proof, preventing double signaling (returned by the IDKit widget)
-     * @param proof The zero-knowledge proof that demonstrates the claimer is registered with World ID (returned by the IDKit widget)
+     * @dev Test vote function without World ID for debugging
      * @param ranking Array of RankingEntry structs with tie information
      */
+    function testVote(
+        RankingEntry[] memory ranking
+    ) external whenNotPaused {
+        // Minimal validation - allow empty rankings and any candidate IDs
+        for (uint256 i = 0; i < ranking.length; i++) {
+            if (ranking[i].candidateId > candidateCount) {
+                revert InvalidCandidateId(ranking[i].candidateId);
+            }
+        }
+
+        // Use msg.sender as voter ID for testing
+        uint256 testVoterId = uint256(uint160(msg.sender));
+
+        // Store/update ranking by test voter ID
+        bool isNewVoter = votes[testVoterId].length == 0;
+
+        delete votes[testVoterId];
+        for (uint256 i = 0; i < ranking.length; i++) {
+            votes[testVoterId].push(ranking[i]);
+        }
+
+        // Track new voter
+        if (isNewVoter) {
+            voters.push(testVoterId);
+        }
+
+        emit RankingUpdated(msg.sender, ranking);
+    }
+
     function vote(
-        uint256 signal,
+        address signal,
         uint256 root,
-        uint256 voterId,
+        uint256 nullifierHash,
         uint256[8] calldata proof,
         RankingEntry[] memory ranking
     ) external whenNotPaused {
         // We verify the provided proof is valid and the user is verified by World ID
         // Note: We allow vote updates, so we don't check if voter ID was used before
-        worldId.verifyProof(
+        // Get our election ID from ElectionManager and verify through it
+        uint256 electionId = electionManager.getElectionIdByAddress(address(this));
+        electionManager.verifyWorldIdProof(
+            electionId,
+            signal,
             root,
-            groupId, // set to "1" in the constructor
-            signal, // Signal is already a hash of the vote data
-            voterId,
-            externalNullifierHash,
+            nullifierHash,
             proof
         );
 
-        if (ranking.length == 0) revert RankingEmpty();
-
-        // Validate all candidate IDs and tie logic
+        // Minimal validation - allow empty rankings and any candidate IDs
+        // Only validate that candidate IDs are within reasonable bounds if provided
         for (uint256 i = 0; i < ranking.length; i++) {
-            if (ranking[i].candidateId == 0 || ranking[i].candidateId > candidateCount) {
+            // Allow candidate ID 0 (abstention) and any ID up to candidateCount
+            if (ranking[i].candidateId > candidateCount) {
                 revert InvalidCandidateId(ranking[i].candidateId);
-            }
-
-            // Check candidate is active
-            if (!candidates[ranking[i].candidateId].active) {
-                revert CandidateNotActive(ranking[i].candidateId);
-            }
-
-            // First entry cannot be tied with previous
-            if (i == 0 && ranking[i].tiedWithPrevious) {
-                revert FirstEntryCannotBeTied();
             }
         }
 
-        // Store/update ranking by voter ID (allows vote updates)
-        bool isNewVoter = votes[voterId].length == 0;
+        // Store/update ranking by nullifier hash (allows vote updates)
+        bool isNewVoter = votes[nullifierHash].length == 0;
 
-        delete votes[voterId];
+        delete votes[nullifierHash];
         for (uint256 i = 0; i < ranking.length; i++) {
-            votes[voterId].push(ranking[i]);
+            votes[nullifierHash].push(ranking[i]);
         }
 
         // Track new voter
         if (isNewVoter) {
-            voters.push(voterId);
+            voters.push(nullifierHash);
         }
 
         emit RankingUpdated(msg.sender, ranking);

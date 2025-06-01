@@ -26,6 +26,16 @@ export function useElectionManager(options: UseElectionManagerOptions = {}) {
   console.log("🔧 useElectionManager hook called with enabled:", enabled);
   console.log("🔧 useElectionManager: Hook is executing!");
 
+  // Debug API call to confirm hook is being called
+  fetch('/api/debug', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: `🔧 useElectionManager: Hook called with enabled=${enabled}`,
+      data: { enabled }
+    })
+  });
+
   const [elections, setElections] = useState<Election[]>([]);
   const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +62,25 @@ export function useElectionManager(options: UseElectionManagerOptions = {}) {
 
       console.log("📖 Loading elections from ElectionManager using getAllElections()...");
 
+      // Debug API call to track election loading
+      await fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `📖 useElectionManager: Starting getAllElections() call`,
+          data: {
+            electionManagerAddress: ELECTION_MANAGER_ADDRESS,
+            expectedAddress: "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC",
+            addressMatch: ELECTION_MANAGER_ADDRESS === "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC"
+          }
+        })
+      });
+
+      // Debug: Log the actual address being used
+      console.log("🔍 ELECTION_MANAGER_ADDRESS being used:", ELECTION_MANAGER_ADDRESS);
+      console.log("🔍 Expected address: 0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC");
+      console.log("🔍 Address match:", ELECTION_MANAGER_ADDRESS === "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC");
+
       // Use the getAllElections() function which is simpler and more reliable
       const allElections = await publicClient.readContract({
         address: ELECTION_MANAGER_ADDRESS as `0x${string}`,
@@ -60,6 +89,23 @@ export function useElectionManager(options: UseElectionManagerOptions = {}) {
       }) as any[];
 
       console.log("🔍 Raw election results from getAllElections():", allElections);
+
+      // Debug API call for contract response
+      await fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `📖 useElectionManager: getAllElections() returned ${allElections.length} elections`,
+          data: {
+            electionCount: allElections.length,
+            firstElection: allElections.length > 0 ? {
+              id: allElections[0].id?.toString(),
+              title: allElections[0].title,
+              electionAddress: allElections[0].electionAddress
+            } : null
+          }
+        })
+      });
 
       if (allElections.length === 0) {
         console.log("No elections found");

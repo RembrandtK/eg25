@@ -95,7 +95,7 @@ const DEPLOYED_ADDRESSES = ${JSON.stringify(deployedAddresses, null, 2)};
 export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
-  rpcUrl: "https://worldchain-sepolia.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "",
   blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
     MockWorldID: {
@@ -113,7 +113,7 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
 export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   chainId: 480,
   name: "World Chain",
-  rpcUrl: "https://worldchain-mainnet.g.alchemy.com/public",
+  rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_MAINNET_RPC || "",
   blockExplorer: "https://worldscan.org",
   contracts: {
     WorldIDAddressBook: {

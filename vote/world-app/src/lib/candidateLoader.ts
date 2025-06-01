@@ -6,6 +6,7 @@ export interface Candidate {
   id: bigint;
   name: string;
   description: string;
+  active: boolean;
 }
 
 /**
@@ -56,7 +57,8 @@ export async function loadElectionCandidates(
       return {
         id: BigInt(index + 1),
         name: result[1] || "", // Access by array index, not property name
-        description: result[2] || ""
+        description: result[2] || "",
+        active: Boolean(result[3]) // Include the active property
       };
     });
 

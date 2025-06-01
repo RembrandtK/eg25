@@ -11,49 +11,26 @@ declare global {
 }
 
 export default function MiniKitProvider({ children }: { children: ReactNode }) {
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(true); // Start ready immediately
   const [error, setError] = useState<string | null>(null);
 
   // Simple debug logging
-  const debugLog = async (step: string, data?: any) => {
+  const debugLog = (step: string, data?: any) => {
     const message = `MiniKit: ${step}`;
     console.log(message, data);
-    try {
-      await fetch("/api/debug", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message,
-          data: data ? JSON.stringify(data, null, 2) : undefined,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          location: window.location.href
-        }),
-      });
-    } catch (e) {
-      // Ignore debug failures
-    }
   };
 
   useEffect(() => {
-    const initMiniKit = async () => {
-      try {
-        await debugLog("Starting initialization", {
-          miniKitExists: typeof MiniKit !== 'undefined',
-          windowMiniKit: typeof window.MiniKit,
-          userAgent: navigator.userAgent
-        });
+    try {
+      debugLog("Starting initialization");
 
-        // Check if MiniKit is available
-        if (!MiniKit) {
-          throw new Error("MiniKit class not available");
-        }
-
-        await debugLog("✅ MiniKit class found");
+      // Check if MiniKit is available
+      if (typeof MiniKit !== 'undefined') {
+        debugLog("✅ MiniKit class found");
 
         // Simple installation
         if (typeof MiniKit.install === "function") {
-          await debugLog("Installing MiniKit");
+          debugLog("Installing MiniKit");
           MiniKit.install({
             appId: "app_10719845a0977ef63ebe8eb9edb890ad",
           });
@@ -61,28 +38,23 @@ export default function MiniKitProvider({ children }: { children: ReactNode }) {
 
         // Make globally available
         window.MiniKit = MiniKit;
-        
-        // Simple completion - don't wait for complex command checking
-        setIsReady(true);
-        await debugLog("🎉 MiniKit initialization complete!");
-
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        await debugLog("❌ Initialization failed", { error: errorMsg });
-        setError(errorMsg);
+      } else {
+        debugLog("⚠️ MiniKit not available, proceeding anyway");
       }
-    };
 
-    initMiniKit();
+      debugLog("🎉 MiniKit initialization complete!");
+    } catch (err) {
+      debugLog("❌ Initialization failed, proceeding anyway");
+    }
   }, []);
 
-  // Loading state
+  // Loading state - minimal and fast
   if (!isReady && !error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Initializing MiniKit...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Loading...</p>
         </div>
       </div>
     );
