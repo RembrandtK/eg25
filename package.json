@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "pnpm --filter world-app dev",
+    "ngrok": "pnpm --filter world-app ngrok",
     "build": "pnpm --filter contracts build && pnpm --filter world-app build",
     "test": "pnpm --filter contracts test && pnpm --filter world-app test",
     "deploy:contracts": "pnpm --filter contracts deploy:election:sepolia",

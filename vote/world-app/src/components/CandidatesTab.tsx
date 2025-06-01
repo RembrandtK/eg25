@@ -1,6 +1,6 @@
 "use client";
 
-import { Candidate } from "@/election-abi";
+import { Candidate } from "@/lib/candidateLoader";
 
 interface CandidatesTabProps {
   candidates: Candidate[];

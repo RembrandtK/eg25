@@ -6,19 +6,34 @@ import { WalletAuthButton } from "./wallet-auth-button";
 import { useElectionVoting } from "@/hooks/useElectionVoting";
 import { ELECTION_ABI } from "@/election-abi";
 import { ELECTION_MANAGER_ADDRESS } from "@/config/contracts";
-import { Candidate } from "@/election-abi";
+import { Candidate } from "@/lib/candidateLoader";
 import { useSession } from "next-auth/react";
+
+interface Election {
+  id: bigint;
+  address: string;
+  name: string;
+  description: string;
+  worldIdAction: string;
+  candidateCount: number;
+  isActive: boolean;
+  creator: string;
+}
 
 interface InteractiveRankingTabProps {
   candidates: Candidate[];
   verified: boolean;
   hasVoted: boolean;
+  selectedElection: Election | null;
+  onRankingChange: (rankedIds: bigint[]) => void;
 }
 
 export function InteractiveRankingTab({
   candidates,
   verified,
-  hasVoted
+  hasVoted,
+  selectedElection,
+  onRankingChange
 }: InteractiveRankingTabProps) {
   const { data: session } = useSession();
   const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
@@ -34,8 +49,9 @@ export function InteractiveRankingTab({
     currentVote,
     hasVoted: hasSubmittedVote
   } = useElectionVoting({
-    electionAddress: ELECTION_MANAGER_ADDRESS, // TODO: This should be the specific Election contract address
+    electionAddress: selectedElection?.address || "",
     electionAbi: ELECTION_ABI,
+    worldIdAction: selectedElection?.worldIdAction || "vote",
     onSuccess: (txId) => {
       console.log("Vote submitted successfully:", txId);
 
@@ -65,8 +81,9 @@ export function InteractiveRankingTab({
   const handleRankingChange = useCallback((newRankedIds: bigint[]) => {
     console.log("🔄 Ranking changed in InteractiveRanking:", newRankedIds);
     setRankedCandidateIds(newRankedIds);
+    onRankingChange(newRankedIds); // Notify parent component
     // Don't auto-submit to blockchain - wait for explicit submit
-  }, []);
+  }, [onRankingChange]);
 
   // Handle explicit vote submission
   const handleSubmitVote = useCallback(() => {
@@ -80,6 +97,23 @@ export function InteractiveRankingTab({
     setSuccessMessage(null);
     setErrorMessage(null);
   }, [rankedCandidateIds]);
+
+  // Check if election is selected
+  if (!selectedElection) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="text-gray-400 mb-4">
+          <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">No Election Selected</h2>
+        <p className="text-gray-600 text-center text-sm">
+          Please select an election from the Elections tab to start voting.
+        </p>
+      </div>
+    );
+  }
 
   if (!verified) {
     return (

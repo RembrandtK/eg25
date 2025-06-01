@@ -40,23 +40,27 @@ async function main() {
     }
   }
 
-  // Define test candidates
+  // Define test candidates - DIFFERENT from the first election
   const candidates = [
     {
-      name: "Alice Johnson",
-      description: "Community leader with 10 years of experience in local governance"
+      name: "Emma Rodriguez",
+      description: "Healthcare advocate with focus on accessible medical services"
     },
     {
-      name: "Bob Smith", 
-      description: "Tech entrepreneur focused on digital innovation"
+      name: "Michael Chen",
+      description: "Urban planning expert specializing in smart city development"
     },
     {
-      name: "Carol Davis",
-      description: "Environmental advocate and sustainability expert"
+      name: "Sarah Thompson",
+      description: "Social justice lawyer and community organizer"
     },
     {
-      name: "David Wilson",
-      description: "Education reformer and former school principal"
+      name: "James Park",
+      description: "Renewable energy engineer and climate policy advisor"
+    },
+    {
+      name: "Lisa Martinez",
+      description: "Small business owner and economic development specialist"
     }
   ];
 
@@ -69,8 +73,8 @@ async function main() {
 
   try {
     const createTx = await electionManager.createElection(
-      "Test Election 2025",
-      "A test election for the World Mini App voting system",
+      "City Council Election 2025",
+      "Municipal election for city council representatives",
       uniqueAction, // Unique World ID action
       candidates
     );

@@ -4,15 +4,9 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { createPublicClient, http } from "viem";
 import { worldchainSepolia } from "viem/chains";
 import { CURRENT_NETWORK } from "@/config/contracts";
+import { Candidate } from "@/lib/candidateLoader";
 
 const MAX_RETRIES = 3;
-
-interface Candidate {
-  id: bigint;
-  name: string;
-  description: string;
-  active: boolean;
-}
 
 interface CandidateListProps {
   contractAddress: string;

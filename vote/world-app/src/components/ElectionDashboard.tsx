@@ -24,26 +24,61 @@ interface Election {
   creator: string;
 }
 
-export function ElectionDashboard() {
+interface ElectionDashboardProps {
+  elections: Election[];
+  electionsLoading: boolean;
+  electionsError: string | null;
+  selectedElection: Election | null;
+  setSelectedElection: (election: Election | null) => void;
+  candidates: Candidate[];
+  setCandidates: (candidates: Candidate[]) => void;
+  rankedCandidateIds: bigint[];
+  setRankedCandidateIds: (ids: bigint[]) => void;
+}
+
+export function ElectionDashboard({
+  elections,
+  electionsLoading,
+  electionsError,
+  selectedElection,
+  setSelectedElection,
+  candidates,
+  setCandidates,
+  rankedCandidateIds,
+  setRankedCandidateIds
+}: ElectionDashboardProps) {
+  // Generate unique component ID to detect multiple instances
+  const componentId = useState(() => Math.random().toString(36).substr(2, 9))[0];
+
   const { data: session } = useSession();
-  const [selectedElection, setSelectedElection] = useState<Election | null>(null);
-  const [rankedCandidateIds, setRankedCandidateIds] = useState<bigint[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+  // Debug: Track candidates state changes with stack trace
+  useEffect(() => {
+    console.log("🔧 ElectionDashboard: Candidates state changed:", candidates.length, candidates.map(c => c.name));
+    console.log("🔧 ElectionDashboard: Full candidates array:", candidates);
+    console.log("🔧 ElectionDashboard: Stack trace:", new Error().stack);
+
+    // Debug API call to track candidates state changes with timestamp
+    fetch('/api/debug', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `🔧 ElectionDashboard: Candidates state changed`,
+        data: {
+          candidatesCount: candidates.length,
+          candidateNames: candidates.map(c => c.name),
+          timestamp: Date.now(),
+          componentId: componentId
+        }
+      })
+    }).catch(console.error);
+  }, [candidates]);
 
   // Check if user is authenticated
   const isAuthenticated = !!session?.user?.address;
 
-  // Load elections from ElectionManager (always load - elections are public)
-  console.log("🔧 ElectionDashboard: About to call useElectionManager");
-  const {
-    elections,
-    isLoading: electionsLoading,
-    error: electionsError,
-    loadElections,
-    getActiveElections
-  } = useElectionManager({ enabled: true });
-  console.log("🔧 ElectionDashboard: useElectionManager returned:", { elections, electionsLoading, electionsError });
+  // Elections are now passed as props from parent component
 
   // Debug: Log component state with session details
   console.log("ElectionDashboard render:", {
@@ -51,7 +86,7 @@ export function ElectionDashboard() {
     sessionExists: !!session,
     sessionUser: session?.user,
     userAddress: session?.user?.address,
-    electionsCount: elections.length,
+    electionsCount: elections?.length || 0,
     electionsLoading
   });
 
@@ -107,15 +142,7 @@ export function ElectionDashboard() {
     }
   });
 
-  // Auto-select first active election if none selected
-  useEffect(() => {
-    if (!selectedElection && elections.length > 0) {
-      const activeElections = elections.filter(election => election.isActive);
-      if (activeElections.length > 0) {
-        setSelectedElection(activeElections[0]);
-      }
-    }
-  }, [elections, selectedElection]);
+  // Auto-selection is now handled by parent component
 
   // Initialize ranking from current vote
   useEffect(() => {
@@ -128,7 +155,7 @@ export function ElectionDashboard() {
     setSelectedElection(election);
     setRankedCandidateIds([]); // Reset ranking when switching elections
     setErrorMessage(null);
-    setCandidates([]); // Reset candidates when switching elections
+    // Don't reset candidates here - let the useEffect handle it to avoid race conditions
   };
 
   // Load candidates when election is selected
@@ -151,6 +178,22 @@ export function ElectionDashboard() {
     });
 
     if (!selectedElection?.address) {
+      // Debug: Track when candidates are cleared due to no election
+      fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `🔧 ElectionDashboard: CLEARING candidates - no election selected`,
+          data: {
+            reason: 'no_election_address',
+            selectedElection: selectedElection,
+            timestamp: Date.now(),
+            componentId: componentId,
+            stackTrace: new Error().stack?.split('\n').slice(0, 5)
+          }
+        })
+      }).catch(console.error);
+
       setCandidates([]);
       return;
     }
@@ -191,15 +234,62 @@ export function ElectionDashboard() {
           })
         });
 
+        console.log("🔧 ElectionDashboard: Setting candidates state:", loadedCandidates.length, loadedCandidates.map(c => c.name));
+        console.log("🔧 ElectionDashboard: Current candidates state before setCandidates:", candidates.length);
+        console.log("🔧 ElectionDashboard: setCandidates function:", typeof setCandidates);
+
+        // Debug API call to track setCandidates call (non-blocking)
+        fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🔧 ElectionDashboard: About to call setCandidates`,
+            data: {
+              loadedCandidatesCount: loadedCandidates.length,
+              currentCandidatesCount: candidates.length,
+              setCandidatesType: typeof setCandidates
+            }
+          })
+        }).catch(console.error);
+
         setCandidates(loadedCandidates);
+        console.log("🔧 ElectionDashboard: setCandidates called, candidates should update");
+
+        // Debug API call to track setCandidates completion (non-blocking)
+        fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🔧 ElectionDashboard: setCandidates called`,
+            data: { expectedCandidatesCount: loadedCandidates.length }
+          })
+        }).catch(console.error);
       } catch (error) {
         console.error("Error loading candidates:", error);
+
+        // Debug: Track when candidates are cleared due to error
+        fetch('/api/debug', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `🔧 ElectionDashboard: CLEARING candidates - error occurred`,
+            data: {
+              reason: 'error_loading_candidates',
+              error: error instanceof Error ? error.message : String(error),
+              electionAddress: selectedElection.address,
+              timestamp: Date.now(),
+              componentId: componentId,
+              stackTrace: new Error().stack?.split('\n').slice(0, 5)
+            }
+          })
+        }).catch(console.error);
+
         setCandidates([]);
       }
     };
 
     loadCandidates();
-  }, [selectedElection]);
+  }, [selectedElection?.address]); // Use stable address instead of entire object
 
   const handleRankingChange = (newRankedIds: bigint[]) => {
     setRankedCandidateIds(newRankedIds);
@@ -271,6 +361,8 @@ export function ElectionDashboard() {
         </div>
       )}
 
+
+
       {/* Election Selection */}
       <ElectionSelector
         elections={elections}
@@ -317,8 +409,11 @@ export function ElectionDashboard() {
               </div>
             </div>
 
+
+
             {/* Interactive Ranking */}
             <InteractiveRanking
+              key={selectedElection?.id || 'no-election'}
               candidates={candidates}
               onRankingChange={handleRankingChange}
               disabled={isVoting}
@@ -363,7 +458,7 @@ export function ElectionDashboard() {
                   <span className="font-medium">World ID Action:</span>
                   <span className="ml-1">{selectedElection.worldIdAction}</span>
                 </div>
-                <div>
+                <div key={`candidates-${candidates.length}-${Date.now()}`}>
                   <span className="font-medium">Candidates:</span>
                   <span className="ml-1">{candidates.length}</span>
                 </div>

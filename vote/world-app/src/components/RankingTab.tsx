@@ -2,7 +2,7 @@
 
 import { CandidateRanking } from "./CandidateRanking";
 import { VoteButton } from "./VoteButton";
-import { Candidate } from "@/election-abi";
+import { Candidate } from "@/lib/candidateLoader";
 
 interface RankingTabProps {
   candidates: Candidate[];
