@@ -109,7 +109,6 @@ async function main() {
     const createTx = await electionManager.createElection(
       electionTitle,
       electionDescription,
-      uniqueAction,
       candidates
     );
 

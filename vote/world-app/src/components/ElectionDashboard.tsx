@@ -446,30 +446,36 @@ export function ElectionDashboard({
               </div>
             )}
 
-            {/* Info */}
-            <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Election Details</h3>
-              <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                <div>
-                  <span className="font-medium">Contract:</span>
-                  <span className="ml-1 font-mono">{selectedElection.address.slice(0, 10)}...</span>
-                </div>
-                <div>
-                  <span className="font-medium">World ID Action:</span>
-                  <span className="ml-1">{selectedElection.worldIdAction}</span>
-                </div>
-                <div key={`candidates-${candidates.length}-${Date.now()}`}>
-                  <span className="font-medium">Candidates:</span>
-                  <span className="ml-1">{candidates.length}</span>
-                </div>
-                <div>
-                  <span className="font-medium">Status:</span>
-                  <span className={`ml-1 ${selectedElection.isActive ? 'text-green-600' : 'text-gray-500'}`}>
-                    {selectedElection.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
+            {/* Election Summary - Clean and minimal */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <details className="cursor-pointer">
+                  <summary className="text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Technical Details
+                  </summary>
+                  <div className="mt-2 grid grid-cols-2 gap-3 text-xs text-gray-600">
+                    <div>
+                      <span className="font-medium">Contract:</span>
+                      <span className="ml-1 font-mono">{selectedElection.address.slice(0, 10)}...</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">World ID Action:</span>
+                      <span className="ml-1">{selectedElection.worldIdAction}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Candidates:</span>
+                      <span className="ml-1">{candidates.length}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Status:</span>
+                      <span className={`ml-1 ${selectedElection.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                        {selectedElection.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                </details>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

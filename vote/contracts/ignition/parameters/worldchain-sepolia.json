@@ -14,6 +14,8 @@
       "0x046B7CDb0DACE9d4c0B5396f34d47945e974E369"
     ],
     "verificationDuration": 31536000,
+    "useRealWorldId": true,
+    "worldIdRouter": "0x11cA3127182f7583EfC416a8771BD4d11Fae4334",
     "initialCandidates": [
       {
         "name": "Alice Johnson",

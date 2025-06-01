@@ -29,12 +29,11 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-06-01T00:27:42.336Z
+// Last updated: 2025-06-01T04:05:40.899Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
-    "ElectionDeployment#MockWorldID": "0x3cA8D240BE0C1E83ad287A613Fd22EaB0dD08764",
-    "ElectionDeployment#ElectionManager": "0x3769d52E4b2fDaeC389f122A7b780516291eB645"
+    "ElectionDeployment#ElectionManager": "0xE633498333Cc9079340EAE0864D001336211d111"
   }
 };
 

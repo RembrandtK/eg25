@@ -32,6 +32,14 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 4801,
     },
+    "worldchain-sepolia-fork": {
+      url: "http://127.0.0.1:8545", // Local anvil fork
+      chainId: 31337,
+      forking: {
+        url: process.env.WORLD_CHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.gateway.tenderly.co",
+        blockNumber: undefined, // Use latest block
+      },
+    },
   },
   etherscan: {
     apiKey: {
