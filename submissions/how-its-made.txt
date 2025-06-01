@@ -2,6 +2,7 @@ TECHNOLOGY STACK
 ----------------
 
 Frontend:
+
 - Next.js 14 with TypeScript for the main application framework
 - Tailwind CSS for responsive, mobile-first styling optimized for World App
 - MiniKit SDK for seamless World App integration and World ID verification
@@ -9,12 +10,15 @@ Frontend:
 - Framer Motion for smooth animations and user feedback
 
 Smart Contracts:
+
 - Solidity smart contracts deployed on World Chain Sepolia testnet
 - Hardhat development environment for contract compilation and deployment
 - OpenZeppelin libraries for secure contract patterns
 - World ID Verification integrated directly into voting contract logic
+- Blockscout for contract verification and exploration
 
 Blockchain Integration:
+
 - ethers.js for blockchain interaction and transaction management
 - World Chain as the primary blockchain for vote storage and verification
 - IPFS (planned) for storing election metadata and candidate information
@@ -23,23 +27,29 @@ ARCHITECTURE & IMPLEMENTATION
 -----------------------------
 
 Smart Contract Design:
+
 The core voting contract implements a sophisticated ranked-choice voting system with World ID verification. Each vote is stored as an encrypted ranking array, with the World ID nullifier hash ensuring one-vote-per-person while maintaining privacy.
 
 Ranking Algorithm:
-We implemented the Tideman/Condorcet method for determining winners, which involves:
+
+Using pair-ranked based method for determining winners, which involves:
+
 1. Creating pairwise comparison matrices between all candidates
 2. Calculating the strength of victory for each pairing
 3. Sorting and locking in the strongest victories first
 4. Avoiding cycles to determine the final ranking
 
 Mobile-First UX:
+
 The interface was specifically designed for the World App environment with:
+
 - Touch-optimized drag-and-drop for ranking candidates
 - Progressive disclosure of complex voting options
 - Real-time validation and feedback
 - Offline-capable design for areas with poor connectivity
 
 Security Considerations:
+
 - All votes are cryptographically signed and verified
 - World ID prevents sybil attacks while preserving anonymity
 - Smart contract logic prevents double voting and tampering
@@ -48,16 +58,8 @@ Security Considerations:
 NOTABLE TECHNICAL ACHIEVEMENTS
 ------------------------------
 
-Innovative Ranking Interface:
-We created a unique mobile-optimized ranking system that allows users to easily reorder candidates with visual feedback, including support for tied rankings - a feature rarely seen in digital voting systems.
-
-Gas-Optimized Vote Storage:
-Votes are stored efficiently on-chain using packed structs and bit manipulation to minimize gas costs while maintaining full transparency.
-
-Real-Time Result Calculation:
-The system calculates Condorcet winners in real-time as votes are cast, providing immediate feedback on election dynamics without compromising vote privacy.
-
 World App Integration:
+
 Deep integration with MiniKit allows for seamless user experience within the World App ecosystem, including automatic wallet connection and streamlined World ID verification.
 
 By combining cutting-edge voting theory with modern blockchain technology and mobile-first design, this project represents a significant advancement in digital democracy tools.

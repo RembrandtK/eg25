@@ -1,4 +1,4 @@
-This project is a comprehensive ranked-choice voting system built as a World Mini App that leverages World ID verification and World Chain smart contracts to create secure, transparent, and accessible elections. It addresses fundamental challenges in democratic processes by combining the security of blockchain with the usability of modern web applications.
+Simple ranked-choice voting World Mini App. It showcases a new paradigm for voting systems to address fundamental flaws in our democratic processes.
 
 CORE FUNCTIONALITY
 ------------------
@@ -15,14 +15,13 @@ The system enables:
 
 5. Tideman/Condorcet Winner Calculation: The system uses advanced voting theory algorithms to determine winners based on pairwise comparisons between candidates, resulting in outcomes that better represent voter preferences.
 
-6. Real-Time Results and Analytics: Election results are calculated and displayed with detailed analytics about voting patterns and candidate performance.
-
 WHY IT MATTERS
 --------------
 
-Existing electoral systems are fundamentally flawed, resulting in undemocratic outcomes where people are neither well represented nor feel represented. These systems insidiously encourage and reward bad behavior from politicians, undermining the very foundations of democracy.
+Existing electoral systems are fundamentally flawed, resulting in undemocratic outcomes where people are neither are nor feel well represented. These systems insidiously encourage and reward bad behavior from politicians, undermining the very foundations of society.
 
 The Core Problem:
+
 Current voting systems force artificial compromises that distort democratic will:
 
 - Strategic Voting: Voters must choose between their preferred candidate and "electability"
@@ -31,8 +30,9 @@ Current voting systems force artificial compromises that distort democratic will
 - Perverse Incentives: Politicians are rewarded for attacking opponents rather than building consensus
 - Voter Disillusionment: People lose faith when the system consistently fails to reflect their values
 
-Our Revolutionary Approach:
-This project implements cutting-edge voting research that resolves the fundamental compromises plaguing all well-known electoral systems. Rather than debating which flawed system is "least bad," we demonstrate a profoundly superior approach that:
+The Alternative:
+
+This project implements cutting-edge voting methodology to resolve fundamental compromises plaguing all well-known electoral systems. Rather than debating which flawed system is "least bad," we demonstrate a profoundly superior approach that:
 
 - Eliminates Strategic Voting: Voters can always vote their true preferences without fear of "wasting" their vote
 - Rewards Consensus-Building: Politicians benefit from being broadly acceptable, not just intensely supported by a narrow base
@@ -40,15 +40,17 @@ This project implements cutting-edge voting research that resolves the fundament
 - Reduces Polarization: The system naturally favors candidates who can bridge divides
 
 The Mission:
+
 While this won't immediately fix democracy, it makes a demonstrably better voting system conveniently available to all. The goal is threefold: provide immediate utility for organizations needing better decision-making tools, demonstrate how superior systems work in practice, and spread awareness that far better alternatives exist. By changing the dialogue from "which compromise should we accept?" to "why accept compromises at all?", we can catalyze broader electoral reform.
 
 Research Foundation:
+
 This project draws from original research on voting systems and collaboration with members of multiple organizations campaigning for electoral reform in the UK. While these groups may not be specifically interested in blockchain technology, there is widespread recognition of the need for and appetite for better voting systems across the democratic reform community.
 
 REAL-WORLD APPLICATIONS
 -----------------------
 
-This system can be used for:
+This app can be used for:
 
 - Community governance decisions
 - DAO proposals and elections
