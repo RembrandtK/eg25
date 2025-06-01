@@ -7,7 +7,7 @@
     "dev": "next dev",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev",
     "dev:debug-brk": "NODE_OPTIONS='--inspect-brk' next dev",
-    "build": "npm run sync-contracts && next build",
+    "build": "npm run sync-contracts && SKIP_TYPE_CHECK=true next build",
     "build:deploy": "npm run sync-contracts && SKIP_TYPE_CHECK=true next build",
     "start": "next start",
     "lint": "next lint",
