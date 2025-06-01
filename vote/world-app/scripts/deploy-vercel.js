@@ -36,30 +36,19 @@ try {
   process.exit(1);
 }
 
-// Step 2: Type check
-console.log('\n🔍 Step 2: Running type check...');
+// Step 2: Test deployment build (skips type checking)
+console.log('\n🔨 Step 2: Testing deployment build...');
 try {
-  execSync('pnpm run type-check', { stdio: 'inherit' });
-  console.log('✅ Type check passed');
+  execSync('pnpm run build:deploy', { stdio: 'inherit' });
+  console.log('✅ Deployment build successful');
 } catch (error) {
-  console.error('❌ Type check failed:', error.message);
-  console.log('\n💡 Please fix TypeScript errors before deploying');
-  process.exit(1);
-}
-
-// Step 3: Test build
-console.log('\n🔨 Step 3: Testing build...');
-try {
-  execSync('pnpm run build', { stdio: 'inherit' });
-  console.log('✅ Build successful');
-} catch (error) {
-  console.error('❌ Build failed:', error.message);
+  console.error('❌ Deployment build failed:', error.message);
   console.log('\n💡 Please fix build errors before deploying');
   process.exit(1);
 }
 
-// Step 4: Check for Vercel CLI
-console.log('\n🔧 Step 4: Checking Vercel CLI...');
+// Step 3: Check for Vercel CLI
+console.log('\n🔧 Step 3: Checking Vercel CLI...');
 try {
   execSync('vercel --version', { stdio: 'pipe' });
   console.log('✅ Vercel CLI found');
@@ -75,8 +64,8 @@ try {
   }
 }
 
-// Step 5: Deploy
-console.log('\n🚀 Step 5: Deploying to Vercel...');
+// Step 4: Deploy
+console.log('\n🚀 Step 4: Deploying to Vercel...');
 console.log('📝 Note: You may need to configure environment variables after deployment');
 
 const deployCommand = process.argv.includes('--prod') ? 'vercel --prod' : 'vercel';

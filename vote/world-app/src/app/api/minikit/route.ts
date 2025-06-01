@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MiniKit, ResponseSuccessPayload } from "@worldcoin/minikit-js";
+import { MiniKit } from "@worldcoin/minikit-js";
+
+// Define the response type locally since it's not exported
+interface ResponseSuccessPayload {
+  status: "success";
+  reference: string;
+}
 
 export async function POST(request: NextRequest) {
   try {

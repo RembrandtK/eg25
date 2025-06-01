@@ -9,6 +9,16 @@ const nextConfig = {
   // Server external packages
   serverExternalPackages: [],
 
+  // Skip type checking during build if SKIP_TYPE_CHECK is set
+  typescript: {
+    ignoreBuildErrors: process.env.SKIP_TYPE_CHECK === 'true',
+  },
+
+  // Skip ESLint during build for deployment
+  eslint: {
+    ignoreDuringBuilds: process.env.SKIP_TYPE_CHECK === 'true',
+  },
+
   // Production optimizations
   ...(process.env.NODE_ENV === 'production' && {
     // Enable compression

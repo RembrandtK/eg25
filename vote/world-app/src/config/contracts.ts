@@ -29,7 +29,7 @@ export interface NetworkConfig {
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-06-01T06:21:48.949Z
+// Last updated: 2025-06-01T06:28:42.916Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
