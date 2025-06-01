@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CURRENT_NETWORK, ELECTION_MANAGER_ADDRESS, MOCK_WORLD_ID_ADDRESS } from "@/config/contracts";
+import { CURRENT_NETWORK, ELECTION_MANAGER_ADDRESS, getMockWorldIdAddress } from "@/config/contracts";
 
 /**
  * Deployment Status API
@@ -14,13 +14,14 @@ export async function GET(request: NextRequest) {
     console.log(`🔍 Deployment status request: action=${action}, chainId=${chainId}`);
 
     // Simplified deployment status using the main contracts config
+    const mockWorldIdAddress = getMockWorldIdAddress();
     const status = {
       chainId: CURRENT_NETWORK.chainId,
       networkName: CURRENT_NETWORK.name,
       rpcUrl: CURRENT_NETWORK.rpcUrl,
       contractAddresses: {
         ElectionManager: ELECTION_MANAGER_ADDRESS,
-        MockWorldID: MOCK_WORLD_ID_ADDRESS,
+        ...(mockWorldIdAddress && { MockWorldID: mockWorldIdAddress }),
       }
     };
 

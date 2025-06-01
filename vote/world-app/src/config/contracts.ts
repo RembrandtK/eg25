@@ -24,12 +24,12 @@ export interface NetworkConfig {
   blockExplorer: string;
   contracts: {
     ElectionManager: ContractConfig;
-    MockWorldID: ContractConfig;
+    MockWorldID?: ContractConfig; // Optional - only for local development
   };
 }
 
 // Contract addresses from Ignition deployments
-// Last updated: 2025-06-01T04:05:40.899Z
+// Last updated: 2025-06-01T06:21:48.949Z
 const DEPLOYED_ADDRESSES = {
   "480": {},
   "4801": {
@@ -42,16 +42,13 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
   rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "",
-  blockExplorer: "https://worldchain-sepolia.explorer.alchemy.com",
+  blockExplorer: "https://worldchain-sepolia.blockscout.com",
   contracts: {
-    MockWorldID: {
-      address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#MockWorldID"] || "",
-      verified: false,
-    },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#ElectionManager"] || "",
       verified: false,
     },
+    // No MockWorldID on testnet - uses real World ID infrastructure
   },
 };
 
@@ -60,16 +57,13 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   chainId: 480,
   name: "World Chain",
   rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_MAINNET_RPC || "",
-  blockExplorer: "https://worldchain-mainnet.explorer.alchemy.com",
+  blockExplorer: "https://worldscan.org",
   contracts: {
-    WorldIDAddressBook: {
-      address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
-      verified: true,
-    },
     ElectionManager: {
       address: DEPLOYED_ADDRESSES[480]["FullDeployment#ElectionManager"] || "",
       verified: false,
     },
+    // No MockWorldID on mainnet - uses real World ID infrastructure
   },
 };
 
@@ -98,14 +92,23 @@ export function getContractAddress(contractName: keyof NetworkConfig['contracts'
   const config = getCurrentNetworkConfig();
   const contract = config.contracts[contractName];
 
-  if (!contract.address) {
+  if (!contract?.address) {
     throw new Error(`${contractName} not deployed on ${config.name}`);
   }
 
   return contract.address;
 }
 
+// Safe getter for optional MockWorldID (only available on local development)
+export function getMockWorldIdAddress(): string | null {
+  try {
+    const config = getCurrentNetworkConfig();
+    return config.contracts.MockWorldID?.address || null;
+  } catch {
+    return null;
+  }
+}
+
 // Export for convenience
 export const CURRENT_NETWORK = getCurrentNetworkConfig();
 export const ELECTION_MANAGER_ADDRESS = getContractAddress('ElectionManager');
-export const MOCK_WORLD_ID_ADDRESS = getContractAddress('MockWorldID');

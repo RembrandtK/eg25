@@ -19,15 +19,19 @@ describe('Contract Address Resolution', () => {
     console.log('✅ ELECTION_MANAGER_ADDRESS resolved correctly');
   });
 
-  it('should resolve MOCK_WORLD_ID_ADDRESS correctly', () => {
-    const { MOCK_WORLD_ID_ADDRESS } = require('@/config/contracts');
-    console.log('MOCK_WORLD_ID_ADDRESS:', MOCK_WORLD_ID_ADDRESS);
+  it('should handle MockWorldID address safely', () => {
+    const { getMockWorldIdAddress } = require('@/config/contracts');
+    const mockWorldIdAddress = getMockWorldIdAddress();
+    console.log('MockWorldID address:', mockWorldIdAddress);
 
-    expect(MOCK_WORLD_ID_ADDRESS).toBe('0xD1475b98eAE5335eDB90Ab7bB46d029c18cb24ab');
-    expect(typeof MOCK_WORLD_ID_ADDRESS).toBe('string');
-    expect(MOCK_WORLD_ID_ADDRESS).toMatch(/^0x[a-fA-F0-9]{40}$/);
-
-    console.log('✅ MOCK_WORLD_ID_ADDRESS resolved correctly');
+    // On testnet, this should be null since we don't use MockWorldID
+    if (mockWorldIdAddress) {
+      expect(typeof mockWorldIdAddress).toBe('string');
+      expect(mockWorldIdAddress).toMatch(/^0x[a-fA-F0-9]{40}$/);
+      console.log('✅ MockWorldID address resolved correctly');
+    } else {
+      console.log('✅ MockWorldID not available (expected on testnet/mainnet)');
+    }
   });
 
   it('should test the exact same import pattern as useElectionManager', () => {
