@@ -20,8 +20,15 @@
     "manage-addresses": "node scripts/manage-addresses.js",
     "ignition-utils": "node scripts/ignition-utils.js",
     "extract-abi": "node scripts/update-frontend-abi.js",
+    "generate:contracts-md": "node scripts/generate-contracts-md.js",
+    "verify:blockscout": "node scripts/verify-contracts.js",
+    "verify:blockscout:sepolia": "node scripts/verify-contracts.js --network=worldchain-sepolia",
+    "analytics": "node scripts/contract-analytics.js",
+    "test:blockscout": "node scripts/test-blockscout-api.js",
     "build": "pnpm run compile && pnpm run extract-abi",
     "deploy:full": "pnpm run build && pnpm run deploy:election:sepolia && cd ../world-app && pnpm run sync-contracts",
+    "deploy:complete": "node scripts/deploy-and-document.js",
+    "deploy:complete:verify": "node scripts/deploy-and-document.js --verify",
     "node": "hardhat node"
   },
   "keywords": [],
@@ -38,6 +45,7 @@
   },
   "dependencies": {
     "@worldcoin/world-id-contracts": "^0.1.1",
+    "axios": "^1.6.0",
     "dotenv": "^16.4.7"
   }
 }
