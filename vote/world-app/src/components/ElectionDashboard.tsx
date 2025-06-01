@@ -1,14 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useElectionManager } from "@/hooks/useElectionManager";
-import { useElectionVoting } from "@/hooks/useElectionVoting";
 import { ElectionSelector } from "./ElectionSelector";
-import { InteractiveRanking } from "./InteractiveRanking";
-import { WalletAuthButton } from "./wallet-auth-button";
-import { ELECTION_ABI } from "@/election-abi";
 import { Candidate } from "@/election-abi";
-import { useSession } from "next-auth/react";
 import { loadElectionCandidates } from "@/lib/candidateLoader";
 
 // Candidates will be loaded from the selected Election contract
@@ -50,111 +44,9 @@ export function ElectionDashboard({
   // Generate unique component ID to detect multiple instances
   const componentId = useState(() => Math.random().toString(36).substr(2, 9))[0];
 
-  const { data: session } = useSession();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Debug: Track candidates state changes with stack trace
-  useEffect(() => {
-    console.log("🔧 ElectionDashboard: Candidates state changed:", candidates.length, candidates.map(c => c.name));
-    console.log("🔧 ElectionDashboard: Full candidates array:", candidates);
-    console.log("🔧 ElectionDashboard: Stack trace:", new Error().stack);
-
-    // Debug API call to track candidates state changes with timestamp
-    fetch('/api/debug', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `🔧 ElectionDashboard: Candidates state changed`,
-        data: {
-          candidatesCount: candidates.length,
-          candidateNames: candidates.map(c => c.name),
-          timestamp: Date.now(),
-          componentId: componentId
-        }
-      })
-    }).catch(console.error);
-  }, [candidates]);
-
-  // Check if user is authenticated
-  const isAuthenticated = !!session?.user?.address;
-
-  // Elections are now passed as props from parent component
-
-  // Debug: Log component state with session details
-  console.log("ElectionDashboard render:", {
-    isAuthenticated,
-    sessionExists: !!session,
-    sessionUser: session?.user,
-    userAddress: session?.user?.address,
-    electionsCount: elections?.length || 0,
-    electionsLoading
-  });
-
-  // Send session debug to server
-  useEffect(() => {
-    const sendSessionDebug = async () => {
-      try {
-        await fetch('/api/debug', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: 'ElectionDashboard: Session State',
-            data: JSON.stringify({
-              isAuthenticated,
-              sessionExists: !!session,
-              sessionUser: session?.user,
-              userAddress: session?.user?.address,
-              timestamp: new Date().toISOString()
-            }, null, 2),
-            timestamp: new Date().toISOString(),
-            userAgent: navigator.userAgent,
-            location: window.location.href
-          })
-        });
-      } catch (e) {
-        // Ignore debug failures
-      }
-    };
-    sendSessionDebug();
-  }, [session, isAuthenticated]);
-
-  // Voting hook for selected election
-  const {
-    submitVote,
-    loadCurrentVote,
-    isVoting,
-    isLoading: voteLoading,
-    lastTxId,
-    currentVote,
-    hasVoted
-  } = useElectionVoting({
-    electionAddress: selectedElection?.address || "",
-    electionAbi: ELECTION_ABI,
-    worldIdAction: selectedElection?.worldIdAction || "vote",
-    onSuccess: (txId) => {
-      console.log("Vote submitted successfully:", txId);
-      setErrorMessage(null);
-    },
-    onError: (error) => {
-      console.error("Error submitting vote:", error);
-      setErrorMessage(error.message || "Failed to submit vote");
-      setTimeout(() => setErrorMessage(null), 5000);
-    }
-  });
-
-  // Auto-selection is now handled by parent component
-
-  // Initialize ranking from current vote
-  useEffect(() => {
-    if (currentVote.length > 0 && rankedCandidateIds.length === 0) {
-      setRankedCandidateIds(currentVote);
-    }
-  }, [currentVote, rankedCandidateIds.length]);
-
   const handleElectionSelect = (election: Election) => {
     setSelectedElection(election);
     setRankedCandidateIds([]); // Reset ranking when switching elections
-    setErrorMessage(null);
     // Don't reset candidates here - let the useEffect handle it to avoid race conditions
   };
 
@@ -291,64 +183,19 @@ export function ElectionDashboard({
     loadCandidates();
   }, [selectedElection?.address]); // Use stable address instead of entire object
 
-  const handleRankingChange = (newRankedIds: bigint[]) => {
-    setRankedCandidateIds(newRankedIds);
-  };
 
-  const handleSubmitVote = () => {
-    if (rankedCandidateIds.length > 0) {
-      submitVote(rankedCandidateIds);
-    }
-  };
-
-  // Show wallet connection if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Election Voting System</h1>
-          <p className="text-gray-600 mb-6">
-            Connect your World ID wallet to participate in elections.
-          </p>
-
-          {/* Development notice */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center">
-                <div className="text-yellow-500 mr-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-                <div className="text-left">
-                  <p className="text-sm text-yellow-700 font-medium">Development Mode</p>
-                  <p className="text-xs text-yellow-600">
-                    Some features may not work outside the World App. For full functionality, test in the World App.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <WalletAuthButton onSuccess={() => {
-            console.log("Wallet connected successfully!");
-          }} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Election Voting System</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Elections</h1>
         <p className="text-gray-600">
-          Select an election and rank candidates in order of preference.
+          Browse and select from available elections.
         </p>
       </div>
 
       {/* Error Messages */}
-      {(electionsError || errorMessage) && (
+      {electionsError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-center">
             <div className="text-red-500 mr-2">
@@ -356,7 +203,7 @@ export function ElectionDashboard({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <p className="text-sm text-red-700">{electionsError || errorMessage}</p>
+            <p className="text-sm text-red-700">{electionsError}</p>
           </div>
         </div>
       )}
@@ -371,114 +218,7 @@ export function ElectionDashboard({
         isLoading={electionsLoading}
       />
 
-      {/* Voting Interface */}
-      {selectedElection && (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{selectedElection.name}</h2>
-                {selectedElection.description && (
-                  <p className="text-gray-600 text-sm mt-1">{selectedElection.description}</p>
-                )}
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                {voteLoading && (
-                  <div className="flex items-center space-x-1 text-purple-500">
-                    <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs">Loading...</span>
-                  </div>
-                )}
-                
-                {isVoting && (
-                  <div className="flex items-center space-x-1 text-blue-500">
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs">Voting...</span>
-                  </div>
-                )}
-                
-                {lastTxId && (
-                  <div className="flex items-center space-x-1 text-green-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-xs">Voted</span>
-                  </div>
-                )}
-              </div>
-            </div>
 
-
-
-            {/* Interactive Ranking */}
-            <InteractiveRanking
-              key={selectedElection?.id || 'no-election'}
-              candidates={candidates}
-              onRankingChange={handleRankingChange}
-              disabled={isVoting}
-              isUpdating={isVoting}
-              initialRanking={currentVote}
-            />
-
-            {/* Submit Button */}
-            {rankedCandidateIds.length > 0 && (
-              <div className="flex justify-center mt-6">
-                <button
-                  onClick={handleSubmitVote}
-                  disabled={isVoting || rankedCandidateIds.length === 0}
-                  className="px-8 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  {isVoting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Submitting Vote...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Submit Vote</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Election Summary - Clean and minimal */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-3">
-                <details className="cursor-pointer">
-                  <summary className="text-sm font-medium text-gray-700 hover:text-gray-900">
-                    Technical Details
-                  </summary>
-                  <div className="mt-2 grid grid-cols-2 gap-3 text-xs text-gray-600">
-                    <div>
-                      <span className="font-medium">Contract:</span>
-                      <span className="ml-1 font-mono">{selectedElection.address.slice(0, 10)}...</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">World ID Action:</span>
-                      <span className="ml-1">{selectedElection.worldIdAction}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Candidates:</span>
-                      <span className="ml-1">{candidates.length}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium">Status:</span>
-                      <span className={`ml-1 ${selectedElection.isActive ? 'text-green-600' : 'text-gray-500'}`}>
-                        {selectedElection.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
-                  </div>
-                </details>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
