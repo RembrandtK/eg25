@@ -206,6 +206,8 @@ function main() {
   console.log('1. Commit the updated contracts.ts file to git');
   console.log('2. Update your .env.local with NEXT_PUBLIC_CHAIN_ID if needed');
   console.log('3. Restart your development server');
+  console.log('4. Generate CONTRACTS.md: cd ../contracts && pnpm run generate:contracts-md');
+  console.log('5. Verify contracts: cd ../contracts && pnpm run verify:blockscout:sepolia');
 }
 
 if (require.main === module) {

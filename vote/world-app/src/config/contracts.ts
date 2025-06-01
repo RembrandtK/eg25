@@ -42,7 +42,7 @@ export const WORLD_CHAIN_SEPOLIA: NetworkConfig = {
   chainId: 4801,
   name: "World Chain Sepolia",
   rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_SEPOLIA_RPC || "",
-  blockExplorer: "https://worldchain-sepolia.blockscout.com",
+  blockExplorer: "https://worldchain-sepolia.explorer.alchemy.com",
   contracts: {
     MockWorldID: {
       address: DEPLOYED_ADDRESSES[4801]["ElectionDeployment#MockWorldID"] || "",
@@ -60,7 +60,7 @@ export const WORLD_CHAIN_MAINNET: NetworkConfig = {
   chainId: 480,
   name: "World Chain",
   rpcUrl: process.env.NEXT_PUBLIC_WORLDCHAIN_MAINNET_RPC || "",
-  blockExplorer: "https://worldscan.org",
+  blockExplorer: "https://worldchain-mainnet.explorer.alchemy.com",
   contracts: {
     WorldIDAddressBook: {
       address: "0x57b930D551e677CC36e2fA036Ae2fe8FdaE0330D", // Official World ID Address Book
