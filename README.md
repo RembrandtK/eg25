@@ -17,7 +17,7 @@ This project implements a complete election voting system where users can:
 
 - **ElectionManager.sol**: Factory contract for creating and managing multiple elections
 - **Election.sol**: Individual election contracts with World ID verification and ranking storage
-- Deployed on World Chain Sepolia testnet at: `0xE633498333Cc9079340EAE0864D001336211d111`
+- Deployed on World Chain Sepolia testnet at: `0xAA75C772ca977F89125B3592355346b9eFD37AC9`
 
 ### Frontend (Next.js + TypeScript)
 
@@ -111,7 +111,7 @@ eg25/
 The system is deployed on World Chain Sepolia testnet:
 
 - **Network**: World Chain Sepolia (Chain ID: 4801)
-- **ElectionManager Contract**: `0xE633498333Cc9079340EAE0864D001336211d111`
+- **ElectionManager Contract**: `0xAA75C772ca977F89125B3592355346b9eFD37AC9`
 - **World ID App ID**: `app_10719845a0977ef63ebe8eb9edb890ad`
 
 ## 📚 Documentation

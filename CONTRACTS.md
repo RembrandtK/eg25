@@ -26,7 +26,7 @@ pnpm run verify:blockscout:sepolia
 
 | Contract | Address | Verified | Compiler | Block Explorer |
 |----------|---------|----------|----------|----------------|
-| ElectionManager | `0xE633498333Cc9079340EAE0864D001336211d111` | ❌ | v0.8.27+commit.40a35a09 | [View](https://worldchain-sepolia.explorer.alchemy.com/address/0xE633498333Cc9079340EAE0864D001336211d111) |
+| ElectionManager | `0xAA75C772ca977F89125B3592355346b9eFD37AC9` | ❌ | v0.8.27+commit.40a35a09 | [View](https://worldchain-sepolia.explorer.alchemy.com/address/0xAA75C772ca977F89125B3592355346b9eFD37AC9) |
 
 ### World Chain Mainnet (Chain ID: 480)
 
@@ -36,14 +36,14 @@ pnpm run verify:blockscout:sepolia
 
 ### ElectionManager
 
-- **Address**: `0xE633498333Cc9079340EAE0864D001336211d111`
+- **Address**: `0xAA75C772ca977F89125B3592355346b9eFD37AC9`
 - **Network**: World Chain Sepolia
 - **Verified**: No
 - **Compiler**: v0.8.27+commit.40a35a09
 - **EVM Version**: london
 - **Optimization**: Enabled
 - **Deployed at Block**: 12345678
-- **Block Explorer**: [View on World Chain Sepolia](https://worldchain-sepolia.explorer.alchemy.com/address/0xE633498333Cc9079340EAE0864D001336211d111)
+- **Block Explorer**: [View on World Chain Sepolia](https://worldchain-sepolia.explorer.alchemy.com/address/0xAA75C772ca977F89125B3592355346b9eFD37AC9)
 - **Deployment Module**: ElectionDeployment
 
 ## Available Scripts
