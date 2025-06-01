@@ -7,7 +7,7 @@
     "dev": "next dev",
     "dev:debug": "NODE_OPTIONS='--inspect' next dev",
     "dev:debug-brk": "NODE_OPTIONS='--inspect-brk' next dev",
-    "build": "npm run sync-contracts && next build",
+    "build": "pnpm run sync-contracts && next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -15,8 +15,14 @@
     "test:watch": "jest --watch",
     "ngrok": "ngrok http --domain=pet-jackal-crucial.ngrok-free.app 3000",
     "test:fast": "node scripts/test-contract-simple.js",
-    "test:build": "npm run type-check && npm run build",
-    "sync-contracts": "node scripts/sync-contracts.js"
+    "test:build": "pnpm run type-check && pnpm run build",
+    "sync-contracts": "node scripts/sync-contracts.js",
+    "deploy": "node scripts/deploy-vercel.js --prod",
+    "deploy:preview": "node scripts/deploy-vercel.js",
+    "deploy:manual": "vercel --prod",
+    "deploy:manual:preview": "vercel",
+    "vercel-build": "pnpm run sync-contracts && next build",
+    "postbuild": "echo 'Build completed successfully!'"
   },
   "dependencies": {
     "@worldcoin/minikit-js": "^1.7.0",
