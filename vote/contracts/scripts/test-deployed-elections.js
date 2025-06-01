@@ -1,11 +1,27 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function testDeployedElections() {
   console.log("🔍 Testing Deployed ElectionManager Contract");
   console.log("=" .repeat(60));
 
-  // Get the deployed contract address from the frontend config
-  const contractAddress = "0x2A43763e2cB8Fd417Df3236bAE24b1590E6bD5EC"; // From contracts.ts
+  // Get the deployed contract address from Ignition deployment files
+  const network = hre.network.name;
+  const chainId = hre.network.config.chainId;
+
+  const deploymentPath = path.join(__dirname, "..", "ignition", "deployments", `chain-${chainId}`, "deployed_addresses.json");
+
+  if (!fs.existsSync(deploymentPath)) {
+    throw new Error(`No deployment found for network ${network} (chain ${chainId}). Please deploy contracts first.`);
+  }
+
+  const deployedAddresses = JSON.parse(fs.readFileSync(deploymentPath, "utf8"));
+  const contractAddress = deployedAddresses["ElectionDeployment#ElectionManager"];
+
+  if (!contractAddress) {
+    throw new Error(`ElectionManager not found in deployment for network ${network}`);
+  }
   
   try {
     // Connect to the deployed contract

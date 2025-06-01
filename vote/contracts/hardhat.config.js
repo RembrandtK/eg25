@@ -28,9 +28,7 @@ module.exports = {
       chainId: 31337,
     },
     "worldchain-sepolia": {
-      url:
-        process.env.WORLD_CHAIN_SEPOLIA_RPC ||
-        "https://worldchain-sepolia.g.alchemy.com/public",
+      url: process.env.WORLD_CHAIN_SEPOLIA_RPC || "https://worldchain-sepolia.gateway.tenderly.co",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 4801,
     },
